@@ -251,14 +251,32 @@ int _MLDebugPrintNullLink(int level) {
 int _MLDebugPrintNullLink() {
     return _MLDebugMessage("Link is Null");
 }
-int _MLDebugPrintObject(int lvl, PyObject *o){
+const char *_MLRepr(PyObject *o) {
     PyObject *tmp = PyObject_Repr(o);
     PyObject *enc = PyUnicode_AsEncodedString(tmp, "utf8", "err~~");
     const char *str =  PyBytes_AsString(enc);
     Py_XDECREF(enc);
-    int res = _MLDebugPrint(lvl, str);
     Py_XDECREF(tmp);
-    return res;
+
+    return str;
+}
+int _MLDebugPrintObject(int lvl, PyObject *o){
+
+    return _MLDebugPrint(lvl, _MLRepr(o));
+}
+int _MLDebugPrintUserData(int lvl, struct cookie* userData) {
+    if (lvl <= ML_DEBUG_LEVEL) {
+        return _MLDebugPrint(
+                    lvl,
+                    "Getting user data: \n\tobject $s\n\tuse numpy %d\n\tuse python message handler %d\n\tuse python yielder %d",
+//                    _MLRepr(userData->ml),
+                    userData->useNumPy,
+                    userData->usePythonMsgHandler,
+                    userData->usePythonYielder
+                    );
+    } else {
+        return 0;
+    }
 }
 
 int _MLSetError ( int err, PyObject *errMsgOut) {
@@ -709,7 +727,7 @@ PyObject *_MLMakeBufferedNDArray ( int type, int depth, int* dims, const void* s
     PyObject *array;
 
     // this might fuck up
-    PyObject *array_module = PyImport_ImportModule(".HelperClasses");
+    PyObject *array_module = PyImport_ImportModule("PJLink.HelperClasses");
     if (array_module == NULL) return NULL;
     PyObject *buffnd = PyObject_GetAttrString(array_module, "BufferedNDArray");
     Py_DECREF(array_module);
@@ -973,15 +991,34 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
 }
 
 bool _MLGetUseNumpy(MLINK mlink) {
+
     struct cookie* userData = (struct cookie*) MLUserData(mlink, NULL);
 
-    return userData->useNumPy;
+    bool use_numpy = userData->useNumPy;
+
+    if (use_numpy) {
+        _MLDebugPrint(5, "NumPy is on", use_numpy);
+    } else {
+        _MLDebugPrint(5, "NumPy is off", use_numpy);
+    }
+
+    return use_numpy;
 }
 
 void _MLSetUseNumpy(MLINK mlink, bool use_numpy) {
+
     struct cookie* userData = (struct cookie*) MLUserData(mlink, NULL);
 
+    if (use_numpy) {
+        _MLDebugPrint(5, "Turning on NumPy", use_numpy);
+    } else {
+        _MLDebugPrint(5, "Turning off NumPy", use_numpy);
+    }
+
     userData->useNumPy = use_numpy;
+
+    // _MLDebugPrintUserData(0, userData);
+
 }
 /******************************  MathLink Functions  ********************************/
 
@@ -3870,12 +3907,7 @@ MLFUNCWITHARGS(setUseNumPy) {
     // Py_XDECREF(ml);
 
     _MLSetUseNumpy(mlink, use_numpy);
-//    struct cookie* userData;
-//    userData = (struct cookie*) MLUserData(mlink, NULL);
 
-//    userData->useNumPy = (int) use_numpy;
-
-//    Py_RETURN_NONE;
     MLRETURNBOOL(use_numpy);
 }
 
@@ -3893,6 +3925,37 @@ MLFUNCWITHARGS(setDebugLevel) {
 }
 
 /****************************  Yielding and Messages  *********************************/
+
+/* setupUserData
+static void setupUserData(MLINK mlp, MLEnvironment mlEnv, JNIEnv* env, jobject ml) {
+
+    JavaVM *jvm = NULL;
+    struct cookie* cookie = malloc(sizeof(struct cookie));
+    jclass mlCls;
+
+    MLYieldFunctionObject yielder = MLCreateYieldFunction(mlEnv, (MLYieldFunctionType) yield_func, 0);
+    MLMessageHandlerObject handler = MLCreateMessageHandler(mlEnv, (MLMessageHandlerType) msg_handler, 0);
+    MLSetYieldFunction(mlp, yielder);
+    MLSetMessageHandler(mlp, handler);
+
+    if ((*env)->GetJavaVM(env, &jvm) != 0 || jvm == NULL) {
+        DEBUGSTR1("GetJavaVM failed")
+        return;
+    }
+
+    mlCls = (*env)->GetObjectClass(env, ml);
+
+    cookie->yielder = yielder;
+    cookie->msgHandler = handler;
+    cookie->jvm = jvm;
+    cookie->ml = (*env)->NewGlobalRef(env, ml);
+    cookie->msgMID = (*env)->GetMethodID(env, mlCls, "nativeMessageCallback", "(II)V");
+    cookie->yieldMID = (*env)->GetMethodID(env, mlCls, "nativeYielderCallback", "(Z)Z");
+    cookie->useJavaYielder = 0;
+    cookie->useJavaMsgHandler = 0;
+    MLSetUserData(mlp, (char *)cookie, NULL);
+}
+*/
 
 static void setupUserData(MLINK mlp, MLEnvironment mlEnv, PyObject *ml) {
 
@@ -3918,26 +3981,37 @@ static void setupUserData(MLINK mlp, MLEnvironment mlEnv, PyObject *ml) {
     //    int usePythonMsgHandler;
     //    int useNumPy;
 
-    struct cookie cookie = {
-        // MLYieldFunctionObject yielder ->
-        yielder,
-        // MLMessageHandlerObject msgHandler ->
-        handler,
-        // PyObject *ml ->
-        ml,
-        // PyObject *yieldFunction ->
-        yieldMethod,
-        // PyObject *messageHandler ->
-        msgMethod,
-        // int usePythonYielder ->
-        0,
-        // int usePythonMsgHandler ->
-        0,
-        // int useNumPy ->
-        0
-    };
+    struct cookie* cookie = (struct cookie*) malloc(sizeof(struct cookie));
 
-    MLSetUserData(mlp, (char *) &cookie, NULL);
+    cookie -> yielder = yielder;
+    cookie -> msgHandler = handler;
+    cookie -> ml = ml;
+    cookie -> yieldFunction = yieldMethod;
+    cookie -> messageHandler = msgMethod;
+    cookie -> usePythonYielder = 0;
+    cookie -> usePythonMsgHandler = 0;
+    cookie -> useNumPy = 0;
+
+//    struct cookie cookie = {
+//        // MLYieldFunctionObject yielder ->
+//        yielder,
+//        // MLMessageHandlerObject msgHandler ->
+//        handler,
+//        // PyObject *ml ->
+//        ml,
+//        // PyObject *yieldFunction ->
+//        yieldMethod,
+//        // PyObject *messageHandler ->
+//        msgMethod,
+//        // int usePythonYielder ->
+//        0,
+//        // int usePythonMsgHandler ->
+//        0,
+//        // int useNumPy ->
+//        0
+//    };
+
+    MLSetUserData(mlp, (char *) cookie, NULL);
 }
 
 /*setupCallback

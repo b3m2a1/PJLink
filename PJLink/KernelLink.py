@@ -901,6 +901,7 @@ class WrappedKernelLink(KernelLink):
     """
 
     def __init__(self, link = None):
+        self.__USE_NUMPY = None
         self.__link_connected = False
         self.__impl = link
 
@@ -965,13 +966,18 @@ class WrappedKernelLink(KernelLink):
 
     @use_numpy.setter
     def use_numpy(self, val):
-        self.__impl.use_numpy = val
+        self._setUseNumPy(val)
 
-    def _setUseNumPy(self, bool):
-        self.__impl._setUseNumPy(bool)
+    def _setUseNumPy(self, val):
+        use = bool(val)
+        self.__USE_NUMPY = use
+        self.__impl._setUseNumPy(use)
 
-    def _getUseNumPy(self, bool):
-        self.__impl._getUseNumPy(bool)
+    def _getUseNumPy(self):
+        return self.__impl._getUseNumPy()
+
+    def _setDebugLevel(self, lvl):
+        return self.__impl._setDebugLevel(lvl)
 
     @property
     def ready(self):
@@ -1140,13 +1146,6 @@ class WrappedKernelLink(KernelLink):
     def _addMessageHandlerOn(self, target, meth):
         # self.__ensure_connection()
         return self.__impl._addMessageHandlerOn(target, meth)
-
-    def _setDebugLevel(self, lvl):
-        return self.__impl._setDebugLevel(lvl)
-    def _setUseNumpy(self, val):
-        return self.__impl._setUseNumpy(val)
-    def _getUseNumpy(self):
-        return self.__impl._getUseNumpy()
 
     def _nextPacket(self):
         # Code here is not just a simple call to impl.nextPacket(). For a KernelLink, nextPacket() returns a

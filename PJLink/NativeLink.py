@@ -27,6 +27,9 @@ class NativeLink(MathLink):
     __NATIVE_LIBRARY_EXISTS = False
 
     def __init__(self, init = None, debug_level = 0):
+
+        self.__USE_NUMPY = None
+
         import os, re
 
         if init is None:
@@ -582,13 +585,26 @@ class NativeLink(MathLink):
     def nativeMessageCallback(self, message, n):
         return self._messageCallback(message, n)
 
+    @property
+    def use_numpy(self):
+        if self.__USE_NUMPY is None:
+            self.__USE_NUMPY = self.Env.HAS_NUMPY
+            self._setUseNumPy(self.Env.HAS_NUMPY)
+
+        return self.__USE_NUMPY
+
+    @use_numpy.setter
+    def use_numpy(self, val):
+        self._setUseNumPy(bool(val))
+
     def _setUseNumPy(self, flag):
         """Sets NumPy usage at the C level"""
+
         flag = bool(flag)
         self.__USE_NUMPY = flag
         self._call("setUseNumPy", flag)
 
-    def _getUseNumpy(self):
+    def _getUseNumPy(self):
         """Gets whether or not NumPy usage has been set at the C level and sets that for the object"""
         res = self._call("getUseNumPy")
         self.__USE_NUMPY = res

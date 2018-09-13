@@ -750,8 +750,6 @@ class MathLink(MathLinkImplBase):
     __packetListeners = [ ]# we use a list rather than set because hashability might be important here
     __packetListenerLock = threading.RLock()
 
-    __USE_NUMPY = None
-
     def _connect_timeout(self, timeout):
         import math, time
         self.setYieldFunction(self._connectTimeoutYielder)
@@ -941,21 +939,8 @@ class MathLink(MathLinkImplBase):
     def _setUseNumPy(self, flag):
         raise NotImplemented
 
-    @property
-    def use_numpy(self):
-        if self.__USE_NUMPY is None:
-            self.__USE_NUMPY = self.Env.HAS_NUMPY
-            self._setUseNumPy(self.Env.HAS_NUMPY)
-
-        return self.__USE_NUMPY
-
-    @use_numpy.setter
-    def use_numpy(self, val):
-        self._setUseNumPy(bool(val))
-
     def _get_put_array_params(self, ob):
 
-        print(self.use_numpy)
         arr, t = self.Util.get_array_data_and_type(ob, self.use_numpy)
         print(arr)
         dims = self.Util.get_array_dims(ob, self.use_numpy)

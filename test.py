@@ -26,9 +26,10 @@ print("Name:", link.name)
 print("Connected:", link.connect())
 print(link._getFunction(), link.drain())
 print(link.evaluateToInputForm("$Version"))
+# link.use_numpy = False
 print(link.evaluate(link.M.F("Transpose", [[1, 2, 3], [1, 2, 3]])))
 link._raiseLastError()
 
 #########################################################################################################
 
-import code; code.interact(local=locals())
+# import code; code.interact(local=locals())
