@@ -47,62 +47,52 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         res = None
         tk = self._getType()
         t1 = self.Env.fromTypeToken(tk)
-        if t1 == "Integer":
 
-            t = self._getInt()
-            t_flint = self.Env.toTypeInt("FloatOrInt")
-            t_dubint = self.Env.toTypeInt("DoubleOrInt")
-            t_float = self.Env.toTypeInt("Float")
-            t_dub = self.Env.toTypeInt("Double")
-            arr_int = self.Env.toTypeInt("Array1D")
-            if t % arr_int == t_flint:
-                t = t_float + arr_int * ( t // arr_int )
-            elif t % arr_int == t_dubint:
-                t = t_dub + arr_int * ( t // arr_int )
+        with LinkMark(self) as mark:
+            unpacking = False
+            try:
+                self._checkFunction("PackedArrayInfo")
+                dtype = self._getSymbol()
+                dims = list(self._getArray(self.Env.toTypeInt("Integer"), 1))
+                true_type = None
+                if isinstance(dtype, MLSym):
+                    dtype = dtype.name
+                if dtype == "Integer":
+                    true_type = self.Env.toTypeInt("Integer")
+                elif dtype == "Real":
+                    true_type = self.Env.toTypeInt("Double")
+                elif dtype == "Complex":
+                    true_type = self.Env.toTypeInt("Complex")
+                tok = self.Env.fromTypeToken(self._getNext())
+                if tok in ("Object", "Symbol"):
+                    res = self._getObject()
+                else:
+                    # print("Unpacking packed array of type {} and dims {}".format(dtype, dims))
+                    # unpacking = True
+                    res = self._getArray(true_type, len(dims))
+            except MathLinkException as e:
+                self._clearError()
+                self._seekMark(mark)
+                # if unpacking:
+                #     raise e
+                # print(e)
 
-            if t == t_dubint:
-                t = t_dub
-            elif t == t_flint:
-                t = t_float
-
-            name = self.Env.fromTypeInt(t, "typename")
-
-            if name == "Bad":
-                return res
-
-            tchar = self._getType() # dunno if this will break things?
-            tname = self.Env.fromTypeToken(tchar)
-            if tname == "Object":
-                res = self._getObject()
-            elif tname == "Function":
-                res = self.getPacket()
-            else:
-                try:
-                    res = self._getSingleObject(t)
-                except (MathLinkException, ValueError, TypeError):
-                    pass # Maybe I should handle these?
-
-            # I have unfortunately not wholly faithfully handled this...
-            # hopefully I can come back and do so sometime
 
             if res is None:
-                for r in range(2, 1+self.Env.MAX_ARRAY_DEPTH):
-                    tar = self.Env.toTypeInt("Array{}D".format(r))
-                    if t > tar:
-                        res = self._getArray(t - tar, r - 1)
-        else:
-            if t1 == "Object":
-                res = self._getObject()
-            elif t1 == "Function":
-                res = self.getPacket()
-            else:
-                try:
-                    res = self._getSingleObject(t1)
-                except (MathLinkException, ValueError, TypeError):
-                    pass # Maybe I should handle these?
+                if t1 == "Object":
+                    res = self._getObject()
+                elif t1 == "Function":
+                    res = self.getPacket()
                 else:
-                    if t1 == "Symbol":
-                        res = MLSym(res)
+                    try:
+                        res = self._getSingleObject(t1)
+                        # print(res)
+                    except (MathLinkException, ValueError, TypeError) as e:
+                        self._clearError()
+                        pass # Maybe I should handle these?
+                    else:
+                        if t1 == "Symbol":
+                            res = MLSym(res)
         return res
 
     def getPacket(self):
@@ -115,6 +105,18 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         else:
             pkt = None
         return pkt
+
+    def evaluate(self, expr, wait = True):
+        self._evaluateExpr(self.M._add_type_hints(expr))
+        if wait:
+            self.waitForAnswer()
+            return self.get()
+
+    def evaluateString(self, expr, wait=True):
+        self._evaluateString(self.M._add_type_hints(expr))
+        if wait:
+            self.waitForAnswer()
+            return self.get()
 
     def _evaluateExpr(self, s):
         self.put(self.M._eval(s))
@@ -353,16 +355,141 @@ from Mathematica), will want to start with the handleCallPacket() method here.
     def _messageHandler(self, msg, ignore):
         self.__LAST_MESSAGE = msg
 
+    def _getObjectTypePair(self):
+
+        res = None
+
+        t = t_orig = self._getInt()
+
+        t_flint = self.Env.toTypeInt("FloatOrInt")
+        t_dubint = self.Env.toTypeInt("DoubleOrInt")
+        t_float = self.Env.toTypeInt("Float")
+        t_dub = self.Env.toTypeInt("Double")
+        arr_int = self.Env.toTypeInt("Array1D")
+
+        # print(t, arr_int, t % arr_int, t_flint, t_dubint, abs(t) // abs(arr_int) )
+
+        if t % arr_int == t_flint:
+            # TYPE_FLOAT + TYPE_ARRAY1 * (type / TYPE_ARRAY1);
+            t = t_float + arr_int * ( -1 if t / abs(t) == 1 else 1) *( abs(t) // abs(arr_int) )
+        elif t % arr_int == t_dubint:
+            # TYPE_DOUBLE + TYPE_ARRAY1 * (type / TYPE_ARRAY1)
+            t = t_dub + arr_int * ( -1 if t / abs(t) == 1 else 1) *( abs(t) // abs(arr_int) )
+
+        if t == t_dubint:
+            t = t_dub
+        elif t == t_flint:
+            t = t_float
+
+        # print(t_orig, t)
+
+        name = self.Env.fromTypeInt(t, "typename")
+        # print(name)
+
+        if name in (  "Integer", "Long", "Short", "Byte", "Char", "Float", "Double", "Boolean" ):
+            res = self._getSingleObject(t)
+        elif name == "String":
+            tok = self._getTypeName()
+            if tok == "Object":
+                res = self._getObject()
+            else:
+                res = self._getString()
+                if tok == "Symbol" and res == "Null":
+                    return MLSym("Null")
+
+        elif name == "Complex":
+            with LinkMark(self) as mark:
+                tok = self.Env.fromTypeToken(self._getNext())
+                if tok == "Object":
+                    res = self._getObject()
+                elif tok == "Symbol":
+                    res = self._getSymbol()
+                    if res == "Null":
+                        res = MLSym("Null") # can't remember how _getSymbol() is working
+                    elif res != MLSym("Null"):
+                        self._seekMark(mark)
+                        res = self._getComplex()
+                else:
+                    self._seekMark(mark)
+                    res = self._getComplex()
+
+        elif name == "BigInteger":
+            with LinkMark(self) as mark:
+                tok = self.Env.fromTypeToken(self._getNext())
+                if tok == "Object":
+                    res = self._getObject()
+                elif tok == "Symbol":
+                    res = self._getSymbol()
+                    if res == "Null":
+                        res = MLSym("Null") # can't remember how _getSymbol() is working
+                    elif res != MLSym("Null"):
+                        self._seekMark(mark)
+                        res = self._getInt()
+                else:
+                    self._seekMark(mark)
+                    res = self._getInt()
+
+        elif name == "Decimal":
+            with LinkMark(self) as mark:
+                tok = self.Env.fromTypeToken(self._getNext())
+                if tok == "Object":
+                    res = self._getObject()
+                elif tok == "Symbol":
+                    res = self._getSymbol()
+                    if res == "Null":
+                        res = MLSym("Null") # can't remember how _getSymbol() is working
+                    elif res != MLSym("Null"):
+                        self._seekMark(mark)
+                        res = self._getDecimal()
+                else:
+                    self._seekMark(mark)
+                    res = self._getDecimal()
+
+        elif name == "Expr":
+            with LinkMark(self) as mark:
+                tok = self.Env.fromTypeToken(self._getNext())
+                if tok == "Object":
+                    res = self._getObject()
+                elif tok == "Symbol":
+                    res = self._getSymbol()
+                    if res == "Null":
+                        res = MLSym("Null") # can't remember how _getSymbol() is working
+                    elif res != MLSym("Null"):
+                        self._seekMark(mark)
+                        res = self._getExpr()
+                else:
+                    self._seekMark(mark)
+                    res = self._getExpr()
+
+        elif name == "Bad":
+            return res
+
+        else:
+
+            tchar = self._getNext() # dunno if this will break things?
+            tname = self.Env.fromTypeToken(tchar)
+            if tname == "Object" or tname == "Symbol":
+                res = self._getObject()
+            elif tname == "Function":
+                res = self.getPacket()
+
+            if res is None:
+                for r in range(2, 1+self.Env.MAX_ARRAY_DEPTH):
+                    tar = self.Env.toTypeInt("Array{}D".format(r))
+                    if t > tar:
+                        res = self._getArray(t - tar, r - 1)
+
+        return res
+
     def _getArray(self, otype, depth, headList=None):
         # Although this method is intended for object arrays, detect cases where user specifies a
         # primitive type and make these go via the older getArray() API, which is optimized for
         # primitive arrays.
 
         if not isinstance(otype, int):
-            tint = self.Env.toTypeInt(otype)
+            otype = self.Env.toTypeInt(otype)
 
-        tname = self.Env.fromTypeInt(otype, "typename")
-
+        # tname = self.Env.fromTypeInt(otype, "typename")
         return self._getArray0(otype, depth, headList, None)
 
     def _getArray0(self, otype, depth, headList = None, array_type = None):
@@ -574,7 +701,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             self.put(self.M._eval_to_string_packet(obj, page_width, format))
             self.flush()
             self.waitForAnswer()
-            res = self.get()
+            res = self._getString()
             # print(res)
         except MathLinkException as e:
             self._clearError()
@@ -1086,11 +1213,11 @@ class WrappedKernelLink(KernelLink):
         # The only types we must handle ourselves are TYPE_COMPLEX (since we must be sure to use _our_ notion of the                                                                                                         // complex class, not the impl's, which will not even have been set), and TYPE_OBJECT (because only a
         # KernelLink can do that).
         typename = self.Env.fromTypeInt(otype, "typename")
-        if  typename == "Object":
-            return super()._getArray(type, depth, headList)
+        if typename == "Object":
+            return super()._getArray(otype, depth, headList)
         else:
             # We don't _need_ to forward--just an optimization.
-            return self.__impl._getArray(type, depth, headList)
+            return self.__impl._getArray(otype, depth, headList)
 
     def _putArray(self, o, headList = None):
         try:
@@ -1099,4 +1226,3 @@ class WrappedKernelLink(KernelLink):
             self.__impl._putArray(o, headList = None)
         except (ValueError, TypeError):
             self._putArrayPiecemeal(o, headList, 0)
-

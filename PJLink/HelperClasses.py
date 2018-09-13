@@ -15,7 +15,11 @@ from collections import namedtuple
 
 #                                            MLFunction                                       #
 MLFunction         = namedtuple("MLFunction",         ["head", "argCount"])
-
+# def expr_repr(expr):
+#     return "{}[{}]".format(expr.head, ", ".join(repr(x) for x in expr.args))
+# expr_repr.name = "__repr__"
+# MLExpr.__repr__ = expr_repr
+# del expr_repr
 #                                            MLExpr                                           #
 MLExpr             = namedtuple("MLExpr",             ["head", "args", "end"])
 MLExpr.__new__.__defaults__ = (False,)
@@ -327,6 +331,27 @@ class LinkWrapper:
 
 ###############################################################################################
 #                                                                                             #
+#                                          LinkMark                                           #
+#                                                                                             #
+###############################################################################################
+
+class LinkMark:
+    """A wrapper to allow with ...: syntax to set a mark on a link
+
+    """
+    def __init__(self, parent):
+        self.parent = parent
+        self.mark = None
+
+    def __enter__(self):
+        self.mark = self.parent._createMark()
+        return self.mark
+
+    def __exit__(self, type, value, traceback):
+        self.parent._destroyMark(self.mark)
+
+###############################################################################################
+#                                                                                             #
 #                                         ArrayUtils                                          #
 #                                                                                             #
 ###############################################################################################
@@ -341,12 +366,12 @@ This includes things like getting array dimensions, casts to BufferedNDArray, ty
         raise TypeError("{} is a standalone class and can not be instantiated".format(type(self).__name__))
 
     @staticmethod
-    def zeros(dims):
+    def nones(dims):
         # this is an ugly, gross, dangerous hack but also only like two lines of code...
         # could also do via http://code.activestate.com/recipes/577061-nest-a-flat-list/
         # all methods will be slow, unfortunately... (hence BufferedNDArray)
 
-        meta = '0'
+        meta = 'None'
         for i, n in enumerate(dims):
             meta = "[ {} for i_{} in range({}) ]".format(meta, i, n)
         return eval(meta)
@@ -360,7 +385,7 @@ This includes things like getting array dimensions, casts to BufferedNDArray, ty
         if test_array_type is None:
             test_array_type = test_array_type_int
         if array_type is not None and test_array_type != array_type:
-            raise TypeError("MathLink can only handle homogenous type data")
+            raise TypeError("MathLink can only handle homogenous type data but got data of type {} and of type {}".format(array_type, test_array_type_int))
 
         if isinstance(test_array_type, int):
             res = item
@@ -368,14 +393,15 @@ This includes things like getting array dimensions, casts to BufferedNDArray, ty
             try:
                 res = array.array(test_array_type, item)
             except ValueError:
-                raise TypeError("MathLink can only handle homogenous type data")
+                raise TypeError("MathLink can only handle homogenous type data but got data of type {} and array {}".format(test_array_type, item))
         else:
-            raise TypeError("MathLink can't handle data of type {}".format(item[0]))
+            raise TypeError("MathLink can't handle data of type {}".format(type(item[0]).__name__))
 
         return test_array_type, res
 
     @classmethod
     def get_array_data_and_type(cls, ob, use_numpy):
+
         res = None
         if use_numpy:
             import numpy as np
@@ -391,6 +417,7 @@ This includes things like getting array dimensions, casts to BufferedNDArray, ty
             array_type = Env.toTypeInt(ob.typecode)
         else:
             import array, itertools
+
             dims = cls.get_array_dims(ob, use_numpy)
             if 0 in dims:
                 raise ValueError("PJLink currently can't handle length 0 arrays")
@@ -405,20 +432,23 @@ This includes things like getting array dimensions, casts to BufferedNDArray, ty
             for i in index:
                 item = item[i]
 
-            item_arr, array_type = cls.get_array_data_and_type(item, array_type)
+            array_type, item_arr = cls.get_array_object(array_type, item)
 
             if isinstance(item_arr, array.array):
                 res = BufferedNDArray(item_arr, dims)
+            elif len(dims) == 1:
+                res = item_arr
             else:
-                res = cls.zeros(dims)
+                res = cls.nones(dims)
                 rl = res
                 for i in index:
                     if rl[i] is not None:
                         rl = rl[i]
+                rl[i]=item_arr
 
-            for index in itertools.product(*(range(n) for n in dims[:-1])):
+            for index in index_iter:
                 # maybe I could do this more efficiently by not reindexing, but I don't
-                # know how to get this kind of metaprogramming working well here
+                # know how to get this kind of thing working well here
 
                 item = ob
                 if isinstance(res, BufferedNDArray):
@@ -431,7 +461,7 @@ This includes things like getting array dimensions, casts to BufferedNDArray, ty
                             rl = rl[i]
                         item = item[i]
 
-                item_arr, array_type = cls.get_array_object(item, array_type)
+                array_type, item_arr = cls.get_array_object(array_type, item)
 
                 if isinstance(res, BufferedNDArray):
                     res.extend(item_arr)
@@ -473,13 +503,18 @@ This includes things like getting array dimensions, casts to BufferedNDArray, ty
             arr, t = cls.get_array_data_and_type(ob, use_numpy)
             depth = len(arr.shape)
         else:
-            depth = 1
+            depth = 0
             do = ob
             try:
                 while hasattr(do, "__getitem__"):
-                    do = do[0] # a good further test that it's indexable
+                    if isinstance(do, str):
+                        break
+                    do2 = do[0] # a good further test that it's indexable
+                    if do2 == do:
+                        break
+                    do = do2
                     depth += 1
-            except:
+            except Exception as e:
                 pass
 
         return depth
@@ -498,8 +533,8 @@ for the JLink package on the Mathematica side
     """
 
     PackageContext = "PJLink`"
-    PackagePrivate = PackageContext+"`Private`"
-    PackagePackage = PackageContext+"`Package`"
+    PackagePrivate = PackageContext+"Private`"
+    PackagePackage = PackageContext+"Package`"
 
     def __init__(self):
         raise NotImplemented
@@ -558,7 +593,7 @@ for the JLink package on the Mathematica side
                         val = MLUnevaluated.arg
                         rhead = "SetDelayed"
                     opts[i] = MLExpr(rhead, (key, val))
-        return opts
+        return cls.List(*opts)
     @classmethod
     def _function(cls, head, *args, **kwargs):
         """Unwraps into a function call
@@ -579,15 +614,15 @@ for the JLink package on the Mathematica side
 
     @classmethod
     def Set(cls, lhs, rhs):
-        return MLExpr("Set", lhs, rhs)
+        return MLExpr("Set", ( MLSym(lhs) if isinstance(lhs, str) else lhs, rhs) )
     @classmethod
     def SetDelayed(cls, lhs, rhs):
-        return MLExpr("SetDelayed", lhs, rhs)
+        return MLExpr("SetDelayed", ( MLSym(lhs) if isinstance(lhs, str) else lhs, rhs))
     s  = Set
     sd = SetDelayed
     @classmethod
     def Unset(cls, lhs, rhs):
-        return MLExpr("Unset", lhs, rhs)
+        return MLExpr("Unset", (lhs, rhs))
     u = Unset
 
     @classmethod
@@ -652,22 +687,23 @@ for the JLink package on the Mathematica side
     def new_context_path(cls, cpath):
         return cls.F(
             "System`Private`NewContextPath",
-            cls.List(cpath)
+            cls.List(*cpath)
             )
     @classmethod
     def restore_context_path(cls):
         return cls.F("System`Private`RestoreContextPath")
     @classmethod
     def with_context(cls, context, cpath, expr):
+        # print(type(cls._psym("cachedContext")))
         setup = [
-            cls.s(cls._psym("cachedContext"), MLSym("$Context"))
+            cls.Set(cls._psym("cachedContext"), MLSym("$Context"))
         ]
         teardown = [
-            cls.s(MLSym("$Context"), cls._psym("cachedContext"))
+            cls.Set(MLSym("$Context"), cls._psym("cachedContext"))
         ]
         if context is not None:
-            setup.append(cls.s(MLSym("$Context"), context))
-            teardown.append(cls.s(MLSym("$Context"), context))
+            setup.append(cls.Set(MLSym("$Context"), context))
+            # teardown.append(cls.s(MLSym("$Context"), context))
         if cpath is not None:
             setup.append(cls.new_context_path(cpath))
             teardown.append(cls.restore_context_path())
@@ -676,6 +712,13 @@ for the JLink package on the Mathematica side
             cls.do(*setup),
             expr,
             cls.do(*teardown)
+        )
+    @classmethod
+    def in_package(cls, expr):
+        return cls.with_context(
+            cls.PackagePackage,
+            [cls.PackageContext, cls.PackagePackage, cls.PackagePrivate],
+            expr
         )
 
     @classmethod
@@ -805,11 +848,32 @@ class MPackage(MExprUtils):
 
     """
 
-    JLinkContext           = "JLink"
-    JLinkEvaluateToContext = JLinkContext + "`EvaluateTo`"
+    JLinkContext           = "JLink`"
+    JLinkEvaluateToContext = JLinkContext + "EvaluateTo`"
 
     @classmethod
-    def _eval(cls, expr):
+    def _add_type_hints(cls, to_eval):
+        expr = MLSym("expr")
+        return cls.in_package(
+            cls.Block(
+                [ "expr" ],
+                cls.Set(expr, cls.F("Developer`ToPackedArray", to_eval)),
+                cls.If(
+                    cls.F("Developer`PackedArrayQ", expr),
+                    cls.F("PackedArrayInfo",
+                        # type
+                        cls.F("Head", cls.F("Extract", expr, cls.F("Table", 1, cls.List(cls.F("ArrayDepth", expr))))),
+                        # dimensions
+                        cls.F("Dimensions", expr),
+                        # data
+                        expr
+                    ),
+                    expr
+                )
+            )
+        )
+    @classmethod
+    def _eval(cls, expr, add_type_hints = True):
         return cls.EvaluatePacket(expr, _EndPacket=True)
 
     @classmethod

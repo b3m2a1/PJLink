@@ -589,12 +589,13 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
 
             head_holder = ['']
             if self.Env.fromTypeInt(otype) == object:
-                res_array = self._getArray(componentClass, 1, head_holder);
+                res_array = self._getArray(componentClass, 1, head_holder)
 
             else:
-                res_array = self._getArray(componentClass, 1, head_holder);
+                res_array = self._getArray(componentClass, 1, head_holder)
 
-            heads[headsIndex] = head_holder[0]
+            if heads is not None:
+                heads[headsIndex] = head_holder[0]
 
         return res_array
 
@@ -969,4 +970,5 @@ class MathLink(MathLinkImplBase):
         return self
 
     def drain(self):
+        self.flush()
         return [ pkt for pkt in self ]

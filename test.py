@@ -22,17 +22,16 @@ from PJLink import *
 #########################################################################################################
 
 link = create_kernel_link(None, debug_level=0)
-import time
 print("Name:", link.name)
 print("Connected:", link.connect())
-link.evaluateToInputForm("$Version")
+print(link._getFunction(), link.drain())
+print(link.evaluateToInputForm("$Version"))
+print(link.evaluate(link.M.F("Transpose", [[1, 2, 3], [1, 2, 3]])))
 link._raiseLastError()
+
 #########################################################################################################
 #########################################################################################################
 #########################################################################################################
-# print(ord("\x00"))
-# print("E\x00v\x00a\x00l\x00u\x00a\x00t\x00")
-# print("\u0049\u006e\u005b\u0031\u005d\u003a\u003d\u0020")
 
 # from PJLink import NativeLink
 # nl = NativeLink.NativeLink(["-linkmode", "launch", "-linkname", "/Applications/Mathematica.app/Contents/MacOS/WolframKernel"])
@@ -55,8 +54,8 @@ link._raiseLastError()
 
 # import timeit
 #
-# print(timeit.timeit( "ArrayUtils.zeros((5, 5, 5))" , "from PJLink.HelperClasses import ArrayUtils", number=10))
-# print(timeit.timeit( "np.zeros((5, 5, 5))",  "import numpy as np", number=10))
+# print(timeit.timeit( "ArrayUtils.nones((5, 5, 5))" , "from PJLink.HelperClasses import ArrayUtils", number=10))
+# print(timeit.timeit( "np.nones((5, 5, 5))",  "import numpy as np", number=10))
 
 # class blah:
 #     def __init__(self, asd):

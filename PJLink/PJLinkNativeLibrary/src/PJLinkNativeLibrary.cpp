@@ -139,8 +139,8 @@
 
 /* Pre declare some stuff here for use later */
 
-static PyObject* MakeArrayN(int type, int depth, int* dims, int curDepth, int lenInFinalDim, const void* startAddr);
-static PyObject* MakeArray1(int type, int len, const void* startAddr);
+PyObject* MakeArrayN(int type, int depth, int* dims, int curDepth, int lenInFinalDim, const void* startAddr, int use_numpy);
+PyObject* MakeArray1(int type, int len, const void* startAddr, int use_numpy);
 
 /*struct cookie {
     MLYieldFunctionObject yielder;
@@ -159,9 +159,9 @@ struct cookie {
     PyObject *ml;
     PyObject *yieldFunction;
     PyObject *messageHandler;
-    int useNumPy;
     int usePythonYielder;
     int usePythonMsgHandler;
+    int useNumPy;
 };
 
 enum ctype {
@@ -250,6 +250,15 @@ int _MLDebugPrintNullLink(int level) {
 }
 int _MLDebugPrintNullLink() {
     return _MLDebugMessage("Link is Null");
+}
+int _MLDebugPrintObject(int lvl, PyObject *o){
+    PyObject *tmp = PyObject_Repr(o);
+    PyObject *enc = PyUnicode_AsEncodedString(tmp, "utf8", "err~~");
+    const char *str =  PyBytes_AsString(enc);
+    Py_XDECREF(enc);
+    int res = _MLDebugPrint(lvl, str);
+    Py_XDECREF(tmp);
+    return res;
 }
 
 int _MLSetError ( int err, PyObject *errMsgOut) {
@@ -420,89 +429,6 @@ MLINK _MLGetMLINK( PyObject *ml ) {
     }
 }
 
-PyObject *_MLMakeNewArray ( int type, int len ) {
-    // Initialize an empty array.array type object of proper type
-    static PyObject *single_array;
-    if (!single_array) {
-        PyObject *array_module = PyImport_ImportModule("array");
-        if (!array_module)
-            return NULL;
-        PyObject *array_type = PyObject_GetAttrString(array_module, "array");
-        Py_DECREF(array_module);
-        if (!array_type)
-            return NULL;
-        switch (type) {
-        case TYPE_CHAR:
-            // array.array('c', "")
-            single_array = PyObject_CallFunction(array_type, "c[c]", 'c', "");
-            break;
-        case TYPE_SHORT:
-            // array.array('h', [0])
-            single_array = PyObject_CallFunction(array_type, "c[h]", 'h', 0);
-            break;
-        case TYPE_INT:
-            // array.array('i', [0])
-            single_array = PyObject_CallFunction(array_type, "c[i]", 'i', 0);
-            break;
-        case TYPE_LONG:
-            // array.array('l', [0])
-            single_array = PyObject_CallFunction(array_type, "c[l]", 'l', 0);
-            break;
-        case TYPE_FLOAT:
-            // array.array('f', [0.0])
-            single_array = PyObject_CallFunction(array_type, "c[f]", 'f', 0.0);
-            break;
-        case TYPE_DOUBLE:
-            // array.array('d', [0.0])
-            single_array = PyObject_CallFunction(array_type, "c[d]", 'd', 0.0);
-            break;
-        case TYPE_BOOLEAN:
-
-            break;
-        case TYPE_BYTE:
-            // array.array('h', [0])
-            single_array = PyObject_CallFunction(array_type, "c[h]", 'h', 0);
-            break;
-        case TYPE_STRING:
-
-            break;
-        default:
-            break;
-        }
-        Py_DECREF(array_type);
-        if (!single_array)
-            return NULL;
-    }
-
-    // extra-fast way to create an empty array of count elements:
-    //   array = single_element_array * count
-    PyObject *pysize = PyLong_FromSsize_t(len);
-    if (!pysize)
-        return NULL;
-    PyObject *array = PyNumber_Multiply(single_array, pysize);
-    Py_DECREF(single_array);
-    Py_DECREF(pysize);
-    if (!array)
-        return NULL;
-
-    return single_array;
-}
-
-void _MLPopulateArray( PyObject *array, const void *startAddr, int size) {
-
-    // this is cannibalized from SO, but would be better without the memcpy
-    PyObject *buffer_info = PyObject_CallMethod(array, "buffer_info", "");
-
-    if (buffer_info) {
-        PyObject *pyaddr = PyTuple_GetItem(buffer_info, 0);
-        void *addr = PyLong_AsVoidPtr(pyaddr);
-
-        // and, finally, copy the data.
-        if (size) memcpy(addr, startAddr, size);
-    }
-
-}
-
 int _MLDataSize(int type) {
 
     int datSize = 0;
@@ -566,12 +492,13 @@ char _MLTypeChar(int type) {
 
 Py_buffer *_MLGetDataBuffer(PyObject *data) {
 
-    Py_buffer *view;
+    Py_buffer view;
     if (PyObject_CheckBuffer(data)) {
-        PyObject_GetBuffer(data, view, PyBUF_CONTIG_RO);
+        _MLDebugMessage(4, "Extracting data buffer");
+        PyObject_GetBuffer(data, &view, PyBUF_CONTIG_RO);
     };
 
-    return view;
+    return &view;
 
 }
 
@@ -593,7 +520,7 @@ int _MLPutDataBuffer
       const int *dims, const char **heads, int depth ) {
 
     Py_buffer *view = _MLGetDataBuffer(data);
-    if (view == NULL) return 0;
+    if ( view == NULL ) return NULL;
 
     int flag = 1;
     switch (type) {
@@ -695,14 +622,221 @@ int _MLPutDataBuffer
 
 }
 
-int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
+template<typename T>
+void _MLSetDataBuffer(PyObject *data, void *buff) {
 
-    PyObject *iterator = PyObject_GetIter(data);
-    if (iterator == NULL) {
-        return 0;
+    Py_buffer *view = _MLGetDataBuffer(data);
+    view->buf = (T *)buff;
+
+}
+
+void _MLCopyDataBuffer(PyObject *data, void *buff, long len, int dsize) {
+
+    Py_buffer *view = _MLGetDataBuffer(data);
+    if (len) memcpy(view->buf, buff, len*dsize);
+
+}
+template<typename T>
+void _MLCopyDataBuffer(PyObject *data, void *buff, long len) {
+    _MLCopyDataBuffer(data, buff, len, sizeof(T));
+}
+
+PyObject *_MLMakeNewArray ( int type, int len ) {
+    // Initialize an empty array.array type object of proper type
+    PyObject *single_array;
+    if (!single_array) {
+        PyObject *array_module = PyImport_ImportModule("array");
+        if (!array_module)
+            return NULL;
+        PyObject *array_type = PyObject_GetAttrString(array_module, "array");
+        Py_DECREF(array_module);
+
+        if (!array_type)
+            return NULL;
+        switch (type) {
+        case TYPE_CHAR:
+            // array.array('b', "")
+            single_array = PyObject_CallFunction(array_type, "s[c]", "b", "");
+            break;
+        case TYPE_SHORT:
+            // array.array('h', [0])
+            single_array = PyObject_CallFunction(array_type, "s[h]", "h", 0);
+            break;
+        case TYPE_INT:
+            // array.array('i', [0])
+            single_array = PyObject_CallFunction(array_type, "s[i]", "i", 0);
+            break;
+        case TYPE_LONG:
+            // array.array('l', [0])
+            single_array = PyObject_CallFunction(array_type, "s[l]", "l", 0);
+            break;
+        case TYPE_FLOAT:
+            // array.array('f', [0.0])
+            single_array = PyObject_CallFunction(array_type, "s[f]", "f", 0.0);
+            break;
+        case TYPE_DOUBLE:
+            // array.array('d', [0.0])
+            single_array = PyObject_CallFunction(array_type, "s[d]", "d", 0.0);
+            break;
+        case TYPE_BOOLEAN:
+
+            break;
+        case TYPE_BYTE:
+            // array.array('h', [0])
+            single_array = PyObject_CallFunction(array_type, "s[B]", "B", 0);
+            break;
+        case TYPE_STRING:
+
+            break;
+        default:
+            break;
+        }
+        Py_DECREF(array_type);
+        if (!single_array)
+            return NULL;
     }
 
-    int len = PySequence_Length(data);
+    // extra-fast way to create an empty array of count elements:
+    //   array = single_element_array * count
+    PyObject *pysize = PyLong_FromSsize_t(len);
+    if (!pysize)
+        return NULL;
+    PyObject *array = PyNumber_Multiply(single_array, pysize);
+    Py_DECREF(single_array);
+    Py_DECREF(pysize);
+    if (!array)
+        return NULL;
+
+    return array;
+}
+
+PyObject *_MLMakeNumpyArray(int type, int depth, int* dims, const void* startAddr) {
+    PyObject *array;
+
+    PyObject *array_module = PyImport_ImportModule("numpy");
+    if (array_module == NULL) return NULL;
+    PyObject *full = PyObject_GetAttrString(array_module, "full");
+    if (full == NULL) return NULL;
+
+    PyObject *dimObj = PyList_New(depth);
+    for (int j = 0; j<depth; j++){
+        PyList_SetItem(dimObj, j, Py_BuildValue("i", dims[j]));
+    }
+
+    char fmt[4]; fmt[0]='O'; fmt[2]='s'; fmt[3]='\0';
+    switch (type) {
+        case TYPE_BYTE: {
+            fmt[1]='B';
+            array = PyObject_CallFunction(full, fmt, dimObj, 0, "B");
+            break;
+        }
+        case TYPE_CHAR: {
+            fmt[1]='b';
+            array = PyObject_CallFunction(full, fmt, dimObj, 0, "b");
+            break;
+        }
+        case TYPE_SHORT: {
+            fmt[1]='h';
+            array = PyObject_CallFunction(full, fmt, dimObj, 0, "h");
+            break;
+        }
+        case TYPE_INT: {
+            fmt[1]='i';
+            array = PyObject_CallFunction(full, fmt, dimObj, 0, "i");
+            break;
+        }
+        case TYPE_LONG: {
+            fmt[1]='l';
+            array = PyObject_CallFunction(full, fmt, dimObj, 0, "l");
+            break;
+        }
+        case TYPE_FLOAT: {
+            fmt[1]='f';
+            array = PyObject_CallFunction(full, fmt, dimObj, 0.0, "f");
+            break;
+        }
+        case TYPE_DOUBLE: {
+            fmt[1]='d';
+            array = PyObject_CallFunction(full, fmt, dimObj, 0.0, "d");
+            break;
+        }
+        default:
+            return NULL;  // Just to silence a compiler warning.
+    }
+
+    Py_XDECREF(full);
+    Py_XDECREF(dimObj);
+    Py_XDECREF(array_module);
+    if (array == NULL) return NULL;
+    PyObject *numpy_dat = PyObject_GetAttrString(array, "data");
+
+    long len = 1;
+    for ( int i = 0; i<depth; i++){
+        len *= dims[i];
+    }
+
+    PyObject *dtype = PyObject_GetAttrString(array, "dtype");
+    PyObject *dsize = PyObject_GetAttrString(dtype, "itemsize");
+    long size = PyLong_AsLong(dsize);
+    Py_XDECREF(dtype);
+    Py_XDECREF(dsize);
+
+//    _MLDebugPrint(0, "%d %d", len, size);
+    _MLCopyDataBuffer(numpy_dat, (void *)startAddr, len, size);
+
+    Py_XDECREF(numpy_dat);
+//    PyObject *buffer_info = PyObject_CallMethod(buff, "buffer_info", NULL);
+//    Py_XDECREF(buff);
+//    if (buffer_info == NULL) return NULL;
+
+//    PyObject *pyaddr = PyTuple_GetItem(buffer_info, 0);
+//    void *addr = PyLong_AsVoidPtr(pyaddr);
+
+//    int size = 1;
+//    for ( int i = 0; i < depth; i++) {
+//        size *= dims[i];
+//    }
+//    if (size) memcpy(addr, startAddr, size);
+
+//    Py_XDECREF(buffer_info);
+
+    MLCHECKERROR();
+
+    return array;
+
+}
+
+int _MLPopulateArray( PyObject *array, const void *startAddr, int size) {
+
+//    PyObject *tmp = PyObject_Repr(array);
+//    _MLDebugMessage(0, _MLGetString(tmp));
+//    Py_XDECREF(tmp);
+
+    // this is cannibalized from SO, but would be better without the memcpy
+    PyObject *buffer_info = PyObject_CallMethod(array, "buffer_info", NULL);
+
+    if ( buffer_info == NULL ) return 0;
+
+    PyObject *pyaddr = PyTuple_GetItem(buffer_info, 0);
+    void *addr = PyLong_AsVoidPtr(pyaddr);
+
+    // and, finally, copy the data.
+    if (size) memcpy(addr, startAddr, size);
+
+    return 1;
+
+}
+
+int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
+
+    _MLDebugMessage(4, "Iteratively putting objects");
+    PyObject *iterator = PyObject_GetIter(data);
+    if (iterator == NULL) {
+        _MLDebugMessage(4, "Failed to get iterator to put");
+        return NULL;
+    }
+
+    int len = PyObject_Length(data);
     MLPutFunction(mlink, head, len);
 
     PyObject *item;
@@ -807,6 +941,17 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
     Py_DECREF(iterator);
 
     return 1;
+}
+
+bool _MLGetUseNumpy(MLINK mlink) {
+    struct cookie* userData = (struct cookie*) MLUserData(mlink, NULL);
+
+    return userData->useNumPy;
+}
+void _MLSetUseNumpy(MLINK mlink, bool use_numpy) {
+    struct cookie* userData = (struct cookie*) MLUserData(mlink, NULL);
+
+    userData->useNumPy = use_numpy;
 }
 /******************************  MathLink Functions  ********************************/
 
@@ -1110,7 +1255,7 @@ JNIEXPORT jstring MLFUNC(MLGetLinkedEnvIDString), jlong link) {
 MLFUNCWITHARGS(MLGetLinkedEnvIDString) {
 
     PyObject *ml;
-    MLPARSEARGS("O");
+    MLPARSEARGS("O", &ml);
     MLINK mlink = _MLGetMLINK(ml);
 
     if (mlink == 0) {
@@ -1894,7 +2039,7 @@ MLFUNCWITHARGS(MLPutString) {
             if ( chars == NULL) {
                 return NULL;
             };
-            _MLDebugPrint(3, "Putting string %ls of length %d on link MathLink(%p)", chars, len, mlink);
+            _MLDebugPrint(3, "Putting string of length %d on link MathLink(%p)", len, mlink);
 //            MLPutUTF16String(mlink, chars, len);
 //            MLPutUCS2String(mlink, chars, len);
             MLPutUTF8String(mlink, chars, len);
@@ -2114,7 +2259,7 @@ MLFUNCWITHARGS(MLPutSymbol) {
             Py_ssize_t len;
             const unsigned char * chars = (unsigned char *) _MLGetUTF8String(strObj, &len);
             if (chars == NULL) return NULL;
-            _MLDebugPrint(3, "Putting symbol %ls of length %d on link MathLink(%p)", chars, len, mlink);
+            _MLDebugPrint(3, "Putting symbol of length %d on link MathLink(%p)", len, mlink);
 //            MLPutUTF16Symbol(mlink, chars, (int) len);
 //            MLPutUCS2Symbol(mlink, chars, (int) len);
             MLPutUTF8Symbol(mlink, chars, len);
@@ -2309,8 +2454,10 @@ MLFUNCWITHARGS(MLCheckFunction) {
 
     // This needs to be Unicode-ified....
     if (mlink == 0) {
+        _MLDebugPrintNullLink(3);
         MLRETURNINT(0);
-    } else if (s == NULL) {
+    } else if (s == Py_None) {
+        _MLDebugMessage(3, "No function string found");
         MLRETURNINT(0);
     } else {
         const char* f = _MLGetString(s);
@@ -2358,17 +2505,19 @@ MLFUNCWITHARGS(MLCheckFunctionWithArgCount) {
     // Basic structure o be used whenever a link is needed
     PyObject *ml, *s;
     long argCount;
-    MLPARSEARGS("O", &ml, &s, &argCount);
+    MLPARSEARGS("OOl", &ml, &s, &argCount);
     MLINK mlink = _MLGetMLINK(ml);
-    // Py_XDECREF(ml);
 
     // This needs to be Unicode-ified....
     if (mlink == 0) {
+        _MLDebugPrintNullLink(3);
         MLRETURNINT(0);
-    } else if (s == NULL) {
+    } else if (s == Py_None) {
+        _MLDebugMessage(3, "Passed function was None");
         MLRETURNINT(0);
     } else {
         const char* f = _MLGetString(s);
+        _MLDebugPrint(3, "Checking function %s with argcount %d", f, argCount);
         if (f == NULL) {
             MLSetError(mlink, MLE_MEMORY);
             MLRETURNINT(0);
@@ -2417,7 +2566,10 @@ MLFUNCWITHARGS(MLGetData) {
     MLINK mlink = _MLGetMLINK(ml);
     // Py_XDECREF(ml);
 
-    if (mlink != 0) {
+    if (mlink == 0) {
+        _MLDebugPrintNullLink(3);
+        Py_RETURN_NONE;
+    } else {
         int cnt;
 
         char *buf = (char *) malloc(len);
@@ -2432,8 +2584,6 @@ MLFUNCWITHARGS(MLGetData) {
             return res;
         }
         if (buf) free(buf);
-        Py_RETURN_NONE;
-    } else {
         Py_RETURN_NONE;
     }
 
@@ -2473,8 +2623,9 @@ MLFUNCWITHARGS(MLPutData) {
     MLINK mlink = _MLGetMLINK(ml);
     // Py_XDECREF(ml);
 
-
-    if (mlink != 0) {
+    if (mlink == 0) {
+        _MLDebugPrintNullLink(3);
+    } else {
         const char *c_data;
         c_data = (const char *) bytes.buf;
         int64_t len = bytes.len;
@@ -2518,6 +2669,7 @@ MLFUNCWITHARGS(MLBytesToGet) {
 
 
     if (mlink == 0) {
+        _MLDebugPrintNullLink(3);
         MLRETURNINT(0);
     } else {
         int i;
@@ -2588,8 +2740,8 @@ MLFUNCWITHARGS(MLBytesToPut) {
     MLINK mlink = _MLGetMLINK(ml);
     // Py_XDECREF(ml);
 
-
     if (mlink == 0) {
+        _MLDebugPrintNullLink(3);
         MLRETURNINT(0);
     } else {
         int i;
@@ -2702,6 +2854,7 @@ MLFUNCWITHARGS(MLGetArray) {
     int res;
 
     if (mlink == 0) {
+        _MLDebugPrintNullLink(3);
         Py_RETURN_NONE;
     }
 
@@ -2743,11 +2896,14 @@ MLFUNCWITHARGS(MLGetArray) {
     }
 
     if (actualDepth >= depth) {
+        int use_numpy = _MLGetUseNumpy(mlink);
+//        _MLDebugPrint(0, "use numpy %d", use_numpy);
         lenInLastDimension = dims[depth-1];
         for (i = depth; i < actualDepth; i++) {
             lenInLastDimension *= dims[i];
         }
-        retval = MakeArrayN(type, depth, dims, 0, lenInLastDimension, data);
+        retval = MakeArrayN(type, depth, dims, 0, lenInLastDimension, data, use_numpy);
+        if (retval == NULL) return NULL;
     } else {
         // It is an error to request an array deeper than what is actually there.
         MLSetError(mlink, MLE_ARRAY_TOO_SHALLOW);
@@ -2773,6 +2929,8 @@ MLFUNCWITHARGS(MLGetArray) {
     }
 
     // Py_DECREF(headsArray);
+
+    MLCHECKERROR();
 
     return retval;
 }
@@ -2894,7 +3052,7 @@ MLFUNCWITHARGS(MLPutArrayFlat){
 
     PyObject *ml, *data, *heads, *dims;
     int type;
-    MLPARSEARGS("niOOO", &ml, &type, &data, &heads, &dims);
+    MLPARSEARGS("OiOOO", &ml, &type, &data, &heads, &dims);
     MLINK mlink = _MLGetMLINK(ml);
     // Py_XDECREF(ml);
 
@@ -2910,6 +3068,10 @@ MLFUNCWITHARGS(MLPutArrayFlat){
         return NULL;
     }
     while (depth < 9 && ( item = PyIter_Next(iterator) )) {
+        if ( item == NULL) {
+            Py_DECREF(iterator);
+            return NULL;
+        }
         c_dims[depth] = (int) PyLong_AsLong(item);
         depth++;
         Py_DECREF(item);
@@ -2943,18 +3105,24 @@ MLFUNCWITHARGS(MLPutArrayFlat){
     c_heads[8] = head9;
 
     if (mlink == 0) {
+        _MLDebugPrintNullLink(3);
         return NULL;
-    } else if (data == NULL) {
+    } else if (data == Py_None) {
+        PyErr_SetString(PyExc_TypeError, "object 'None' is not an array");
         return NULL;
     }
 
-    usesHeads = PySequence_Size(heads);
+    usesHeads = heads != Py_None && PyObject_Size(heads);
     if (usesHeads) {
         for (i = 0; i < usesHeads; i++) {
             PyObject *s = PySequence_GetItem(heads, i);
+            if ( s == NULL ) {
+                return NULL;
+            };
             const char *p = _MLGetString(s);
             strncpy(c_heads[i], p, 255);
             c_heads[i][255] = 0;
+            Py_DECREF(s);
         }
     }
     // Py_DECREF(heads);
@@ -2999,6 +3167,8 @@ MLFUNCWITHARGS(MLPutArrayFlat){
         default:
             break;
     }
+
+    MLCHECKERROR()
 
     // Py_DECREF(data);
 
@@ -3177,28 +3347,41 @@ MLFUNCWITHARGS(MLPutArray) {
 
     PyObject *ml, *data, *head;
     int type;
-    MLPARSEARGS("OiOOO", &ml, &type, &data, &head);
+    MLPARSEARGS("OiOO", &ml, &type, &data, &head);
     MLINK mlink = _MLGetMLINK(ml);
     // Py_XDECREF(ml);
-
 
     // int i;
     char c_head[256]; // Limit of 256 chars on symbol names for head at deepest level of array.
     const char *head_ptr = c_head;
     int len;
 
-    if (mlink != 0) {
+    if (mlink == 0) {
+
+        _MLDebugPrintNullLink(3);
+
+    } else if ( data == Py_None ) {
+
+        PyErr_SetString(PyExc_TypeError, "object 'None' is not an array");
+        return NULL;
+
+    } else {
+
+        _MLDebugPrint(4, "Putting array of type %d onto the link", type);
 
         if ( head != Py_None ) {
             const char *p = _MLGetString(head);
             strncpy(c_head, p == NULL ? "List" : p, 255);
             c_head[255] = 0;
+            _MLDebugPrint(4, "Proper head %s was found", c_head);
             // Py_DECREF(head);
         } else {
+            _MLDebugMessage(4, "None head found. Using 'List'");
             c_head[0] = 'L'; c_head[1] = 'i'; c_head[2] = 's'; c_head[3] = 't'; c_head[4] = 0;
         }
 
-        len = PySequence_Length(data);
+        len = PyObject_Size(data);
+
         if (len == 0) {
             // MLPutXXXArray functions in the MathLink C API cannot handle arrays of length 0, so we do these
             // differently. All arrays with a 0 anywhere in their dims are routed in Java so that they will go through here
@@ -3207,53 +3390,132 @@ MLFUNCWITHARGS(MLPutArray) {
         } else {
             switch (type) {
                 case TYPE_BOOLEAN: {
-                    _MLIterPut(mlink, data, c_head, type);
+                    _MLDebugPrint(4, "Putting %d bools on link MathLink(%p)", len, mlink);
+                    int iter_res = _MLIterPut(mlink, data, c_head, type);
+                    if ( iter_res == NULL ) {
+                        return NULL;
+                    } else if ( iter_res == 0 ) {
+                        _MLDebugPrint(4, "Failed to put objects on link");
+                        PyErr_SetString(PyExc_TypeError, "Failed to put array onto link");
+                        return NULL;
+                    }
                     break;
                 }
                 case TYPE_BYTE: {
+                    _MLDebugPrint(4, "Putting %d bytes on link MathLink(%p)", len, mlink);
                     if (!_MLPutDataBuffer(mlink, data, 'b', 16, &len, &head_ptr, 1)) {
-                        _MLIterPut(mlink, data, c_head, type);
+                        _MLDebugPrint(4, "Failed to put byte buffer on link MathLink(%p)", mlink);
+                        int iter_res = _MLIterPut(mlink, data, c_head, type);
+                        if (iter_res == NULL) {
+                            return NULL;
+                        } else if ( iter_res == 0 ) {
+                            _MLDebugPrint(4, "Failed to put objects on link");
+                            PyErr_SetString(PyExc_TypeError, "Failed to put array onto link");
+                            return NULL;
+                        }
                     }
                     break;
                 }
                 case TYPE_CHAR: {
+                    _MLDebugPrint(4, "Putting %d chars on link MathLink(%p)", len, mlink);
                     if (!_MLPutDataBuffer(mlink, data, 'i', 0, &len, &head_ptr, 1)) {
-                        _MLIterPut(mlink, data, c_head, type);
+                        _MLDebugPrint(4, "Failed to put char buffer on link MathLink(%p)", mlink);
+                        int iter_res = _MLIterPut(mlink, data, c_head, type);
+                        if (iter_res == NULL) {
+                            return NULL;
+                        } else if ( iter_res == 0 ) {
+                            _MLDebugPrint(4, "Failed to put objects on link");
+                            PyErr_SetString(PyExc_TypeError, "Failed to put array onto link");
+                            return NULL;
+                        }
                     }
                     break;
                 }
                 case TYPE_SHORT: {
+                    _MLDebugPrint(4, "Putting %d shorts on link MathLink(%p)", len, mlink);
                     if (!_MLPutDataBuffer(mlink, data, 'i', 16, &len, &head_ptr, 1)) {
-                        _MLIterPut(mlink, data, c_head, type);
+                        _MLDebugPrint(4, "Failed to put short buffer on link MathLink(%p)", mlink);
+                        int iter_res = _MLIterPut(mlink, data, c_head, type);
+                        if (iter_res == NULL) {
+                            return NULL;
+                        } else if ( iter_res == 0 ) {
+                            _MLDebugPrint(4, "Failed to put objects on link");
+                            PyErr_SetString(PyExc_TypeError, "Failed to put array onto link");
+                            return NULL;
+                        }
                     }
                     break;
                 }
                 case TYPE_INT: {
+                    _MLDebugPrint(4, "Putting %d ints on link MathLink(%p)", len, mlink);
                     if (!_MLPutDataBuffer(mlink, data, 'i', 32, &len, &head_ptr, 1)) {
-                        _MLIterPut(mlink, data, c_head, type);
+                        _MLDebugPrint(4, "Failed to put int buffer on link MathLink(%p)", mlink);
+                        int iter_res = _MLIterPut(mlink, data, c_head, type);
+                        if (iter_res == NULL) {
+                            return NULL;
+                        } else if ( iter_res == 0 ) {
+                            _MLDebugPrint(4, "Failed to put objects on link");
+                            PyErr_SetString(PyExc_TypeError, "Failed to put array onto link");
+                            return NULL;
+                        }
                     }
                     break;
                 }
                 case TYPE_LONG: {
+                    _MLDebugPrint(4, "Putting %d longs on link MathLink(%p)", len, mlink);
                     if (!_MLPutDataBuffer(mlink, data, 'i', 64, &len, &head_ptr, 1)) {
-                        _MLIterPut(mlink, data, c_head, type);
+                        _MLDebugPrint(4, "Failed to put long buffer on link MathLink(%p)", mlink);
+                        int iter_res = _MLIterPut(mlink, data, c_head, type);
+                        if (iter_res == NULL) {
+                            return NULL;
+                        } else if ( iter_res == 0 ) {
+                            _MLDebugPrint(4, "Failed to put objects on link");
+                            PyErr_SetString(PyExc_TypeError, "Failed to put array onto link");
+                            return NULL;
+                        }
                     }
                     break;
                 }
                 case TYPE_FLOAT: {
+                    _MLDebugPrint(4, "Putting %d floats on link MathLink(%p)", len, mlink);
                     if (!_MLPutDataBuffer(mlink, data, 'f', 32, &len, &head_ptr, 1)) {
-                        _MLIterPut(mlink, data, c_head, type);
+                        _MLDebugPrint(4, "Failed to put float buffer on link MathLink(%p)", mlink);
+                        int iter_res = _MLIterPut(mlink, data, c_head, type);
+                        if (iter_res == NULL) {
+                            return NULL;
+                        } else if ( iter_res == 0 ) {
+                            _MLDebugPrint(4, "Failed to put objects on link");
+                            PyErr_SetString(PyExc_TypeError, "Failed to put array onto link");
+                            return NULL;
+                        }
                     }
                     break;
                 }
                 case TYPE_DOUBLE: {
+                    _MLDebugPrint(4, "Putting %d doubles on link MathLink(%p)", len, mlink);
                     if (!_MLPutDataBuffer(mlink, data, 'f', 64, &len, &head_ptr, 1)) {
-                        _MLIterPut(mlink, data, c_head, type);
+                        _MLDebugPrint(4, "Failed to put double buffer on link MathLink(%p)", mlink);
+                        int iter_res = _MLIterPut(mlink, data, c_head, type);
+                        if (iter_res == NULL) {
+                            return NULL;
+                        } else if ( iter_res == 0 ) {
+                            _MLDebugPrint(4, "Failed to put objects on link");
+                            PyErr_SetString(PyExc_TypeError, "Failed to put array onto link");
+                            return NULL;
+                        }
                     }
                     break;
                 }
                 case TYPE_STRING: {
-                   _MLIterPut(mlink, data, c_head, type);
+                   _MLDebugPrint(4, "Putting %d strings on link MathLink(%p)", len, mlink);
+                   int iter_res = _MLIterPut(mlink, data, c_head, type);
+                   if (iter_res == NULL) {
+                       return NULL;
+                   } else if ( iter_res == 0 ) {
+                       _MLDebugPrint(4, "Failed to put objects on link");
+                       PyErr_SetString(PyExc_TypeError, "Failed to put array onto link");
+                       return NULL;
+                   }
                    break;
                 }
                 default:
@@ -3555,6 +3817,51 @@ static void destroyEnvironment(void) {
     }
 }
 
+/* Env Setup */
+
+MLFUNCWITHARGS(getUseNumPy) {
+    _MLDebugMessage(2, ":getUseNumpy:");
+
+    PyObject *ml;
+    MLPARSEARGS("O", &ml);
+    MLINK mlink = _MLGetMLINK(ml);
+
+    MLRETURNBOOL(_MLGetUseNumpy(mlink));
+
+}
+
+MLFUNCWITHARGS(setUseNumPy) {
+    _MLDebugMessage(2, ":setUseNumpy:");
+
+    PyObject *ml;
+    bool use_numpy;
+    MLPARSEARGS("Op", &ml, &use_numpy);
+    MLINK mlink = _MLGetMLINK(ml);
+    // Py_XDECREF(ml);
+
+    _MLSetUseNumpy(mlink, use_numpy);
+//    struct cookie* userData;
+//    userData = (struct cookie*) MLUserData(mlink, NULL);
+
+//    userData->useNumPy = (int) use_numpy;
+
+//    Py_RETURN_NONE;
+    MLRETURNBOOL(use_numpy);
+}
+
+MLFUNCWITHARGS(setDebugLevel) {
+    _MLDebugMessage(2, ":setDebugLevel:");
+
+    PyObject *ml;
+    int level;
+    MLPARSEARGS("Oi", &ml, &level);
+
+    ML_DEBUG_LEVEL = level;
+
+    Py_RETURN_NONE;
+
+}
+
 /****************************  Yielding and Messages  *********************************/
 
 static void setupUserData(MLINK mlp, MLEnvironment mlEnv, PyObject *ml) {
@@ -3579,24 +3886,25 @@ static void setupUserData(MLINK mlp, MLEnvironment mlEnv, PyObject *ml) {
     //    PyObject *messageHandler;
     //    int usePythonYielder;
     //    int usePythonMsgHandler;
+    //    int useNumPy;
 
     struct cookie cookie = {
         // MLYieldFunctionObject yielder ->
         yielder,
-                // MLMessageHandlerObject msgHandler ->
-                handler,
-                // PyObject *ml ->
-                ml,
-                // PyObject *yieldFunction ->
-                yieldMethod,
-                // PyObject *messageHandler ->
-                msgMethod,
-                // int useNumPy ->
-                0,
-                // int usePythonYielder ->
-                0,
-                // int usePythonMsgHandler ->
-                0
+        // MLMessageHandlerObject msgHandler ->
+        handler,
+        // PyObject *ml ->
+        ml,
+        // PyObject *yieldFunction ->
+        yieldMethod,
+        // PyObject *messageHandler ->
+        msgMethod,
+        // int usePythonYielder ->
+        0,
+        // int usePythonMsgHandler ->
+        0,
+        // int useNumPy ->
+        0
     };
 
     MLSetUserData(mlp, (char *) &cookie, NULL);
@@ -3894,7 +4202,7 @@ MLYDEFN(devyield_result, yield_func, (MLINK mlp, MLYieldParameters yp)) {
 
 }*/
 
-static PyObject *MakeArray1(int type, int len, const void* startAddr) {
+PyObject *MakeArray1(int type, int len, const void* startAddr) {
 
     // int i;
     switch (type) {
@@ -3908,35 +4216,47 @@ static PyObject *MakeArray1(int type, int len, const void* startAddr) {
             PyObject *array = _MLMakeNewArray(type, len);
             if ( array == NULL )
                 return NULL;
-            _MLPopulateArray(array, startAddr, len*_MLDataSize(type));
+            if (!_MLPopulateArray(array, startAddr, len*_MLDataSize(type))) {
+                return NULL;
+            }
             return array;
         }
         case TYPE_SHORT: {
             PyObject *array = _MLMakeNewArray(type, len);
             if ( array == NULL )
                 return NULL;
-            _MLPopulateArray(array, startAddr, len*_MLDataSize(type));
+            if (!_MLPopulateArray(array, startAddr, len*_MLDataSize(type))) {
+                return NULL;
+            }
             return array;
         }
         case TYPE_INT: {
             PyObject *array = _MLMakeNewArray(type, len);
-            if ( array == NULL )
+//            PyObject *tmp = PyObject_Repr(array);
+//            _MLDebugPrint(0, "Array object: %s", _MLGetString(tmp));
+//            Py_XDECREF(tmp);
+            if ( array == NULL ) return NULL;
+            if (!_MLPopulateArray(array, startAddr, len*_MLDataSize(type))) {
                 return NULL;
-            _MLPopulateArray(array, startAddr, len*_MLDataSize(type));
+            }
             return array;
         }
         case TYPE_FLOAT: {
             PyObject *array = _MLMakeNewArray(type, len);
             if ( array == NULL )
                 return NULL;
-            _MLPopulateArray(array, startAddr, len*_MLDataSize(type));
+            if (!_MLPopulateArray(array, startAddr, len*_MLDataSize(type))) {
+                return NULL;
+            }
             return array;
         }
         case TYPE_DOUBLE: {
             PyObject *array = _MLMakeNewArray(type, len);
             if ( array == NULL )
                 return NULL;
-            _MLPopulateArray(array, startAddr, len*_MLDataSize(type));
+            if (!_MLPopulateArray(array, startAddr, len*_MLDataSize(type))) {
+                return NULL;
+            }
             return array;
         }
         default:
@@ -3945,35 +4265,43 @@ static PyObject *MakeArray1(int type, int len, const void* startAddr) {
 }
 
 // should add compiler logic for if NumPy is to be used
-static PyObject *MakeArrayN(int type, int depth, int* dims, int curDepth, int lenInFinalDim, const void* startAddr) {
+PyObject *MakeArrayN(int type, int depth, int* dims, int curDepth, int lenInFinalDim, const void* startAddr, int use_numpy) {
 
     PyObject *array;
-    int i, datSize;
-    char typeChar;
 
-    if (depth == 1)
-        return MakeArray1(type, lenInFinalDim, startAddr);
+    if ( use_numpy ) {
+        array = _MLMakeNumpyArray(type, depth, dims, startAddr);
+    } else {
 
-    datSize=_MLDataSize(type);
-    typeChar=_MLTypeChar(type);
+        int i, datSize;
+        char typeChar;
 
-    array=PyList_New(depth);
+        if (depth == 1)
+            return MakeArray1(type, lenInFinalDim, startAddr);
 
-    if (array == NULL) {
-        return NULL;
-    }
-    for (i = 0; i < dims[curDepth]; i++) {
-        PyObject *array2;
-        size_t jump = lenInFinalDim;
-        int j;
-        for (j = curDepth + 1; j < curDepth + depth - 1; j++)
-            jump *= dims[j];
-        array2 = MakeArrayN(type, depth - 1, dims, curDepth + 1, lenInFinalDim, (char*)startAddr + i*jump*datSize);
-        if (array2 == NULL) {
+        datSize=_MLDataSize(type);
+        typeChar=_MLTypeChar(type);
+
+        array=PyList_New(dims[curDepth]);
+
+        if (array == NULL) {
             return NULL;
         }
-        PyList_SetItem(array, i, array2);
+
+        for (i = 0; i < dims[curDepth]; i++) {
+            PyObject *array2;
+            size_t jump = lenInFinalDim;
+            int j;
+            for (j = curDepth + 1; j < curDepth + depth - 1; j++)
+                jump *= dims[j];
+            array2 = MakeArrayN(type, depth - 1, dims, curDepth + 1, lenInFinalDim, (char*)startAddr + i*jump*datSize, use_numpy);
+            if (array2 == NULL) {
+                return NULL;
+            }
+            PyList_SetItem(array, i, array2);
+        }
     }
+
     return array;
 }
 
@@ -4222,44 +4550,6 @@ BOOL CALLBACK appMainWindowToFrontCallback(HWND hwnd, LPARAM lParam) {
 
 #endif*/
 
-MLFUNCWITHARGS(getUseNumPy) {
-
-    PyObject *ml;
-    MLPARSEARGS("Op", &ml);
-    MLINK mlink = _MLGetMLINK(ml);
-
-    struct cookie* c = (struct cookie*) MLUserData(mlink, NULL);
-
-    MLRETURNBOOL(c->useNumPy)
-
-}
-
-MLFUNCWITHARGS(setUseNumPy) {
-
-    PyObject *ml;
-    bool use_numpy;
-    MLPARSEARGS("Op", &ml, &use_numpy);
-    MLINK mlink = _MLGetMLINK(ml);
-    // Py_XDECREF(ml);
-
-    struct cookie* c = (struct cookie*) MLUserData(mlink, NULL);
-
-    c->useNumPy = use_numpy;
-
-    MLRETURNBOOL(use_numpy);
-}
-
-MLFUNCWITHARGS(setDebugLevel) {
-
-    PyObject *ml;
-    int level;
-    MLPARSEARGS("Oi", &ml, &level);
-
-    ML_DEBUG_LEVEL = level;
-
-    Py_RETURN_NONE;
-
-}
 /******************************  PJLink Module Setup  ********************************/
 
 static PyMethodDef PJLinkNativeLibraryMethods[] = {

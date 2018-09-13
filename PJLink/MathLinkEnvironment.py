@@ -187,7 +187,7 @@ class MathLinkEnvironment:
         import numpy as np
         NUMPY_TYPE_MAP = {
             np.int64      : "Long",
-            np.int32      : "Int",
+            np.int32      : "Integer",
             np.int16      : "Short",
             np.int8       : "Char",
             np.float64    : "Double",
@@ -202,14 +202,14 @@ class MathLinkEnvironment:
         TYPE_MAP.update(NUMPY_TYPE_MAP.items())
         NUMPY_TYPE_MAP.update(tuple((item, key) for key, item in NUMPY_TYPE_MAP.items()))
     TYPE_MAP.update({
-        "Int"        : int,
-        "Short"      : int,
-        "BigInteger" : int,
-        "Float"      : float
+        "Integer"        : int,
+        "Short"          : int,
+        "BigInteger"     : int,
+        "Float"          : float
     })
 
     TYPECODE_MAP = {
-        'i' : "Int",
+        'i' : "Integer",
         'h' : "Short",
         'l' : "Long",
         'f' : "Float",
@@ -338,6 +338,13 @@ class MathLinkEnvironment:
     def __init__(self):
         raise TypeError("{} is a standalone class and cannot be instantiated".format(type(self).__name__))
 
+    @staticmethod
+    def __lookup(m, key, default=None):
+        try:
+            return m[key]
+        except KeyError:
+            return default
+
     @classmethod
     def toTypeInt(cls, o):
         """A convenience function that turns a python type, typcode, or type name into a type int
@@ -350,9 +357,11 @@ class MathLinkEnvironment:
         try:
             tint = cls.TYPE_INTEGERS[o]
         except KeyError:
-            for m in (cls.TYPE_MAP, cls.TYPECODE_MAP, cls.TYPENAME_MAP):
+            for m in (cls.TYPE_MAP, cls.TYPECODE_MAP, cls.TYPE_INTEGERS, cls.TYPENAME_MAP):
                 try:
-                    tint = cls.TYPE_MAP[o]
+                    tint = m[o]
+                    if isinstance(tint, str):
+                        tint = cls.TYPE_INTEGERS[tint]
                     break
                 except KeyError:
                     pass
@@ -360,7 +369,7 @@ class MathLinkEnvironment:
         return tint
 
     @classmethod
-    def fromTypeInt(cls, tint, mode="typename"):
+    def fromTypeInt(cls, tint, mode="intname"): ### THIS IS TERRIBLY DESIGNED TODO: MAKE IT NOT SUCK
         """A convenience function that turns a type int into a python type, typecode, or typename
 
         :param tint:
@@ -372,9 +381,14 @@ class MathLinkEnvironment:
             if isinstance(tint, int):
                 tint = cls.TYPE_INTEGER_NAMES[tint]
             if mode == "typename":
-                otype = cls.TYPENAME_MAP[tint]
+                if tint in cls.TYPENAME_MAP:
+                    otype = cls.TYPENAME_MAP[tint]
+                elif isinstance(tint, str):
+                    otype = tint
+                else:
+                    otype = None
             elif mode == "typecode":
-                otype = cls.TYPE_MAP[tint]
+                otype = cls.TYPECODE_MAP[tint]
             elif mode == "type":
                 otype = cls.TYPE_MAP[tint]
             else:
@@ -385,16 +399,21 @@ class MathLinkEnvironment:
         return otype
 
     @classmethod
-    def getShortNameFromTypeInt(cls, tint):
-        return cls.fromTypeInt(tint, "typename")
+    def getTypeNameFromTypeInt(cls, tint):
+        return cls.__lookup(cls.TYPE_INTEGER_NAMES, tint)
     @classmethod
     def getTypeCodeFromTypeInt(cls, tint):
-        cls.fromTypeInt(tint, "typecode")
+        if isinstance(tint, int):
+            tint = cls.getTypeNameFromTypeInt(tint)
+        return cls.__lookup(cls.TYPECODE_MAP, tint)
+    @classmethod
+    def getShortNameFromTypeInt(cls, tint):
+        return cls.fromTypeInt(cls.TYPENAME_MAP, "typename")
 
     @classmethod
     def getObjectTypeInt(cls, ob):
         tint = None
-        for t, n in cls.TYPE_MAP:
+        for t, n in cls.TYPE_MAP.items():
             if not isinstance(t, str) and isinstance(ob, t):
                 tint = cls.TYPE_INTEGERS[n]
 
@@ -437,7 +456,6 @@ class MathLinkEnvironment:
                 pass
 
             tint = cls.getObjectTypeInt(item)
-
         return tint
 
     @classmethod

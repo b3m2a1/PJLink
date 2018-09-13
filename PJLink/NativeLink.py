@@ -351,7 +351,12 @@ class NativeLink(MathLink):
             return str
     def _putSymbol(self, s):
         with self._wrap():
+            # print("asdasdasd", s)
             return self._call("PutSymbol", s)
+    def _putString(self, s):
+        with self._wrap():
+            # print(s)
+            self._call("PutString", s)
     def _putBool(self, b):
         with self._wrap():
             return self._call("PutSymbol", "True" if b else "False")
@@ -402,10 +407,6 @@ class NativeLink(MathLink):
     def _putTrueFloat(self, d):
         self._putReal0(d, "PutFloat")
 
-    def _putString(self, s):
-        with self._wrap():
-            self._call("PutString", s)
-
     def _getFunction(self):
         with self._wrap(check=0):
             t = self.Env.fromTypeToken(self._call("GetType"))
@@ -436,10 +437,10 @@ class NativeLink(MathLink):
 
         if argCount is None:
             with self._wrap(check=0):
-                return self._call("MLCheckFunction", f)
+                return self._call("CheckFunction", f)
         else:
             with self._wrap():
-                return self._call("MLCheckFunctionWithArgCount", f, argCount)
+                return self._call("CheckFunctionWithArgCount", f, argCount)
 
     def transferExpression(self, source):
         with self._wrap():
@@ -517,13 +518,17 @@ class NativeLink(MathLink):
     def _getArray(self, otype, depth, head_List=None):
 
         import array
-        tc = self.Env.getTypeCode(otype)
-        if tc in array.typecodes and ( depth == 1 or not self.Env.allowRagged()):
+
+        tname = self.Env.getTypeNameFromTypeInt(otype)
+
+        tc = self.Env.getTypeCodeFromTypeInt(tname)
+        if isinstance(tc, str) and tc in array.typecodes and ( depth == 1 or not self.Env.allowRagged()):
             with self._wrap(check=0):
                 res_array = self._call("GetArray", otype, depth, head_List)
                 err_code = self._error()
                 MathLinkException.raise_non_ml_error(err_code)
         else:
+            # print(otype)
             res_array = super()._getArray(otype, depth, head_List)
 
         return res_array
@@ -537,27 +542,29 @@ class NativeLink(MathLink):
             # we must make sure that arrays with a 0 anywhere in their dimensions get sent the slow way: putArraySlices().
 
             arr, tint, dims, depth = self._get_put_array_params(o) # will not be accurate for ragged arrays, but we won't use the result in that case.
+            # print(arr, tint, dims, depth)
 
             if tint is not None:
                 sent = False
                 if depth == 1:
                     if isinstance(arr, BufferedNDArray):
                         arr = arr._buffer
-                    self._call("PutArray", tint, arr, "List" if headList is None else headList[0])
+                    self._call("PutArray", tint, arr, None if headList is None else headList[0])
                     sent = True
-                elif depth > 1 and tint != self.Env.TYPE_STRING and tint != self.Env.TYPE_BOOLEAN:
+                elif depth > 1 and tint not in map(self.Env.toTypeInt, ("String", "Boolean")):
                     # Much faster to create a new flattened (1-D) array, to match the C-style memory layout of arrays.
                     # This can be sent very efficiently over the link down in the native library. The cost is memory--an
                     # extra copy of the array data is made here. To turn off this behavior and fall back to the slow method
                     # (which was always used prior to J/Link 1.1), use a Java command line with -DJLINK_FAST_ARRAYS=false.
 
-                    ## We're going to assume the arr implements the buffer interface and that furthermore it's got
-                    ## a single contiguous memory block.
-                    ## That should be sufficient here to make everything work nicely
+                    # We're going to assume the arr implements the buffer interface and that furthermore it's got
+                    # a single contiguous memory block.
+                    # That should be sufficient here to make everything work nicely
 
                     if isinstance(arr, BufferedNDArray):
                         arr = arr._buffer
-                    self._call("PutArray", tint, arr, headList, dims)
+                    # print(arr, tint, dims)
+                    self._call("PutArrayFlat", tint, arr, headList, dims)
                     sent = True
 
                 if not sent:
