@@ -970,6 +970,9 @@ class WrappedKernelLink(KernelLink):
     def _setUseNumPy(self, bool):
         self.__impl._setUseNumPy(bool)
 
+    def _getUseNumPy(self, bool):
+        self.__impl._getUseNumPy(bool)
+
     @property
     def ready(self):
         # self.__ensure_connection()

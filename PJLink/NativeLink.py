@@ -17,7 +17,6 @@ from .HelperClasses import *
 
 class NativeLink(MathLink):
 
-    CURRENT_MATHEMATICA = "11.3"
     # This is intended to be used within J/Link to determine whether the native
     # library is loaded and therefore whether it is OK to do things that would require it to be loaded.
     # Right now, only the Expr class uses this, to decide whether it can use a loopback link. It does not want
@@ -25,17 +24,18 @@ class NativeLink(MathLink):
     __NATIVE_LIBRARY_LOADED = False
     __lib = None
     __LIBRARY_LOAD_EXCEPTION = None
+    __NATIVE_LIBRARY_EXISTS = False
 
     def __init__(self, init = None, debug_level = 0):
         import os, re
 
         if init is None:
-            bin = self._get_Mathematica_binary()
+            bin = self.Env.get_Mathematica_binary()
             init = ["-linkmode", "launch", "-linkname", "'{}' -mathlink -wstp".format(bin)]#, "-mathlink", "-wstp"]
         elif isinstance(init, str) and os.path.isfile(init):
             init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink -wstp'".format(init)]#, "-mathlink", "-wstp"]
         elif isinstance(init, float) or re.match(r"\d\d.\d", init):
-            bin = self._get_Mathematica_binary(init)
+            bin = self.Env.get_Mathematica_binary(init)
             init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink -wstp'".format(bin)]#, "-mathlink", "-wstp"]
 
 
@@ -80,37 +80,6 @@ class NativeLink(MathLink):
                 err_msg = None
             raise MathLinkException("CreationFailed")
 
-    @classmethod
-    def _get_Mathematica_binary(cls, mname = None):
-        import platform, os, re
-
-        plat = platform.system()
-        if plat == "Darwin":
-            if mname is None:
-                mname = "Mathematica.app"
-            elif isinstance(mname, float) or re.match(r"\d\d.\d", mname):
-                mname = "Mathematica {}.app".format(mname)
-            bin = os.sep + os.path.join("Applications", mname, "Contents", "MacOS", "WolframKernel")
-        elif plat == "Linux":
-            if mname is None:
-                mname = os.path.join("Mathematica", cls.CURRENT_MATHEMATICA)
-            elif isinstance(mname, float) or re.match(r"\d\d.\d", mname):
-                mname = os.path.join("Mathematica", str(mname))
-            bin = os.sep + os.path.join("usr", "local", "Wolfram", mname, "SystemFiles", "Kernel", "Binaries", "Linux-x86-64", "WolframKernel")
-        elif plat == "Windows":
-            if mname is None:
-                mname = os.path.join("Mathematica", cls.CURRENT_MATHEMATICA)
-            elif isinstance(mname, float) or re.match(r"\d\d.\d", mname):
-                mname = os.path.join("Mathematica", str(mname))
-            bin = os.path.expandvars(os.path.join("%ProgramFiles%", "Wolfram Research", mname , "wolfram"))
-        else:
-            raise ValueError("Don't know how to find the WolframKernel executable on system {}".format(plat))
-
-        if not os.path.isfile(bin):
-            raise ValueError("Couldn't find binary for platform {} ({} is not a file)".format(plat, bin))
-
-        return bin
-
     @property
     def native_library_loaded(self):
         return self.__NATIVE_LIBRARY_LOADED
@@ -118,9 +87,21 @@ class NativeLink(MathLink):
     def library_load_exception(self):
         return self.__LIBRARY_LOAD_EXCEPTION
 
-    def _loadNativeLibrary(self, *args, initialize = True, debug_level = None):
+    def _loadNativeLibrary(self, *args, initialize = True, debug_level = None, setup = True):
+        import os
         ## args is just a sneaky hack to force using keywords
         if not self.__NATIVE_LIBRARY_LOADED:
+            if setup:
+                targ_dir = os.path.join(os.path.dirname(__file__), "PJLinkNativeLibrary")
+                for f in os.listdir(targ_dir):
+                    if f.endswith(".so") or f.endswith(".pyd"):
+                        self.__NATIVE_LIBRARY_EXISTS = True
+                        break
+                else:
+                    import PJLink.PJLinkNativeLibrary.src.setup as setup
+                    if setup.failed:
+                        raise ImportError("No library file found")
+
             try:
                 import PJLink.PJLinkNativeLibrary as pj
             except ImportError as e:
@@ -135,6 +116,8 @@ class NativeLink(MathLink):
                     pj.Initialize()
 
     def __sig_handler(self, sig, frame):
+        # these don't actually seem to do what I wanted...
+
         import signal
         sig_names = {
             signal.SIGSEGV : "InvalidMemoryAccess",

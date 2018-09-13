@@ -346,7 +346,7 @@ PyObject *_MLDecodePythonUTF16(const unsigned short *s, Py_ssize_t len, Py_ssize
 //    return PyUnicode_DecodeUTF16((const char *) s, len, errors, bom);
 //    return PyUnicode_FromWideChar((const wchar_t*) &s[1], charn); // s[1] is pointer to next element in the array?
     _MLDebugPrint(5, "Getting UTF16 object from string of length %d", len);
-    int bo = 1; // MathLink is little endian?
+//    int bo = 1; // MathLink is little endian?
 
     const char *obuff = (const char *) s;
 //    char buff[2*len];// = (char *) malloc(2*len*sizeof(char));
@@ -520,7 +520,7 @@ int _MLPutDataBuffer
       const int *dims, const char **heads, int depth ) {
 
     Py_buffer *view = _MLGetDataBuffer(data);
-    if ( view == NULL ) return NULL;
+    if ( view == NULL ) return 0;
 
     int flag = 1;
     switch (type) {
@@ -626,7 +626,7 @@ template<typename T>
 void _MLSetDataBuffer(PyObject *data, void *buff) {
 
     Py_buffer *view = _MLGetDataBuffer(data);
-    view->buf = (T *)buff;
+    view->buf = (T *) buff;
 
 }
 
@@ -643,69 +643,98 @@ void _MLCopyDataBuffer(PyObject *data, void *buff, long len) {
 
 PyObject *_MLMakeNewArray ( int type, int len ) {
     // Initialize an empty array.array type object of proper type
-    PyObject *single_array;
-    if (!single_array) {
-        PyObject *array_module = PyImport_ImportModule("array");
-        if (!array_module)
-            return NULL;
-        PyObject *array_type = PyObject_GetAttrString(array_module, "array");
-        Py_DECREF(array_module);
+    PyObject *single_array = NULL;
 
-        if (!array_type)
-            return NULL;
-        switch (type) {
-        case TYPE_CHAR:
-            // array.array('b', "")
-            single_array = PyObject_CallFunction(array_type, "s[c]", "b", "");
-            break;
-        case TYPE_SHORT:
-            // array.array('h', [0])
-            single_array = PyObject_CallFunction(array_type, "s[h]", "h", 0);
-            break;
-        case TYPE_INT:
-            // array.array('i', [0])
-            single_array = PyObject_CallFunction(array_type, "s[i]", "i", 0);
-            break;
-        case TYPE_LONG:
-            // array.array('l', [0])
-            single_array = PyObject_CallFunction(array_type, "s[l]", "l", 0);
-            break;
-        case TYPE_FLOAT:
-            // array.array('f', [0.0])
-            single_array = PyObject_CallFunction(array_type, "s[f]", "f", 0.0);
-            break;
-        case TYPE_DOUBLE:
-            // array.array('d', [0.0])
-            single_array = PyObject_CallFunction(array_type, "s[d]", "d", 0.0);
-            break;
-        case TYPE_BOOLEAN:
+    PyObject *array_module = PyImport_ImportModule("array");
+    if (!array_module)
+        return NULL;
+    PyObject *array_type = PyObject_GetAttrString(array_module, "array");
+    Py_DECREF(array_module);
 
-            break;
-        case TYPE_BYTE:
-            // array.array('h', [0])
-            single_array = PyObject_CallFunction(array_type, "s[B]", "B", 0);
-            break;
-        case TYPE_STRING:
+    if (!array_type)
+        return NULL;
+    switch (type) {
+    case TYPE_CHAR:
+        // array.array('b', "")
+        single_array = PyObject_CallFunction(array_type, "s[c]", "b", "");
+        break;
+    case TYPE_SHORT:
+        // array.array('h', [0])
+        single_array = PyObject_CallFunction(array_type, "s[h]", "h", 0);
+        break;
+    case TYPE_INT:
+        // array.array('i', [0])
+        single_array = PyObject_CallFunction(array_type, "s[i]", "i", 0);
+        break;
+    case TYPE_LONG:
+        // array.array('l', [0])
+        single_array = PyObject_CallFunction(array_type, "s[l]", "l", 0);
+        break;
+    case TYPE_FLOAT:
+        // array.array('f', [0.0])
+        single_array = PyObject_CallFunction(array_type, "s[f]", "f", 0.0);
+        break;
+    case TYPE_DOUBLE:
+        // array.array('d', [0.0])
+        single_array = PyObject_CallFunction(array_type, "s[d]", "d", 0.0);
+        break;
+    case TYPE_BOOLEAN:
 
-            break;
-        default:
-            break;
-        }
-        Py_DECREF(array_type);
-        if (!single_array)
-            return NULL;
+        break;
+    case TYPE_BYTE:
+        // array.array('h', [0])
+        single_array = PyObject_CallFunction(array_type, "s[B]", "B", 0);
+        break;
+    case TYPE_STRING:
+
+        break;
+    default:
+        break;
     }
+    Py_DECREF(array_type);
 
     // extra-fast way to create an empty array of count elements:
     //   array = single_element_array * count
     PyObject *pysize = PyLong_FromSsize_t(len);
-    if (!pysize)
-        return NULL;
+    if (pysize == NULL) return NULL;
     PyObject *array = PyNumber_Multiply(single_array, pysize);
     Py_DECREF(single_array);
     Py_DECREF(pysize);
-    if (!array)
-        return NULL;
+    if (array == NULL) return NULL;
+
+    return array;
+}
+
+PyObject *_MLMakeBufferedNDArray ( int type, int depth, int* dims, const void* startAddr ) {
+    PyObject *array;
+
+    // this might fuck up
+    PyObject *array_module = PyImport_ImportModule(".HelperClasses");
+    if (array_module == NULL) return NULL;
+    PyObject *buffnd = PyObject_GetAttrString(array_module, "BufferedNDArray");
+    Py_DECREF(array_module);
+    if (buffnd == NULL) return NULL;
+
+    long len = 1;
+    for ( int i = 0; i<depth; i++){
+        len *= dims[i];
+    }
+
+    PyObject *single_array = _MLMakeNewArray(type, len);
+    if ( single_array == NULL ) return NULL;
+
+    int ds = _MLDataSize(type);
+    _MLCopyDataBuffer(single_array, (void *) startAddr, len, ds);
+
+    PyObject *dimObj = PyList_New(depth);
+    for (int j = 0; j<depth; j++){
+        PyList_SetItem(dimObj, j, Py_BuildValue("i", dims[j]));
+    }
+
+    array = PyObject_CallFunction(buffnd, "OO", single_array, dimObj);
+
+    Py_DECREF(single_array);
+    Py_DECREF(dimObj);
 
     return array;
 }
@@ -833,7 +862,7 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
     PyObject *iterator = PyObject_GetIter(data);
     if (iterator == NULL) {
         _MLDebugMessage(4, "Failed to get iterator to put");
-        return NULL;
+        return -1;
     }
 
     int len = PyObject_Length(data);
@@ -948,6 +977,7 @@ bool _MLGetUseNumpy(MLINK mlink) {
 
     return userData->useNumPy;
 }
+
 void _MLSetUseNumpy(MLINK mlink, bool use_numpy) {
     struct cookie* userData = (struct cookie*) MLUserData(mlink, NULL);
 
@@ -3392,7 +3422,7 @@ MLFUNCWITHARGS(MLPutArray) {
                 case TYPE_BOOLEAN: {
                     _MLDebugPrint(4, "Putting %d bools on link MathLink(%p)", len, mlink);
                     int iter_res = _MLIterPut(mlink, data, c_head, type);
-                    if ( iter_res == NULL ) {
+                    if ( iter_res == -1 ) {
                         return NULL;
                     } else if ( iter_res == 0 ) {
                         _MLDebugPrint(4, "Failed to put objects on link");
@@ -3406,7 +3436,7 @@ MLFUNCWITHARGS(MLPutArray) {
                     if (!_MLPutDataBuffer(mlink, data, 'b', 16, &len, &head_ptr, 1)) {
                         _MLDebugPrint(4, "Failed to put byte buffer on link MathLink(%p)", mlink);
                         int iter_res = _MLIterPut(mlink, data, c_head, type);
-                        if (iter_res == NULL) {
+                        if (iter_res == -1) {
                             return NULL;
                         } else if ( iter_res == 0 ) {
                             _MLDebugPrint(4, "Failed to put objects on link");
@@ -3421,7 +3451,7 @@ MLFUNCWITHARGS(MLPutArray) {
                     if (!_MLPutDataBuffer(mlink, data, 'i', 0, &len, &head_ptr, 1)) {
                         _MLDebugPrint(4, "Failed to put char buffer on link MathLink(%p)", mlink);
                         int iter_res = _MLIterPut(mlink, data, c_head, type);
-                        if (iter_res == NULL) {
+                        if (iter_res == -1) {
                             return NULL;
                         } else if ( iter_res == 0 ) {
                             _MLDebugPrint(4, "Failed to put objects on link");
@@ -3436,7 +3466,7 @@ MLFUNCWITHARGS(MLPutArray) {
                     if (!_MLPutDataBuffer(mlink, data, 'i', 16, &len, &head_ptr, 1)) {
                         _MLDebugPrint(4, "Failed to put short buffer on link MathLink(%p)", mlink);
                         int iter_res = _MLIterPut(mlink, data, c_head, type);
-                        if (iter_res == NULL) {
+                        if (iter_res == -1) {
                             return NULL;
                         } else if ( iter_res == 0 ) {
                             _MLDebugPrint(4, "Failed to put objects on link");
@@ -3451,7 +3481,7 @@ MLFUNCWITHARGS(MLPutArray) {
                     if (!_MLPutDataBuffer(mlink, data, 'i', 32, &len, &head_ptr, 1)) {
                         _MLDebugPrint(4, "Failed to put int buffer on link MathLink(%p)", mlink);
                         int iter_res = _MLIterPut(mlink, data, c_head, type);
-                        if (iter_res == NULL) {
+                        if (iter_res == -1) {
                             return NULL;
                         } else if ( iter_res == 0 ) {
                             _MLDebugPrint(4, "Failed to put objects on link");
@@ -3466,7 +3496,7 @@ MLFUNCWITHARGS(MLPutArray) {
                     if (!_MLPutDataBuffer(mlink, data, 'i', 64, &len, &head_ptr, 1)) {
                         _MLDebugPrint(4, "Failed to put long buffer on link MathLink(%p)", mlink);
                         int iter_res = _MLIterPut(mlink, data, c_head, type);
-                        if (iter_res == NULL) {
+                        if (iter_res == -1) {
                             return NULL;
                         } else if ( iter_res == 0 ) {
                             _MLDebugPrint(4, "Failed to put objects on link");
@@ -3481,7 +3511,7 @@ MLFUNCWITHARGS(MLPutArray) {
                     if (!_MLPutDataBuffer(mlink, data, 'f', 32, &len, &head_ptr, 1)) {
                         _MLDebugPrint(4, "Failed to put float buffer on link MathLink(%p)", mlink);
                         int iter_res = _MLIterPut(mlink, data, c_head, type);
-                        if (iter_res == NULL) {
+                        if (iter_res == -1) {
                             return NULL;
                         } else if ( iter_res == 0 ) {
                             _MLDebugPrint(4, "Failed to put objects on link");
@@ -3496,7 +3526,7 @@ MLFUNCWITHARGS(MLPutArray) {
                     if (!_MLPutDataBuffer(mlink, data, 'f', 64, &len, &head_ptr, 1)) {
                         _MLDebugPrint(4, "Failed to put double buffer on link MathLink(%p)", mlink);
                         int iter_res = _MLIterPut(mlink, data, c_head, type);
-                        if (iter_res == NULL) {
+                        if (iter_res == -1) {
                             return NULL;
                         } else if ( iter_res == 0 ) {
                             _MLDebugPrint(4, "Failed to put objects on link");
@@ -3509,7 +3539,7 @@ MLFUNCWITHARGS(MLPutArray) {
                 case TYPE_STRING: {
                    _MLDebugPrint(4, "Putting %d strings on link MathLink(%p)", len, mlink);
                    int iter_res = _MLIterPut(mlink, data, c_head, type);
-                   if (iter_res == NULL) {
+                   if (iter_res == -1) {
                        return NULL;
                    } else if ( iter_res == 0 ) {
                        _MLDebugPrint(4, "Failed to put objects on link");
@@ -4264,6 +4294,7 @@ PyObject *MakeArray1(int type, int len, const void* startAddr) {
     }
 }
 
+bool ML_USE_BUFFEREDNDARRAY = true;
 // should add compiler logic for if NumPy is to be used
 PyObject *MakeArrayN(int type, int depth, int* dims, int curDepth, int lenInFinalDim, const void* startAddr, int use_numpy) {
 
@@ -4271,6 +4302,8 @@ PyObject *MakeArrayN(int type, int depth, int* dims, int curDepth, int lenInFina
 
     if ( use_numpy ) {
         array = _MLMakeNumpyArray(type, depth, dims, startAddr);
+    } else if ( ML_USE_BUFFEREDNDARRAY ) {
+        array = _MLMakeBufferedNDArray(type, depth, dims, startAddr);
     } else {
 
         int i, datSize;

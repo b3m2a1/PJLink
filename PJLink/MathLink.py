@@ -944,6 +944,7 @@ class MathLink(MathLinkImplBase):
     @property
     def use_numpy(self):
         if self.__USE_NUMPY is None:
+            self.__USE_NUMPY = self.Env.HAS_NUMPY
             self._setUseNumPy(self.Env.HAS_NUMPY)
 
         return self.__USE_NUMPY
@@ -954,7 +955,9 @@ class MathLink(MathLinkImplBase):
 
     def _get_put_array_params(self, ob):
 
+        print(self.use_numpy)
         arr, t = self.Util.get_array_data_and_type(ob, self.use_numpy)
+        print(arr)
         dims = self.Util.get_array_dims(ob, self.use_numpy)
         depth = len(dims)
 

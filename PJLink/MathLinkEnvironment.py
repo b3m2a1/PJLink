@@ -330,7 +330,9 @@ class MathLinkEnvironment:
     ALLOW_RAGGED_ARRAYS = False
 
     # Not currently used -- will force copies of data buffers to protect against corruption
-    COPY_DATA_BUFFERS = False
+    COPY_DATA_BUFFERS = False # I'm not sure I can actually disable this?
+
+    CURRENT_MATHEMATICA = "11.3"
 
     if HAS_NUMPY:
         del np
@@ -619,3 +621,86 @@ class MathLinkEnvironment:
             packet_name = None
 
         return packet_name
+
+    @classmethod
+    def get_Mathematica_name(cls, version = None):
+        import platform, os, re
+
+        mname = version
+        plat = platform.system()
+        if plat == "Darwin":
+            if mname is None:
+                mname = "Mathematica.app"
+            elif isinstance(mname, float) or re.match(r"\d\d.\d", mname):
+                mname = "Mathematica {}.app".format(mname)
+        elif plat == "Linux":
+            if mname is None:
+                mname = os.path.join("Mathematica", cls.CURRENT_MATHEMATICA)
+            elif isinstance(mname, float) or re.match(r"\d\d.\d", mname):
+                mname = os.path.join("Mathematica", str(mname))
+        elif plat == "Windows":
+            if mname is None:
+                mname = os.path.join("Mathematica", cls.CURRENT_MATHEMATICA)
+            elif isinstance(mname, float) or re.match(r"\d\d.\d", mname):
+                mname = os.path.join("Mathematica", str(mname))
+
+        return mname
+
+    @classmethod
+    def get_Mathematica_root(cls, mname = None):
+        import platform, os
+
+        plat = platform.system()
+        mname = cls.get_Mathematica_name(mname)
+        if plat == "Darwin":
+            root = os.sep + os.path.join("Applications", mname, "Contents")
+        elif plat == "Linux":
+            root = os.sep + os.path.join("usr", "local", "Wolfram", mname)
+        elif plat == "Windows":
+            root = os.path.expandvars(os.path.join("%ProgramFiles%", "Wolfram Research", mname))
+        else:
+            raise ValueError("Couldn't find Mathematica for platform {}".format(plat, bin))
+
+        return root
+
+    @classmethod
+    def get_Mathematica_binary(cls, version = None):
+        import platform, os
+
+        plat = platform.system()
+
+        try:
+            root = cls.get_Mathematica_root(version)
+        except ValueError:
+            if not (isinstance(version, str) and os.path.isfile(version)):
+                raise ValueError("Don't know how to find the WolframKernel executable on system {}".format(plat))
+
+        if plat == "Darwin":
+            bin = os.path.join(root, "MacOS", "WolframKernel")
+        elif plat == "Linux":
+            bin = os.path.join(root, "SystemFiles", "Kernel", "Binaries", "Linux-x86-64", "WolframKernel")
+        elif plat == "Windows":
+            bin = os.path.join(root, "wolfram")
+
+        if not os.path.isfile(bin):
+            raise ValueError("Couldn't find binary for platform {} ({} is not a file)".format(plat, bin))
+
+        return bin
+
+    @classmethod
+    def get_MathLink_library(cls, version = None):
+        import platform, os
+
+        plat = platform.system()
+        try:
+            root = cls.get_Mathematica_root(version)
+        except ValueError:
+            if not (isinstance(version, str) and os.path.isfile(version)):
+                raise ValueError("Don't know how to MathLink library on system {}".format(plat))
+
+        lib = os.path.join(root, "SystemFiles", "Links", "MathLink", "DeveloperKit", )
+
+        if not os.path.isfile(bin):
+            raise ValueError("Couldn't find binary for platform {} ({} is not a file)".format(plat, bin))
+
+        return bin
