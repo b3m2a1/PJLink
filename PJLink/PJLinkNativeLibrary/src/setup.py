@@ -8,24 +8,24 @@ setup_orig_dir = os.getcwd()
 lib_dir = os.path.dirname(__file__)
 os.chdir(lib_dir)
 
-argv1 = sys.argv
-argv2 = [ "build_ext", "--inplace" ]
+# argv1 = sys.argv
+# argv2 = [ "build_ext", "--inplace" ]
 
-mathlink_dir = os.path.join(Env.get_Mathematica_root(), "SystemFiles", "Links", "MathLink", "DeveloperKit")
+mathlink_base = os.path.join(Env.get_Mathematica_root(), "SystemFiles", "Links", "MathLink", "DeveloperKit")
 
 plat = platform.system()
-# if plat == "Darwin":
-#
-# elif plat == "Linux":
-#     mathlink_dir = os.sep + os.path.join("Applications", mname, "Contents", "MacOS", "WolframKernel")
-# elif plat == "Windows":
-#     if mname is None:
-#         mname = os.path.join("Mathematica", cls.CURRENT_MATHEMATICA)
-#     elif isinstance(mname, float) or re.match(r"\d\d.\d", mname):
-#         mname = os.path.join("Mathematica", str(mname))
-#     bin = os.path.expandvars(os.path.join("%ProgramFiles%", "Wolfram Research", mname , "wolfram"))
-# else:
-#     raise ValueError("Don't know how to find the WolframKernel executable on system {}".format(plat))
+if plat == "Darwin":
+    sys_name = "MacOSX"
+elif plat == "Linux":
+    sys_name = "Linux"
+elif plat == "Windows":
+    sys_name = "Windows"
+else:
+    raise ValueError("Don't know how to find the MathLink library on system {}".format(plat))
+
+mathlink_dir = os.path.join(mathlink_base, sys_name + "-x86-64", "CompilerAdditions")
+if not os.path.exists(mathlink_dir):
+    mathlink_dir = os.path.join(mathlink_base, sys_name, "CompilerAdditions")
 
 module1 = Extension(
     'PJLinkNativeLibrary',
@@ -61,4 +61,4 @@ if src is not None:
         pass
     os.rename(src, target)
 
-failed = os.path.isfile(target)
+failed = not os.path.isfile(target)

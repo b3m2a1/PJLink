@@ -5,22 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/PJLink/Mathematica/Kernel/init.m" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/PJLink/Mathematica/PJLink.m" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/PJLink/Mathematica/SymbolicPython.m" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/PJLink/PacletInfo.m" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/PJLink/Reader.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/PJLink/StdLink.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/PJLink/start_kernel.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/HelperClasses.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/HelperClasses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/KernelLink.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/KernelLink.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/MathLink.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/MathLink.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PJLink/NativeLink.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/NativeLink.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/SystemResources/libMLi4.a" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/factories.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/factories.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -48,7 +35,7 @@
           <entry key="gitignore" value="1" />
           <entry key="java" value="105" />
           <entry key="m" value="4" />
-          <entry key="py" value="112" />
+          <entry key="py" value="113" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
@@ -56,7 +43,7 @@
           <entry key="JAVA" value="105" />
           <entry key="Mathematica" value="4" />
           <entry key="PLAIN_TEXT" value="1" />
-          <entry key="Python" value="112" />
+          <entry key="Python" value="113" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
@@ -65,7 +52,7 @@
           <entry key="gitignore" value="5" />
           <entry key="java" value="3" />
           <entry key="m" value="3454" />
-          <entry key="py" value="118277" />
+          <entry key="py" value="118561" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
@@ -74,7 +61,7 @@
           <entry key="JAVA" value="3" />
           <entry key="Mathematica" value="3454" />
           <entry key="PLAIN_TEXT" value="89" />
-          <entry key="Python" value="118275" />
+          <entry key="Python" value="118559" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.vcs.git.usages" />
@@ -85,8 +72,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/test.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="171">
-              <caret line="32" column="46" selection-start-line="32" selection-start-column="46" selection-end-line="32" selection-end-column="46" />
+            <state relative-caret-position="231">
+              <caret line="36" column="12" selection-start-line="36" selection-start-column="12" selection-end-line="36" selection-end-column="12" />
               <folding>
                 <marker date="1536925770236" expanded="true" signature="131:582" ph="..." />
                 <marker date="1536925770236" expanded="true" signature="1358:1591" ph="..." />
@@ -96,11 +83,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/PJLink/KernelLink.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="153">
-              <caret line="932" column="22" selection-start-line="932" selection-start-column="22" selection-end-line="932" selection-end-column="22" />
+            <state relative-caret-position="108">
+              <caret line="929" selection-start-line="929" selection-end-line="929" />
               <folding>
                 <element signature="e#0#30#0" expanded="true" />
                 <marker date="1536953070416" expanded="true" signature="619:620" ph="..." />
@@ -130,7 +117,7 @@
         <entry file="file://$PROJECT_DIR$/PJLink/StdLink.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="207">
-              <caret line="188" column="24" lean-forward="true" selection-start-line="188" selection-start-column="24" selection-end-line="188" selection-end-column="24" />
+              <caret line="188" column="24" selection-start-line="188" selection-start-column="24" selection-end-line="188" selection-end-column="24" />
               <folding>
                 <element signature="e#0#29#0" expanded="true" />
                 <marker date="1536904383622" expanded="true" signature="3226:3231" ph="..." />
@@ -146,7 +133,7 @@
         <entry file="file://$PROJECT_DIR$/PJLink/start_kernel.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="178">
-              <caret line="21" column="22" lean-forward="true" selection-start-line="21" selection-start-column="22" selection-end-line="21" selection-end-column="22" />
+              <caret line="21" column="22" selection-start-line="21" selection-start-column="22" selection-end-line="21" selection-end-column="22" />
             </state>
           </provider>
         </entry>
@@ -154,17 +141,26 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/PJLink/NativeLink.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="123">
-              <caret line="296" column="31" lean-forward="true" selection-start-line="296" selection-start-column="31" selection-end-line="296" selection-end-column="31" />
+            <state relative-caret-position="232">
+              <caret line="108" column="36" lean-forward="true" selection-start-line="108" selection-start-column="36" selection-end-line="108" selection-end-column="36" />
               <folding>
                 <element signature="e#541#571#0" expanded="true" />
-                <marker date="1536927142523" expanded="true" signature="1115:1117" ph="..." />
-                <marker date="1536927142523" expanded="true" signature="1637:1643" ph="..." />
-                <marker date="1536927142523" expanded="true" signature="3836:3841" ph="..." />
-                <marker date="1536927142523" expanded="true" signature="4029:4034" ph="..." />
-                <marker date="1536927142523" expanded="true" signature="5763:5768" ph="..." />
-                <marker date="1536927142523" expanded="true" signature="12600:12606" ph="..." />
+                <marker date="1536954851957" expanded="true" signature="1115:1117" ph="..." />
+                <marker date="1536954851957" expanded="true" signature="1637:1643" ph="..." />
+                <marker date="1536954851957" expanded="true" signature="3836:3841" ph="..." />
+                <marker date="1536954851957" expanded="true" signature="4029:4034" ph="..." />
+                <marker date="1536954851957" expanded="true" signature="5993:5998" ph="..." />
+                <marker date="1536954851957" expanded="true" signature="12830:12836" ph="..." />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="103">
+              <caret line="38" column="67" lean-forward="true" selection-start-line="38" selection-start-column="67" selection-end-line="38" selection-end-column="67" />
             </state>
           </provider>
         </entry>
@@ -173,7 +169,7 @@
         <entry file="file://$PROJECT_DIR$/PJLink/MathLink.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="76">
-              <caret line="683" column="34" lean-forward="true" selection-start-line="683" selection-start-column="34" selection-end-line="683" selection-end-column="34" />
+              <caret line="683" column="34" selection-start-line="683" selection-start-column="34" selection-end-line="683" selection-end-column="34" />
               <folding>
                 <element signature="e#189#206#0" expanded="true" />
                 <marker date="1536910538546" expanded="true" signature="6106:6322" ph="..." />
@@ -188,7 +184,7 @@
         <entry file="file://$PROJECT_DIR$/PJLink/HelperClasses.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="111">
-              <caret line="854" column="38" lean-forward="true" selection-start-line="854" selection-start-column="38" selection-end-line="854" selection-end-column="38" />
+              <caret line="854" column="38" selection-start-line="854" selection-start-column="38" selection-end-line="854" selection-end-column="38" />
               <folding>
                 <element signature="e#81#140#0" expanded="true" />
                 <marker date="1536952689175" expanded="true" signature="1293:1399" ph="..." />
@@ -206,7 +202,7 @@
         <entry file="file://$PROJECT_DIR$/PJLink/Reader.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="244">
-              <caret line="144" column="52" lean-forward="true" selection-start-line="144" selection-start-column="52" selection-end-line="144" selection-end-column="52" />
+              <caret line="144" column="52" selection-start-line="144" selection-start-column="52" selection-end-line="144" selection-end-column="52" />
               <folding>
                 <element signature="e#0#16#0" expanded="true" />
                 <marker date="1536928186153" expanded="true" signature="170:175" ph="..." />
@@ -228,7 +224,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>lastPktWasAllowUIComputations</find>
       <find>__ui_lock.wait</find>
       <find>isinstance</find>
       <find>mustPol</find>
@@ -250,7 +245,6 @@
       <find>signal</find>
       <find>print</find>
       <find>callJava</find>
-      <find>def _put</find>
       <find>__handleCallPacket</find>
       <find>def put</find>
       <find>__callP</find>
@@ -258,6 +252,8 @@
       <find>def get</find>
       <find>_add</find>
       <find>__callPython</find>
+      <find>def _put</find>
+      <find>argv2</find>
     </findStrings>
     <replaceStrings>
       <replace>T =</replace>
@@ -303,7 +299,6 @@
         <option value="$PROJECT_DIR$/PJLink/MathLinkExceptions.py" />
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/__init__.py" />
-        <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" />
         <option value="$PROJECT_DIR$/Java/StdLink.java" />
         <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/Reader.py" />
         <option value="$PROJECT_DIR$/PJLink/StdLink.py" />
@@ -314,7 +309,6 @@
         <option value="$PROJECT_DIR$/PJLink/Mathematica/init.m" />
         <option value="$PROJECT_DIR$/PJLink/PacletInfo.m" />
         <option value="$PROJECT_DIR$/test.py" />
-        <option value="$PROJECT_DIR$/PJLink/NativeLink.py" />
         <option value="$PROJECT_DIR$/PJLink/factories.py" />
         <option value="$PROJECT_DIR$/PJLink/Reader.py" />
         <option value="$PROJECT_DIR$/PJLink/start_kernel.py" />
@@ -322,10 +316,12 @@
         <option value="$PROJECT_DIR$/PJLink/HelperClasses.py" />
         <option value="$PROJECT_DIR$/PJLink/KernelLink.py" />
         <option value="$PROJECT_DIR$/PJLink/setup.py" />
+        <option value="$PROJECT_DIR$/PJLink/NativeLink.py" />
+        <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
+  <component name="ProjectFrameBounds" extendedState="1">
     <option name="y" value="23" />
     <option name="width" value="1108" />
     <option name="height" value="877" />
@@ -369,6 +365,12 @@
               <item name="PJLink" type="462c0819:PsiDirectoryNode" />
               <item name="PJLink" type="462c0819:PsiDirectoryNode" />
               <item name="Mathematica" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="PJLink" type="b2602c69:ProjectViewProjectNode" />
+              <item name="PJLink" type="462c0819:PsiDirectoryNode" />
+              <item name="PJLink" type="462c0819:PsiDirectoryNode" />
+              <item name="PJLinkNativeLibrary" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="PJLink" type="b2602c69:ProjectViewProjectNode" />
@@ -687,13 +689,6 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="51">
-          <caret line="42" column="8" selection-start-line="42" selection-start-column="8" selection-end-line="42" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$APPLICATION_PLUGINS_DIR$/python-ce/helpers/pydev/pydevd.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="417">
@@ -805,7 +800,7 @@ print(link._error())</expression-string>
     <entry file="file://$PROJECT_DIR$/PJLink/StdLink.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="207">
-          <caret line="188" column="24" lean-forward="true" selection-start-line="188" selection-start-column="24" selection-end-line="188" selection-end-column="24" />
+          <caret line="188" column="24" selection-start-line="188" selection-start-column="24" selection-end-line="188" selection-end-column="24" />
           <folding>
             <element signature="e#0#29#0" expanded="true" />
             <marker date="1536904383622" expanded="true" signature="3226:3231" ph="..." />
@@ -830,7 +825,7 @@ print(link._error())</expression-string>
     <entry file="file://$PROJECT_DIR$/PJLink/Reader.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="244">
-          <caret line="144" column="52" lean-forward="true" selection-start-line="144" selection-start-column="52" selection-end-line="144" selection-end-column="52" />
+          <caret line="144" column="52" selection-start-line="144" selection-start-column="52" selection-end-line="144" selection-end-column="52" />
           <folding>
             <element signature="e#0#16#0" expanded="true" />
             <marker date="1536928186153" expanded="true" signature="170:175" ph="..." />
@@ -842,7 +837,7 @@ print(link._error())</expression-string>
     <entry file="file://$PROJECT_DIR$/PJLink/start_kernel.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="178">
-          <caret line="21" column="22" lean-forward="true" selection-start-line="21" selection-start-column="22" selection-end-line="21" selection-end-column="22" />
+          <caret line="21" column="22" selection-start-line="21" selection-start-column="22" selection-end-line="21" selection-end-column="22" />
         </state>
       </provider>
     </entry>
@@ -866,40 +861,12 @@ print(link._error())</expression-string>
     <entry file="file://$PROJECT_DIR$/PJLink/MathLink.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="76">
-          <caret line="683" column="34" lean-forward="true" selection-start-line="683" selection-start-column="34" selection-end-line="683" selection-end-column="34" />
+          <caret line="683" column="34" selection-start-line="683" selection-start-column="34" selection-end-line="683" selection-end-column="34" />
           <folding>
             <element signature="e#189#206#0" expanded="true" />
             <marker date="1536910538546" expanded="true" signature="6106:6322" ph="..." />
             <marker date="1536910538546" expanded="true" signature="17568:17573" ph="..." />
             <marker date="1536910538546" expanded="true" signature="36551:36577" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/PJLink/NativeLink.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="123">
-          <caret line="296" column="31" lean-forward="true" selection-start-line="296" selection-start-column="31" selection-end-line="296" selection-end-column="31" />
-          <folding>
-            <element signature="e#541#571#0" expanded="true" />
-            <marker date="1536927142523" expanded="true" signature="1115:1117" ph="..." />
-            <marker date="1536927142523" expanded="true" signature="1637:1643" ph="..." />
-            <marker date="1536927142523" expanded="true" signature="3836:3841" ph="..." />
-            <marker date="1536927142523" expanded="true" signature="4029:4034" ph="..." />
-            <marker date="1536927142523" expanded="true" signature="5763:5768" ph="..." />
-            <marker date="1536927142523" expanded="true" signature="12600:12606" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="171">
-          <caret line="32" column="46" selection-start-line="32" selection-start-column="46" selection-end-line="32" selection-end-column="46" />
-          <folding>
-            <marker date="1536925770236" expanded="true" signature="131:582" ph="..." />
-            <marker date="1536925770236" expanded="true" signature="1358:1591" ph="..." />
-            <marker date="1536925770236" expanded="true" signature="1612:1613" ph="..." />
           </folding>
         </state>
       </provider>
@@ -917,7 +884,7 @@ print(link._error())</expression-string>
     <entry file="file://$PROJECT_DIR$/PJLink/HelperClasses.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="111">
-          <caret line="854" column="38" lean-forward="true" selection-start-line="854" selection-start-column="38" selection-end-line="854" selection-end-column="38" />
+          <caret line="854" column="38" selection-start-line="854" selection-start-column="38" selection-end-line="854" selection-end-column="38" />
           <folding>
             <element signature="e#81#140#0" expanded="true" />
             <marker date="1536952689175" expanded="true" signature="1293:1399" ph="..." />
@@ -942,8 +909,8 @@ print(link._error())</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/KernelLink.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="932" column="22" selection-start-line="932" selection-start-column="22" selection-end-line="932" selection-end-column="22" />
+        <state relative-caret-position="108">
+          <caret line="929" selection-start-line="929" selection-end-line="929" />
           <folding>
             <element signature="e#0#30#0" expanded="true" />
             <marker date="1536953070416" expanded="true" signature="619:620" ph="..." />
@@ -953,6 +920,41 @@ print(link._error())</expression-string>
             <marker date="1536953070416" expanded="true" signature="45066:45075" ph="..." />
             <marker date="1536953070416" expanded="true" signature="54142:54147" ph="..." />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="231">
+          <caret line="36" column="12" selection-start-line="36" selection-start-column="12" selection-end-line="36" selection-end-column="12" />
+          <folding>
+            <marker date="1536925770236" expanded="true" signature="131:582" ph="..." />
+            <marker date="1536925770236" expanded="true" signature="1358:1591" ph="..." />
+            <marker date="1536925770236" expanded="true" signature="1612:1613" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PJLink/NativeLink.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="232">
+          <caret line="108" column="36" lean-forward="true" selection-start-line="108" selection-start-column="36" selection-end-line="108" selection-end-column="36" />
+          <folding>
+            <element signature="e#541#571#0" expanded="true" />
+            <marker date="1536954851957" expanded="true" signature="1115:1117" ph="..." />
+            <marker date="1536954851957" expanded="true" signature="1637:1643" ph="..." />
+            <marker date="1536954851957" expanded="true" signature="3836:3841" ph="..." />
+            <marker date="1536954851957" expanded="true" signature="4029:4034" ph="..." />
+            <marker date="1536954851957" expanded="true" signature="5993:5998" ph="..." />
+            <marker date="1536954851957" expanded="true" signature="12830:12836" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="103">
+          <caret line="38" column="67" lean-forward="true" selection-start-line="38" selection-start-column="67" selection-end-line="38" selection-end-column="67" />
         </state>
       </provider>
     </entry>

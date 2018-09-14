@@ -91,7 +91,7 @@ class NativeLink(MathLink):
         return self.__LIBRARY_LOAD_EXCEPTION
 
     def _loadNativeLibrary(self, *args, initialize = True, debug_level = None, setup = True):
-        import os
+        import os, sys
         ## args is just a sneaky hack to force using keywords
         if not self.__NATIVE_LIBRARY_LOADED:
             if setup:
@@ -101,7 +101,13 @@ class NativeLink(MathLink):
                         self.__NATIVE_LIBRARY_EXISTS = True
                         break
                 else:
-                    import PJLink.PJLinkNativeLibrary.src.setup as setup
+                    sys.path.insert(0, os.path.join(targ_dir, "src"))
+                    argv1 = sys.argv
+                    sys.argv = [ "-q", "build", "build_ext", "--inplace" ]
+                    import setup as setup
+                    sys.path.pop(0)
+                    sys.argv = argv1
+
                     if setup.failed:
                         raise ImportError("No library file found")
 
