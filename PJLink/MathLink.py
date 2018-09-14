@@ -922,7 +922,11 @@ class MathLink(MathLinkImplBase):
         else:
             for listener in self.__packetListeners:
                 try:
-                    allowFurtherProcessing = listener.packetArrived(evt)
+                    try:
+                        pkt_processor = listener.packetArrived
+                    except:
+                        pkt_processor = listener
+                    allowFurtherProcessing = pkt_processor(evt)
                     if not allowFurtherProcessing:
                         break
                 except MathLinkException as e:

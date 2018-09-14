@@ -21,15 +21,25 @@ from PJLink import *
 
 #########################################################################################################
 
-link = create_kernel_link(None, debug_level=0)
-print("Name:", link.name)
-print("Connected:", link.connect())
-print(link._getFunction(), link.drain())
-print(link.evaluateToInputForm("$Version"))
-# link.use_numpy = False
-print(link.evaluate(link.M.F("Transpose", [[1, 2, 3], [1, 2, 3]])))
-link._raiseLastError()
+# link = create_kernel_link(None, debug_level=0)
+# print("Name:", link.name)
+# print("Connected:", link.connect())
+# print(link._getFunction(), link.drain())
+# print(link.evaluateToInputForm("$Version"))
+# # link.use_numpy = False
+# print(link.evaluate(link.M.F("Transpose", [[1, 2, 3], [1, 2, 3]])))
+# link._raiseLastError()
 
 #########################################################################################################
 
-# import code; code.interact(local=locals())
+reader = create_reader_link()
+link = reader.link
+link.drain()
+def test_call():
+    return link.evaluate(link.M.ToExpression("LinkWrite[Links[][[1]], CallPacket[1, 1]]"))
+def test_eval(evstr):
+    return link.evaluate(link.M.ToExpression('LinkWrite[Links[][[1]], CallPacket[1, "Evaluate"@"{}"]]'.format(evstr)))
+# print(test_call())
+
+import code;
+code.interact(banner = "", local=locals())

@@ -37,7 +37,7 @@ class NativeLink(MathLink):
             init = ["-linkmode", "launch", "-linkname", "'{}' -mathlink -wstp".format(bin)]#, "-mathlink", "-wstp"]
         elif isinstance(init, str) and os.path.isfile(init):
             init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink -wstp'".format(init)]#, "-mathlink", "-wstp"]
-        elif isinstance(init, float) or re.match(r"\d\d.\d", init):
+        elif isinstance(init, float) or (isinstance(init, str) and re.match(r"\d\d.\d", init)):
             bin = self.Env.get_Mathematica_binary(init)
             init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink -wstp'".format(bin)]#, "-mathlink", "-wstp"]
 
@@ -81,7 +81,7 @@ class NativeLink(MathLink):
                 err_msg = self.__errMsgOut[0]
             else:
                 err_msg = None
-            raise MathLinkException("CreationFailed")
+            raise MathLinkException("CreationFailed", err_msg=err_msg)
 
     @property
     def native_library_loaded(self):
@@ -118,30 +118,30 @@ class NativeLink(MathLink):
                 if initialize:
                     pj.Initialize()
 
-    def __sig_handler(self, sig, frame):
-        # these don't actually seem to do what I wanted...
-
-        import signal
-        sig_names = {
-            signal.SIGSEGV : "InvalidMemoryAccess",
-            signal.SIGABRT : "Abort",
-            signal.SIGINT  : "Interrupt",
-            signal.SIGTERM : "Terminate"
-        }
-        try:
-            sig_name = sig_names[sig]
-        except KeyError:
-            sig_name = sig
-        raise MathLinkException("SignalCaught", "Signal {}".format(sig_name))
+    # def __sig_handler(self, sig, frame):
+    #     # these don't actually seem to do what I wanted...
+    #
+    #     import signal
+    #     sig_names = {
+    #         signal.SIGSEGV : "InvalidMemoryAccess",
+    #         signal.SIGABRT : "Abort",
+    #         signal.SIGINT  : "Interrupt",
+    #         signal.SIGTERM : "Terminate"
+    #     }
+    #     try:
+    #         sig_name = sig_names[sig]
+    #     except KeyError:
+    #         sig_name = sig
+    #     raise MathLinkException("SignalCaught", "Signal {}".format(sig_name))
 
     def _lib_call(self, meth, *args):
-        import signal
+        # import signal
         self._loadNativeLibrary()
 
-        handled_sigs = [ signal.SIGABRT, signal.SIGSEGV, signal.SIGTERM, signal.SIGINT]
-        og_handlers = [ signal.getsignal(sig) for sig in handled_sigs ]
-        for sig in handled_sigs:
-            signal.signal(sig, self.__sig_handler)
+        # handled_sigs = [ signal.SIGABRT, signal.SIGSEGV, signal.SIGTERM, signal.SIGINT]
+        # og_handlers = [ signal.getsignal(sig) for sig in handled_sigs ]
+        # for sig in handled_sigs:
+        #     signal.signal(sig, self.__sig_handler)
 
         try:
             lib_meth = getattr(self.__lib, meth)
@@ -150,9 +150,9 @@ class NativeLink(MathLink):
             argstr = "Exception in MathLink call '{}': ".format(meth) + e.args[0]
             e.args = (argstr, )
             raise e
-        finally:
-            for sig, handle in zip(handled_sigs, og_handlers):
-                signal.signal(sig, handle)
+        # finally:
+        #     for sig, handle in zip(handled_sigs, og_handlers):
+        #         signal.signal(sig, handle)
 
         return res
 

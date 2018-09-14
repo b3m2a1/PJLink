@@ -30,6 +30,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
 
     __LAST_EXCEPTION = None
     __LAST_EXCEPTION_DURING_CALL_HANDLING = None
+    __LAST_MESSAGE = None
     __FEServerLink = None
 
     M = MPackage
@@ -51,7 +52,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         with LinkMark(self) as mark:
             unpacking = False
             try:
-                self._checkFunction("PackedArrayInfo")
+                self._checkFunction(self.M.PackagePackage+"PackedArrayInfo") # this can get messy with context
                 dtype = self._getSymbol()
                 dims = list(self._getArray(self.Env.toTypeInt("Integer"), 1))
                 true_type = None
@@ -180,7 +181,6 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             tname = self.Env.fromTypeToken(otype)
             if tname == "Integer":
                 # A normal CallPacket representing a call to Java via jCallJava.
-                # ^^ dunno what I should do about this... maybe just some like eval call?
                 self.__handleCallPacket()
             elif self.FEServerLink is not None:
                 # A CallPacket destined for the FE via MathLink`CallFrontEnd[] and routed through
@@ -611,19 +611,19 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         :return:
         """
 
-        index = 0
+
+        ind = 0
         try:
-            index = self._getInt()
-            self._checkFunction("List")
+            ind = self._getInt()
         except MathLinkException as e:
             self.__handleCleanException(e)
             return
 
-        if index != self.Env.getCallInt("GetException"):
+        if ind != self.Env.getCallInt("GetException"):
             self.__LAST_EXCEPTION_DURING_CALL_HANDLING = None
 
         try:
-            name = self.Env.getCallName(index)
+            name = self.Env.getCallName(ind)
             if name == "CallPython":
                 self.__callPython()
             elif name == "Throw":
@@ -801,30 +801,172 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             raise TypeError("{}: FE link is expected to be None or a MathLink instance but got {}".format(type(self).__name__, type(link).__name__))
         self.__FEServerLink = link
 
+    def __do_call_recursive(self, pkt, call_data = None):
+        # I'd prefer not to have this in KernelLink but... not too many options
+        # It effectively implements the equivalent of the PJLink ToSymbolicPython
+        # but data is efficiently bound to variables to avoid waste
+
+        variable_saved_types = [ BufferedNDArray ]
+        if self.use_numpy:
+            import numpy
+            variable_saved_types.append(numpy.ndarray)
+        variable_saved_types=tuple(variable_saved_types)
+
+        if call_data is None and not isinstance(pkt, MLExpr):
+            return (pkt, )
+        elif isinstance(pkt, (float, int, MLSym, MLFunction)):
+            return (pkt, )
+        elif isinstance(pkt, str) and len(pkt)<200: #basically to handle method names and things...
+            return (pkt, )
+        elif not isinstance(pkt, MLExpr):
+            var_name = "{}_{}_{}".format("var", call_data["id"], call_data["vars"])
+            call_data["vars"] += 1
+            call_data["env"][var_name] = pkt
+            return (var_name, "variable") #just a way for the thing to realize it's not data...
+        elif isinstance(pkt, MLExpr) and pkt.head == "List":
+            arg_list = [ self.__do_call_recursive(a, call_data) for a in pkt.args ] # I think this might be the only common one to handle?
+            for i, arg in enumerate(arg_list):
+                if isinstance(arg, tuple):
+                    arg = str(arg[0])
+                    arg_list[i] = arg
+                elif isinstance(arg, list):
+                    arg = ", ".join(arg)
+                    arg = "[ " + arg + " ]"
+                    arg_list[i] = arg
+
+            return arg_list
+
+        else:
+            top_call = False
+            if call_data is None:
+                top_call = True
+                call_data = {}
+                call_data["call"] = ""
+                call_data["env"] = {}
+                call_data["vars"] = 0
+                call_data["id"] = str(id(call_data))
+                call_data["indent"] = 0
+            # curr = call_data["call"]
+            head = pkt.head
+            args = pkt.args
+            # print(head, args)
+            if isinstance(head, MLSym):
+                head = head.name
+            elif isinstance(head, MLFunction):
+                head = head.name
+
+            res = None
+            if isinstance(head, str) and head.endswith("PyBlock"):
+                indent_level = call_data["indent"]
+                block_head = args[2]
+                if isinstance(block_head, MLSym) and block_head.name == "Nothing":
+                    block_head = None
+                elif not isinstance(block_head, str):
+                    block_head = self.__do_call_recursive(args[2], call_data)
+
+                try:
+                    indent_incr = int(args[1])
+                except (TypeError, ValueError):
+                    indent_incr = 1
+
+                block_sep = args[2] if isinstance(args[2], str) else self.__do_call_recursive(args[2], call_data)
+                arg_list = [ self.__do_call_recursive(a, call_data) for a in args[3].args ]
+
+                arg_list = self.__do_call_recursive(args[0], call_data)
+
+                block_sep = "\n"+block_sep
+
+                to_ind = indent_level + indent_incr
+                indent_str = "\t"*to_ind
+
+                arg_list.insert(0, block_head)
+                block_string = block_sep.join((indent_str+x for x in arg_list))
+
+                call_data["indent"] = indent_level
+
+                res = block_string
+
+            elif isinstance(head, str) and head.endswith("PyRow"):
+
+                riff = args[1]
+                if not isinstance(riff, str):
+                    riff = self.__do_call_recursive(riff, call_data)
+
+                arg_list = self.__do_call_recursive(args[0], call_data)
+
+                res = riff.join( arg_list )
+
+            elif head == "Evaluate":
+
+                res = args[0]
+
+            if top_call and head == "CallPacket":
+
+                if isinstance(args[1], MLExpr) and args[1].head == "Evaluate":
+                    arg = args[1].args[0]
+                else:
+                    arg = self.__do_call_recursive(args[1], call_data)
+
+                if isinstance(arg, tuple):
+                    arg = arg[0]
+
+                if isinstance(arg, str):
+                    res = None
+                    self.__EXEC_ENV.update(call_data["env"])
+                    if len(arg.split("\n", 2)) == 1:
+                        try:
+                            res = eval(arg, self.__EXEC_ENV, self.__EXEC_ENV)
+                        except SyntaxError:
+                            exec(arg, self.__EXEC_ENV, self.__EXEC_ENV)
+                    else:
+                        exec(arg, self.__EXEC_ENV, self.__EXEC_ENV)
+
+                    for k in call_data["env"]:
+                        del self.__EXEC_ENV[k]
+                else:
+                    res = arg
+
+                return res
+
+            elif top_call and isinstance(res, str):
+                # print(res)
+                self.__EXEC_ENV.update(call_data["env"])
+                if len(res.split("\n", 2)) == 1:
+                    try:
+                        return eval(res, self.__EXEC_ENV, self.__EXEC_ENV)
+                    except SyntaxError:
+                        exec(res, self.__EXEC_ENV, self.__EXEC_ENV)
+                        return None
+                else:
+                    exec(res, self.__EXEC_ENV, self.__EXEC_ENV)
+                for k in call_data["env"]:
+                    del self.__EXEC_ENV[k]
+
+            if res is None:
+                # print(head)
+                raise MathLinkException("UnknownCallType", "couldn't understand packet {}".format(MLExpr(head, args)))
+            else:
+                return res
+
     def __callPython(self):
         ### dunno exactly how this data should come through...
-        packet = self.getPacket()
+        arg = self.get() ### Call packets take exactly two args? (and the type int has been drained)
+        pkt = MLExpr("CallPacket", (1, arg))
 
-        def do_call_recursive(pkt):
-            if not isinstance(pkt, MLExpr):
-                return pkt
-            args = list(do_call_recursive(a) for a in pkt.args)
-            head = pkt.head
-            if head == "Set":
-                lhs, rhs = args
-                if isinstance(lhs, MLSym):
-                    lhs = lhs.name
-                if isinstance(lhs, str):
-                    self.ObjectHandler.set_object(lhs, rhs, self.__EXEC_ENV)
-                else:
-                    pass #should I throw??
-            elif head == "Evaluate":
-                self.ObjectHandler.exec_code(args, self.__EXEC_ENV)
+        try:
+            res = self.__do_call_recursive(pkt)
+            if res is None:
+                self._putSymbol("Null")
             else:
-                meth = self.ObjectHandler.get_object(head, self.__EXEC_ENV)
-                return meth(*pkt.args)
+                self.put(res)
+        except Exception as e:
+            import traceback as tb
+            self.__LAST_EXCEPTION_DURING_CALL_HANDLING = e
+            self.put(self.M.F(self.M.PackageContext+"PythonTraceback", tb.format_exc()))
+            self._clearError()
+        finally: # is this wise?
+            self._endPacket()
 
-        return do_call_recursive(packet)
 
     def __connectToFEServer(self, timeout = 100):
         import time
@@ -1054,7 +1196,13 @@ class WrappedKernelLink(KernelLink):
 
     def put(self, o):
         self.__ensure_connection()
-        return self.__impl.put(o)
+        if isinstance(o, type):
+            return self.__impl.put(repr(o))
+        else:
+            try:
+                return self.__impl.put(o)
+            except:
+                return self.__impl.put(repr(o))
 
     def _getInt(self):
         self.__ensure_connection()
@@ -1146,6 +1294,9 @@ class WrappedKernelLink(KernelLink):
     def _addMessageHandlerOn(self, target, meth):
         # self.__ensure_connection()
         return self.__impl._addMessageHandlerOn(target, meth)
+
+    def _wrap(self, checkLink = True, checkError = True, check = None, lock = True):
+        return self.__impl._wrap(checkLink, checkError, check, lock)
 
     def _nextPacket(self):
         # Code here is not just a simple call to impl.nextPacket(). For a KernelLink, nextPacket() returns a

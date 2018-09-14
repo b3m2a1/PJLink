@@ -717,7 +717,7 @@ for the JLink package on the Mathematica side
     def in_package(cls, expr):
         return cls.with_context(
             cls.PackagePackage,
-            [cls.PackageContext, cls.PackagePackage, cls.PackagePrivate],
+            ["System`", cls.PackageContext, cls.PackagePackage, cls.PackagePrivate],
             expr
         )
 
@@ -860,7 +860,7 @@ class MPackage(MExprUtils):
                 cls.Set(expr, cls.F("Developer`ToPackedArray", to_eval)),
                 cls.If(
                     cls.F("Developer`PackedArrayQ", expr),
-                    cls.F("PackedArrayInfo",
+                    cls.F(cls.PackagePackage+"PackedArrayInfo",
                         # type
                         cls.F("Head", cls.F("Extract", expr, cls.F("Table", 1, cls.List(cls.F("ArrayDepth", expr))))),
                         # dimensions
@@ -1013,11 +1013,12 @@ class ObjectHandler:
         __in_constructor = False
 
         def __init__(self, name, envid):
-            if not self.__in_constructor:
-                raise NotImplemented
             self.__env   = envid
             self.__name  = name
             self.__names = {}
+            if not self.__in_constructor:
+                raise NotImplemented
+
 
         @property
         def name(self):
@@ -1025,17 +1026,26 @@ class ObjectHandler:
 
         def __getattr__(self, item):
             try:
-                return self.__names[item]
+                names = super().__getattr__("__names")
+            except AttributeError:
+                names = {}
+            try:
+                return names[item]
             except KeyError:
                 if item.endswith("__Context__"):
                     return self.get_subcontext(item[:-(len("__Context__")+1)])
                 else:
-                    raise NameError("Symbol '{}{}' not found".format(self.name, item))
+                    try:
+                        name = super().__getattr_("__name")
+                    except AttributeError:
+                        name = "UnnamedContext`"
+                    raise NameError("Symbol '{}{}' not found".format(name, item))
 
         def __setattr__(self, key, value):
             if key.endswith("__Context__"):
                 raise ValueError("Cannot assign to context {}".format(self.get_subcontext(key).name))
-            self.__names[key] = value
+            names = self.__names
+            names[key] = value
 
         def get_subcontext(self, subpat):
             name = self.name+"`"+subpat+"`"
@@ -1059,7 +1069,7 @@ class ObjectHandler:
                 cont = cache[full_name]
             except KeyError:
                 bits = full_name.split("`")
-                cont = cls.from_parts(bits[:-2], env)
+                cont = cls.from_parts(bits, env)
             return cont
 
         @classmethod
@@ -1080,7 +1090,7 @@ class ObjectHandler:
                     cont = cache[bits[0]+"`"]
                 except KeyError:
                     cls.__in_constructor = True
-                    cont = cls(bits[0]+"`")
+                    cont = cls(bits[0]+"`", id(env))
                     cls.__in_constructor = False
 
                 for b in bits[1:]:

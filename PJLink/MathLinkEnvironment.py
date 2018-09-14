@@ -97,7 +97,8 @@ class MathLinkEnvironment:
         "WrappedException"   : 1006,
         "BadObject"          : 1100,
         "FirstUserException" : 2000,
-        "SignalCaught"       : 2100
+        "SignalCaught"       : 2100,
+        "UnknownCallType"    : 2101
     }
     ERROR_TYPE_NAMES = {}
     ERROR_TYPE_NAMES.update(tuple((item, key) for key, item in ERROR_TYPES.items()))
@@ -631,17 +632,17 @@ class MathLinkEnvironment:
         if plat == "Darwin":
             if mname is None:
                 mname = "Mathematica.app"
-            elif isinstance(mname, float) or re.match(r"\d\d.\d", mname):
+            elif isinstance(mname, float) or (isinstance(mname, str) and re.match(r"\d\d.\d", mname)):
                 mname = "Mathematica {}.app".format(mname)
         elif plat == "Linux":
             if mname is None:
                 mname = os.path.join("Mathematica", cls.CURRENT_MATHEMATICA)
-            elif isinstance(mname, float) or re.match(r"\d\d.\d", mname):
+            elif isinstance(mname, float) or (isinstance(mname, str) and re.match(r"\d\d.\d", mname)):
                 mname = os.path.join("Mathematica", str(mname))
         elif plat == "Windows":
             if mname is None:
                 mname = os.path.join("Mathematica", cls.CURRENT_MATHEMATICA)
-            elif isinstance(mname, float) or re.match(r"\d\d.\d", mname):
+            elif isinstance(mname, float) or (isinstance(mname, str) and re.match(r"\d\d.\d", mname)):
                 mname = os.path.join("Mathematica", str(mname))
 
         return mname
