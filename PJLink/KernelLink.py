@@ -33,13 +33,11 @@ from Mathematica), will want to start with the handleCallPacket() method here.
     __LAST_MESSAGE = None
     __FEServerLink = None
 
-    M = MPackage
-
-    ObjectHandler = ObjectHandler
-
     def __init__(self):
+        self.M = MPackage
+        self.ObjectHandler = ObjectHandler
         super().__init__()
-        self._EXEC_ENV = { "Kernel":self , "Mathematica":self.M, "Evaluate":self.evaluateString }
+        self._EXEC_ENV = { "Kernel":self , "Mathematica": self.M, "Evaluate": self.evaluateString }
 
     def get(self):
         # Replace TYPE_FLOATORINT and TYPE_DOUBLEORINT (and arrays of them) with just TYPE_FLOAT and TYPE_DOUBLE.
@@ -627,6 +625,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             # About the only thing to do is call endPacket and hope that this will cause
             # $Aborted to be returned.
             try:
+                import traceback as tb
                 self.put(self.M.F(self.M.PackageContext+"PythonTraceback", tb.format_exc()))
                 self._endPacket()
             except MathLinkException:

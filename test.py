@@ -1,4 +1,5 @@
 from PJLink import *
+from PJLink.KernelLink import *
 
 #########################################################################################################
 
@@ -32,6 +33,8 @@ M = MPackage
 # print("GetType:", link.close())
 
 #########################################################################################################
+
+link = WrappedKernelLink()
 
 # link = create_kernel_link(None, debug_level=0)
 # print("Name:", link.name)
