@@ -70,7 +70,9 @@ Some slicing capability is added for giggles
         self.__offsets = tuple(offsets)
 
     @classmethod
-    def from_buffers(cls, buffs, dims):
+    def from_buffers(cls, buffs, dims = None):
+        if dims is None:
+            dims = [ len(b) for b in buffs ]
         bob = None
         for b in buffs:
             if bob is None:
@@ -79,6 +81,30 @@ Some slicing capability is added for giggles
                 bob.extend(b)
         bob.adjust()
         return bob
+
+    @classmethod
+    def from_iterable(cls, itable, dims = None):
+        import array
+
+        if dims is None:
+            dims = [ len(itable) ]
+
+        if isinstance(itable, str):
+            tchar = 'B'
+            itt = itable
+        else:
+            itt = list(itable)
+            tchar = None
+            if isinstance(itt[0], int):
+                tchar = 'l'
+            elif isinstance(itt[0], float):
+                tchar = 'd'
+            elif isinstance(itt[0], (bytes, bytearray)):
+                tchar = 'B'
+            else:
+                raise TypeError("{}: couldn't determine typecode for object '{}'".format(cls.__name__, itt[0]))
+
+        return cls(array.array(tchar, itt), dims)
 
     @staticmethod
     def __prod(iterable):
@@ -97,9 +123,14 @@ Some slicing capability is added for giggles
     def adjust(self):
         start, end = self.__offsets
         elems = start + self.__prod(self.__shape)
+        blen = len(self._buffer)
         end = len(self._buffer) - elems
         if 0 > end:
             raise ValueError("Buffer dimension exceeds buffer size")
+        elif start >= blen or end >= blen:
+            raise ValueError("Buffer offset exceeds buffer size")
+        elif end < 0 or start < 0:
+            raise ValueError("Buffer offset cannot be negative")
         else:
             self.__offsets = (start, end)
     @property
@@ -135,8 +166,16 @@ Some slicing capability is added for giggles
     def size(self):
         return len(self._buffer) - self.__offsets[1] - self.__offsets[0]
 
-    def __len__(self):
+    @property
+    def depth(self):
         return len(self.__shape)
+
+    def __len__(self):
+        return self.__shape[0]
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
 
     @property
     def typecode(self):
@@ -196,6 +235,7 @@ Some slicing capability is added for giggles
             return self._buffer[start:start + shift]
         elif isinstance(start, int):
             bob = type(self)(self._buffer, newdim, offsets = (start, len(self._buffer) - (start + shift)))
+            bob.adjust()
             return bob
         else:
             if len(start) == 1 and shift == 0:
@@ -211,6 +251,7 @@ Some slicing capability is added for giggles
                 for i, s in enumerate(start):
                     new_buf[i*shift:(i+1)*shift] = self._buffer[s:s+shift]
             bob = type(self)(new_buf, newdim, offsets = (0, 0))
+            bob.adjust()
             return bob
 
     def __set_slice(self, value, start, shift, newdim, dims):
@@ -267,29 +308,45 @@ Some slicing capability is added for giggles
 
     def __getitem__(self, ind):
         self.adjust()
-        if isinstance(ind, (int, slice)):
-            coords = self.__calculate_slice_coordinates([ind])
-            return self.__get_slice(*coords)
-        elif all((isinstance(item, (int, slice)) for item in ind)):
-            coords = self.__calculate_slice_coordinates(ind)
-            return self.__get_slice(*coords)
-        elif len(ind) > 0:
-            raise TypeError("{} indices must be integers or slices or tuples of ints, not {}".format(type(self).__name__, type(slice[0]).__name__))
+        shape = self.shape
+        if len(shape) == 1 and isinstance(ind, (int, slice)):
+            return self._buffer[self.__offsets[0]:len(self._buffer)-self.__offsets[1]][ind]
         else:
-            raise TypeError("{} indices must be integers or slices or tuples of ints, not {}".format(type(self).__name__, type(slice).__name__))
+            if isinstance(ind, (int, slice)):
+                coords = self.__calculate_slice_coordinates([ind])
+                return self.__get_slice(*coords)
+            elif all((isinstance(item, (int, slice)) for item in ind)):
+                coords = self.__calculate_slice_coordinates(ind)
+                return self.__get_slice(*coords)
+            elif len(ind) > 0:
+                raise TypeError("{} indices must be integers or slices or tuples of ints, not {}".format(type(self).__name__, type(slice[0]).__name__))
+            else:
+                raise TypeError("{} indices must be integers or slices or tuples of ints, not {}".format(type(self).__name__, type(slice).__name__))
 
     def __setitem__(self, ind, value):
         self.adjust()
-        if isinstance(ind, (int, slice)):
-            coords = self.__calculate_slice_coordinates([ind])
-            return self.__set_slice(value, *coords)
-        elif all((isinstance(item, (int, slice)) for item in ind)):
-            coords = self.__calculate_slice_coordinates(ind)
-            return self.__set_slice(value, *coords)
-        elif len(ind) > 0:
-            raise TypeError("{} indices must be integers or slices or tuples of ints, not {}".format(type(self).__name__, type(slice[0]).__name__))
+        shape = self.shape
+        if len(shape) == 1 and isinstance(ind, (int, slice)):
+            if isinstance(ind, slice):
+                sta = self.__offsets[0] + 0 if ind.start is None else ind.start
+                sto = (len(self._buffer)-self.__offsets[0]) + 0 if ind.stop is None else ind.stop
+                ste = ind.step
+                ind = slice(sta, sto, ste)
+            else:
+                ind = self.__offsets[0] + ind
+
+            self._buffer[ind] = value
         else:
-            raise TypeError("{} indices must be integers or slices or tuples of ints, not {}".format(type(self).__name__, type(slice).__name__))
+            if isinstance(ind, (int, slice)):
+                coords = self.__calculate_slice_coordinates([ind])
+                return self.__set_slice(value, *coords)
+            elif all((isinstance(item, (int, slice)) for item in ind)):
+                coords = self.__calculate_slice_coordinates(ind)
+                return self.__set_slice(value, *coords)
+            elif len(ind) > 0:
+                raise TypeError("{} indices must be integers or slices or tuples of ints, not {}".format(type(self).__name__, type(slice[0]).__name__))
+            else:
+                raise TypeError("{} indices must be integers or slices or tuples of ints, not {}".format(type(self).__name__, type(slice).__name__))
 
 
 
@@ -411,6 +468,9 @@ This includes things like getting array dimensions, casts to BufferedNDArray, ty
                 res = ob.tonumpy()
             else:
                 res = np.array(ob)
+
+            if not res.data.c_contiguous:
+                res = np.ascontiguousarray(np)
             array_type = Env.getNumPyTypeInt(res.dtype.type)
         elif isinstance(ob, BufferedNDArray):
             res = ob

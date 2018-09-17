@@ -25,6 +25,7 @@ class Reader:
  Calls arrive in the form of CallPackets, and they are sent to the KernelLink's handleCallPacket() method.
 
     """
+
     def __init__(self, link, quit_on_link_end = True, is_main_link = False, always_poll = False):
         self.__link = link
         self.__quit_on_link_end = quit_on_link_end
@@ -78,6 +79,8 @@ class Reader:
         # that will be used for calls to M from the UI thread (unless we are in the modal state, in which case
         # the link we set here is used).
 
+        link.Env.log("Starting!")
+
         if start:
             reader.__thread.start()
         StdLink.link = link
@@ -102,6 +105,7 @@ class Reader:
         try:
             while not self.__stop_requested:
                 if self.__killer.is_set():
+                    self.__link.Env.log("Done!")
                     self.__stop_requested = True
                     break
                 if self.__is_main_link and must_poll:
@@ -129,6 +133,7 @@ class Reader:
                             # 11 is "other side closed link"; not sure why this succeeds clearError, but it does.
                             if e.no == 11 or not self.__link._clearError():
                                 return None
+
                 else:
                     # Use blocking style (dive right into MLNextPacket and block there). Much more efficient. Requires a native threads JVM
                     # or a yield function callback into Java; otherwise, all threads in the JVM will hang.

@@ -672,7 +672,9 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
         fraction   : "Rational",
         MLExpr     : "MLExpr",
         MLFunction : "MLFunction",
-        MLSym      : "MLSym"
+        MLSym      : "MLSym",
+        bytes      : "ByteString",
+        bytearray  : "ByteString"
     }
     del decimal
     del fraction

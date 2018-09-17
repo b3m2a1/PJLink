@@ -50,36 +50,53 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         t1 = self.Env.fromTypeToken(tk)
 
         with LinkMark(self) as mark:
-            unpacking = False
-            try:
-                self._checkFunction(self.M.PackagePackage+"PackedArrayInfo") # this can get messy with context
-                dtype = self._getSymbol()
-                dims = list(self._getArray(self.Env.toTypeInt("Integer"), 1))
-                true_type = None
-                if isinstance(dtype, MLSym):
-                    dtype = dtype.name
-                if dtype == "Integer":
-                    true_type = self.Env.toTypeInt("Integer")
-                elif dtype == "Real":
-                    true_type = self.Env.toTypeInt("Double")
-                elif dtype == "Complex":
-                    true_type = self.Env.toTypeInt("Complex")
-                tok = self.Env.fromTypeToken(self._getNext())
-                if tok in ("Object", "Symbol"):
-                    res = self._getObject()
-                else:
-                    # print("Unpacking packed array of type {} and dims {}".format(dtype, dims))
-                    # unpacking = True
-                    res = self._getArray(true_type, len(dims))
-            except MathLinkException as e:
-                self._clearError()
-                self._seekMark(mark)
-                # if unpacking:
-                #     raise e
-                # print(e)
 
+            self.Env.log("Getting {} off link".format(t1))
+
+            if t1 == "Function":
+                try:
+                    self.Env.log("Checking if object is packed array".format(t1))
+                    self._checkFunction(self.M.PackagePackage+"PackedArrayInfo") # this can get messy with context?
+                    self.Env.log("Found packed array on link")
+
+                    dtype = self._getSymbol()
+                    self.Env.log("Got array type {}".format(dtype))
+
+                    true_type = None
+                    if isinstance(dtype, MLSym):
+                        dtype = dtype.name
+                    if dtype == "Integer":
+                        true_type = self.Env.toTypeInt("Integer")
+                    elif dtype == "Real":
+                        true_type = self.Env.toTypeInt("Double")
+                    elif dtype == "Complex":
+                        true_type = self.Env.toTypeInt("Complex")
+
+                    self.Env.log("Getting array dimensions".format(dtype))
+                    dims = list(self._getArray(self.Env.toTypeInt("Integer"), 1))
+                    self.Env.log("Got array dimensions {}".format(dims))
+
+                    tok = self.Env.fromTypeToken(self._getNext())
+                    self.Env.log("Got next token {}".format(tok))
+
+                    if tok in ("Object", "Symbol"):
+                        res = self._getObject()
+                    else:
+                        # print("Unpacking packed array of type {} and dims {}".format(dtype, dims))
+                        # unpacking = True
+                        res = self._getArray(true_type, len(dims))
+                except MathLinkException as e:
+                    # import traceback as tb
+
+                    # self.Env.log(tb.format_exc())
+                    self._clearError()
+                    self._seekMark(mark)
+                    # if unpacking:
+                    #     raise e
+                    # print(e)
 
             if res is None:
+
                 if t1 == "Object":
                     res = self._getObject()
                 elif t1 == "Function":
@@ -89,11 +106,17 @@ from Mathematica), will want to start with the handleCallPacket() method here.
                         res = self._getSingleObject(t1)
                         # print(res)
                     except (MathLinkException, ValueError, TypeError) as e:
+                        import traceback as tb
+
                         self._clearError()
+                        self.Env.log(tb.format_exc())
                         pass # Maybe I should handle these?
                     else:
                         if t1 == "Symbol":
                             res = MLSym(res)
+
+        self.Env.log("Got {} off link".format(res))
+
         return res
 
     def getPacket(self):
@@ -172,13 +195,14 @@ from Mathematica), will want to start with the handleCallPacket() method here.
 
     def _handlePacket(self, pkt):
         pkt_name = self.Env.getPacketName(pkt)
-        # print(pkt_name)
+        self.Env.log("Handling packet {}".format(pkt_name))
         if pkt_name in ("Return", "InputName", "ReturnText", "ReturnExpr", "Menu", "Message"):
             # maybe debug print them?
             pass
         elif pkt_name == "Call":
             otype = self._getType()
             tname = self.Env.fromTypeToken(otype)
+            self.Env.log("Handling call packet of type {}".format(tname))
             if tname == "Integer":
                 # A normal CallPacket representing a call to Java via jCallJava.
                 self.__handleCallPacket()
@@ -592,8 +616,8 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             if self.wasInterrupted():
                 self._putFunction("Abort", 0)
             else:
-                msg = exc.args[0] ### ????
-                self.put(msg)
+                import traceback as tb
+                self.put(self.M.F(self.M.PackageContext+"PythonTraceback", tb.format_exc()))
             self._endPacket()
             self.flush()
         except MathLinkException as e:
@@ -601,16 +625,17 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             # About the only thing to do is call endPacket and hope that this will cause
             # $Aborted to be returned.
             try:
+                self.put(MLSym("$Aborted"))
                 self._endPacket()
             except MathLinkException:
-                pass
+                self.put(b'$Failed')
+                self._endPacket()
 
     def __handleCallPacket(self):
         """
 
         :return:
         """
-
 
         ind = 0
         try:
@@ -624,6 +649,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
 
         try:
             name = self.Env.getCallName(ind)
+            self.Env.log("Enter call packet {}".format(name))
             if name == "CallPython":
                 self.__callPython()
             elif name == "Throw":
@@ -683,15 +709,20 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             elif name == "SetException": #setException()
                 raise NotImplemented
         except Exception as e:
+            self.__handleCleanException(e)
+            import traceback as tb
             self.__LAST_EXCEPTION_DURING_CALL_HANDLING = e
+            # self.put(tb.format_exc())
+            # self.Env.log(tb.format_exc())
         finally:
+            # self.Env.log("end handle call packet")
             self._clearError()
-            self._newPacket()
             try:
+                self._newPacket()
                 self._endPacket()
                 self.flush()
-            except MathLinkException:
-                pass
+            except MathLinkException as e:
+                self.__handleCleanException(e)
 
     def _eval_to_string(self, obj, page_width = None, format = None):
 
@@ -733,8 +764,6 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         except Exception as e:
             self._clearError()
             self.__LAST_EXCEPTION = e
-        finally:
-            self._newPacket()
 
         return image_data
 
@@ -807,23 +836,33 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         # but data is efficiently bound to variables to avoid waste
 
         variable_saved_types = [ BufferedNDArray ]
+
         if self.use_numpy:
             import numpy
             variable_saved_types.append(numpy.ndarray)
         variable_saved_types=tuple(variable_saved_types)
 
         if call_data is None and not isinstance(pkt, MLExpr):
+            self.Env.log("Something weird happened {}".format(pkt))
             return (pkt, )
         elif isinstance(pkt, (float, int, MLSym, MLFunction)):
+            self.Env.log("Got puttable {}".format(pkt))
             return (pkt, )
-        elif isinstance(pkt, str) and len(pkt)<200: #basically to handle method names and things...
+        elif isinstance(pkt, str) and len(pkt)<200 and "\n" not in pkt: #basically to handle method names and things...
+            self.Env.log("Got string {}".format(pkt))
             return (pkt, )
         elif not isinstance(pkt, MLExpr):
+
             var_name = "{}_{}_{}".format("var", call_data["id"], call_data["vars"])
             call_data["vars"] += 1
             call_data["env"][var_name] = pkt
+            self.Env.log("Storing {} in variable {}".format(pkt, var_name))
+
+            # self.Env.log("Store variable {}".format(var_name))
             return (var_name, "variable") #just a way for the thing to realize it's not data...
         elif isinstance(pkt, MLExpr) and pkt.head == "List":
+
+            self.Env.log("Converting List packet {} to proper list".format(pkt))
             arg_list = [ self.__do_call_recursive(a, call_data) for a in pkt.args ] # I think this might be the only common one to handle?
             for i, arg in enumerate(arg_list):
                 if isinstance(arg, tuple):
@@ -837,6 +876,8 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             return arg_list
 
         else:
+            self.Env.log("Building call")
+
             top_call = False
             if call_data is None:
                 top_call = True
@@ -950,22 +991,28 @@ from Mathematica), will want to start with the handleCallPacket() method here.
 
     def __callPython(self):
         ### dunno exactly how this data should come through...
+
+        self.Env.log("Getting CallPython packet")
+
         arg = self.get() ### Call packets take exactly two args? (and the type int has been drained)
         pkt = MLExpr("CallPacket", (1, arg))
 
-        try:
-            res = self.__do_call_recursive(pkt)
-            if res is None:
-                self._putSymbol("Null")
-            else:
-                self.put(res)
-        except Exception as e:
-            import traceback as tb
-            self.__LAST_EXCEPTION_DURING_CALL_HANDLING = e
-            self.put(self.M.F(self.M.PackageContext+"PythonTraceback", tb.format_exc()))
-            self._clearError()
-        finally: # is this wise?
-            self._endPacket()
+        self.Env.log("Calling python on packet {}".format(pkt))
+
+        # try:
+        res = self.__do_call_recursive(pkt)
+        if res is None:
+            self._putSymbol("Null")
+        else:
+            self.put(res)
+
+        # except Exception as e:
+        #     import traceback as tb
+        #     self.__LAST_EXCEPTION_DURING_CALL_HANDLING = e
+        #     self.put(self.M.F(self.M.PackageContext+"PythonTraceback", tb.format_exc()))
+        #     self._clearError()
+        # finally: # is this wise?
+        #     self._endPacket()
 
 
     def __connectToFEServer(self, timeout = 100):
@@ -1197,11 +1244,14 @@ class WrappedKernelLink(KernelLink):
     def put(self, o):
         self.__ensure_connection()
         if isinstance(o, type):
+            self.Env.log("Putting repr of type {} on link".format(o.__name__))
             return self.__impl.put(repr(o))
         else:
             try:
                 return self.__impl.put(o)
-            except:
+            except Exception as e:
+                import traceback as tb
+                self.Env.log(tb.format_exc())
                 return self.__impl.put(repr(o))
 
     def _getInt(self):

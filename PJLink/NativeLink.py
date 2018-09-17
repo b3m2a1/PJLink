@@ -317,8 +317,6 @@ class NativeLink(MathLink):
     def _getString(self):
         with self._wrap(check=0):
             str = self._call("GetString") # for reasons unknown this adds a character...
-            # if len(str) > 0:
-            #     str = str[1:]
             return str
     def _getByteString(self, missing):
         with self._wrap(check=0):
@@ -333,7 +331,7 @@ class NativeLink(MathLink):
             else:
                 raise ValueError("cannot interpret data as bytes-compatible object")
             if not isinstance(num, int):
-                num = len(data)
+                num = 0 # len(data)
             return self._call("PutByteString", data, num)
     def _getSymbol(self):
         with self._wrap(check=0):
@@ -536,6 +534,8 @@ class NativeLink(MathLink):
             arr, tint, dims, depth = self._get_put_array_params(o) # will not be accurate for ragged arrays, but we won't use the result in that case.
             # print(arr, tint, dims, depth)
 
+            # self.Env.log("PutArray:", arr, tint, dims, depth)
+
             if tint is not None:
                 sent = False
                 if depth == 1:
@@ -567,6 +567,7 @@ class NativeLink(MathLink):
                     # of the first depth - 1 dimensions is very large (say, > 50000). In other words, slowness is probably
                     # only an issue for very large depth >= 3 arrays.
                     # putArraySlices needs full explicit heads array, not null.
+
                     explicit_heads = [ "List" ] * depth
                     if headList is not None:
                         for i, el in enumerate(headList):
@@ -578,10 +579,27 @@ class NativeLink(MathLink):
                 self._putArrayPiecemeal(o, headList, 0)
 
     def _putArraySlices(self, o, tint, head_list, head_index ):
-        if head_index == len(head_list) - 1:
+        try:
+            len(o)
+        except TypeError:
+            raise TypeError("{}: object {} cannot be interpreted as an array".format(type(self).__name__, o))
+
+        try:
+            head_num = len(head_list)
+        except TypeError:
+            head_list = []
+            head_num = 0
+
+        if head_index == head_num - 1:
             self._call("PutArray", tint, o, head_list[head_index])
         else:
-            self._putFunction(head_list[head_index], len(o))
+            try:
+                head = head_list[head_index]
+            except IndexError:
+                head = "List"
+                head_list += [ "List" ] * ( head_index - head_num + 1)
+
+            self._putFunction(head, len(o))
             for e in o:
                 self._putArraySlices(e, tint, head_list, head_index + 1)
 

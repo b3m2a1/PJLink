@@ -4,6 +4,10 @@
 
 ToPython::usage=
   "Specifies how to turn a symbolic structure into a python evaluation";
+$ToPythonStrings::usage=
+  "If true commands are boiled down to strings instead of packets";
+
+
 SymbolicPythonQ::usage=
   "Gives True if a symbol is a known symbolic python structure";
 ToSymbolicPython::usage=
@@ -187,6 +191,15 @@ ToPython[PyFromImportAsSow[from_,import_,as_]]:=
     ];
 
 
+(* ::Subsubsection::Closed:: *)
+(*String or Packet*)
+
+
+IfPS[a_, b_]:=
+ If[TrueQ@$ToPythonStrings, a, b]
+IfPS~SetAttributes~HoldAll;
+
+
 (* ::Subsection:: *)
 (*Atomics*)
 
@@ -243,7 +256,7 @@ ToPython[PySymbol[s_Symbol]]:=
     ];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Numerics*)
 
 
@@ -252,14 +265,11 @@ ToPython[PySymbol[s_Symbol]]:=
 
 
 ToPython[PyInt[i_?NumericQ]]:=
-    i;
-  (*toNumberString@IntegerPart[i];*)
+    IfPS[toNumberString@IntegerPart[i], i];
 ToPython[PyFloat[n_?NumericQ,prec:_Integer|Automatic:Automatic]]:=
-    n;
-  (*toNumberString@If[prec===Automatic,N[n],N[n,prec]];*)
+    IfPS[toNumberString@If[prec===Automatic,N[n],N[n,prec]], n];
 ToPython@PyVerbatim[v_]:=
-    v;
-  (*ToString[v];*)
+    IfPS[ToString[v], v];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -267,32 +277,31 @@ ToPython@PyVerbatim[v_]:=
 
 
 ToPython@PyBoolean[True]:=
-    True;
-  (*"True";*)
+    IfPS["True", True];
 ToPython@PyBoolean[False]:=
-    False;
-  (*"False";*)
+    IfPS["False", False];
 PyAlias[PyTrue]:=
-    True;
-  (*PyBoolean[True];*)
+    IfPS[PyBoolean[True], True];
 PyAlias[PyFalse]:=
-    False;
-  (*PyBoolean[False];*)
+    IfPS[PyBoolean[False], False];
 
 
 (* ::Subsection:: *)
 (*MultiPart*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*List*)
 
 
 ToPython[PyList[l_List]]:=
-  Replace[PJLink`Package`AddTypeHints[l],
-    {
-      e_List:>ToPython/@e
-      }
+  IfPS[
+    StringJoin@{"[ ",Riffle[ToPython/@l,", "]," ]"};,
+    Replace[PJLink`Package`AddTypeHints[l],
+      {
+        e_List:>ToPython/@e
+        }
+      ]
     ]
 
 
@@ -301,8 +310,10 @@ ToPython[PyList[l_List]]:=
 
 
 ToPython[PyTuple[l_List]]:=
-    ToPython@PyCall["tuple", l];
-  (*StringJoin@{"( ",Riffle[ToPython/@l,", "]," )"};*)
+  IfPS[
+    StringJoin@{"( ",Riffle[ToPython/@l,", "]," )"},
+    ToPython@PyCall["tuple", l]
+    ];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -310,8 +321,10 @@ ToPython[PyTuple[l_List]]:=
 
 
 ToPython[PySet[l_List]]:=
-    ToPython@PyCall["set", l];
-  (*StringJoin@{"{ ",Riffle[ToPython/@l,", "]," }"};*)
+    IfPS[
+      StringJoin@{"{ ",Riffle[ToPython/@l,", "]," }"},
+      ToPython@PyCall["set", l]
+      ];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -320,7 +333,10 @@ ToPython[PySet[l_List]]:=
 
 $PyRuleChar="=";
 ToPython@PyRule[a_,b_,rs:_String|Automatic:Automatic]:=
-  PyRow[{ToPython[a],Replace[rs,Automatic->$PyRuleChar],ToPython[b]}];
+  IfPS[
+    StringJoin@{ToPython[a],Replace[rs,Automatic->$PyRuleChar],ToPython[b]};,
+    PyRow[{ToPython[a],Replace[rs,Automatic->$PyRuleChar],ToPython[b]}]
+    ];
 ToPython@PyRule[a_->b_,rs:_String|Automatic:Automatic]:=
   ToPython@PyRule[a,b,rs];
 ToPython@PyRule[a_:>b_,rs:_String|Automatic:Automatic]:=
@@ -332,8 +348,10 @@ ToPython@PyRule[a_:>b_,rs:_String|Automatic:Automatic]:=
 
 
 ToPython[PyDict[l_List]]:=
-    ToPython@PySymbol["dict"][PyFor[]];
-  (*StringJoin@{"{ ",Riffle[Block[{$PyRuleChar=":"},ToPython/@Normal@l],", "]," }"};*)
+  IfPS[
+    StringJoin@{"{ ",Riffle[Block[{$PyRuleChar=":"}, ToPython/@Normal@l],", "]," }"},
+    ToPython@PySymbol["dict"][PyFor[]]
+    ];
 ToPython[PyDict[a_Association]]:=
   ToPython[PyDict[Normal@a]];
 
@@ -343,10 +361,13 @@ ToPython[PyDict[a_Association]]:=
 
 
 ToPython[PySequence[args_List]]:=
-  StringJoin@Riffle[ToPython/@args,", "];
+  IfPS[
+    StringJoin@Riffle[ToPython/@args,", "],
+    PyStar[args]
+    ];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*WL*)
 
 
@@ -438,7 +459,10 @@ ToPython[SlotSequence[n_]]:=
 
 
 ToPython@(p:PyRow[args_List,riffle:_String:""]):=
-  PyRow[ToPython/@args,riffle]
+  IfPS[
+    StringJoin@Riffle[ToPython/@args,riffle],
+    PyRow[ToPython/@args,riffle]
+    ]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -450,31 +474,23 @@ ToPython@(b:PyBlock[
   head_:Nothing,
   indent:_Integer:1,
   separator:_String:""
-  ][args:{__}]):=b;
-  Block[{$PyIndentLevel=$PyIndentLevel+indent},
-    PyBlock[
-      Replace[head,{
-        l_List:>
-            ToPython@PyRow[l],
-        e:Except[Nothing]:>
-            ToPython@e
-      }],
-      indent,
-      separator,
-      ToPython/@args
-    ]
-    (*StringJoin@Riffle[Flatten@{
-      Replace[head,{
-        l_List:>
-          ToPython@PyRow[l],
-        e:Except[Nothing]:>
-          ToPython@e
-        }],
-      ToPython/@args
-      },
-      separator<>"\n"<>If[$PyIndentLevel>0,StringRepeat["\t",$PyIndentLevel],""]
-      ]<>"\n"*)
-    ];
+  ][args:{__}]):=
+    IfPS[
+      Block[{$PyIndentLevel=$PyIndentLevel+indent},
+        StringJoin@Riffle[Flatten@{
+          Replace[head,{
+            l_List:>
+              ToPython@PyRow[l],
+            e:Except[Nothing]:>
+              ToPython@e
+            }],
+          ToPython/@args
+          },
+          separator<>"\n"<>If[$PyIndentLevel>0,StringRepeat["\t",$PyIndentLevel],""]
+          ]<>"\n"
+        ],
+      b
+      ];
 ToPython@PyBlock[e__][a:Except[_List],b___]:=
   ToPython@PyBlock[e][{a,b}];
 
@@ -569,7 +585,7 @@ PyAlias@PyGlobal[args__]:=
   PyCommand["global"][args];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Import*)
 
 
@@ -2207,7 +2223,7 @@ PyAlias@
     PyRaise[PyCall[tag][val]]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Fallbacks*)
 
 
@@ -2234,7 +2250,7 @@ PyAlias@(struct_?SymbolicPythonQ)[a___][b___][c___][d___]:=
 (*Usage*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Language Transformations*)
 
 
@@ -2248,7 +2264,10 @@ $PySymbolsContext=$Context;
 If[!ValueQ@$PyLangPreEvaluate,
   $PyLangPreEvaluate=
     {
-      
+      l_List:>
+        With[{d=Developer`ToPackedArray@l, uuid=CreateUUID[]},
+          $$blockDataBits[uuid]=d;$$$blockDataBit[uuid]/;Developer`PackedArrayQ[d]
+          ]
       }
 ]
 
@@ -2261,7 +2280,7 @@ If[!ValueQ@$PyLangTranslations,
 
 $PyLangTranslations=
   {
-  
+    
     Equal->PyEqual,
     Rule->Rule (* Just protecting it from later replacement *),
     Association->Association (* Just protecting it from later replacement *),
@@ -2445,7 +2464,7 @@ $PyLangTranslationSymbols=
     1]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Symbolic Python*)
 
 
@@ -2463,38 +2482,41 @@ ToSymbolicPython[symbols:{___Symbol}:{},expr_]:=
     ptCont=
       $PackageName<>"`*"
     },
-    ReleaseHold[
-      ReplaceRepeated[
-        ReplaceRepeated[Hold[expr], $PyLangPreEvaluate]/.
-          Join[syms,
-            {
-              p_PyString:>p (* Protects the inner string from further replacement *),
-              HoldPattern[String[s_]]:>PyString[s],
-              s_String?(Not@StringMatchQ[#,(WordCharacter|"_"|".")..]&):>
-                RuleCondition[
-                  PyString[s,
-                    If[Length@StringSplit[s,EndOfLine]>1,
-                      "'''",
-                      "'"
-                      ]
-                    ],
-                  True
-                  ]
-              }
-            ]/.
-          s_Symbol?(
-            Function[Null, 
-              !StringMatchQ[Context[#],ptCont]&&
-              !trfPat[#]&&(
-              System`Private`HasDownCodeQ[#]||
-              System`Private`HasUpCodeQ[#]||
-              !StringMatchQ[Context[#],"System`*"]
-              ),
-              HoldAllComplete
-              ]):>
-            PySymbol[s],
-        Dispatch@$PyLangTranslations
-        ]
+    Block[
+      { $$blockDataBits=<||> },
+      ReleaseHold[
+        ReplaceRepeated[
+          ReplaceRepeated[Hold[expr], $PyLangPreEvaluate]/.
+            Join[syms,
+              {
+                p_PyString:>p (* Protects the inner string from further replacement *),
+                HoldPattern[String[s_]]:>PyString[s],
+                s_String?(Not@StringMatchQ[#,(WordCharacter|"_"|".")..]&):>
+                  RuleCondition[
+                    PyString[s,
+                      If[Length@StringSplit[s,EndOfLine]>1,
+                        "'''",
+                        "'"
+                        ]
+                      ],
+                    True
+                    ]
+                }
+              ]/.
+            s_Symbol?(
+              Function[Null, 
+                !StringMatchQ[Context[#],ptCont]&&
+                !trfPat[#]&&(
+                System`Private`HasDownCodeQ[#]||
+                System`Private`HasUpCodeQ[#]||
+                !StringMatchQ[Context[#],"System`*"]
+                ),
+                HoldAllComplete
+                ]):>
+              PySymbol[s],
+          Dispatch@$PyLangTranslations
+          ]
+        ]/.PySymbol[$$$blockDataBit][PyString[k_, _]]:>$$blockDataBits[k]
       ]
     ];
 ToSymbolicPython~SetAttributes~HoldAll;

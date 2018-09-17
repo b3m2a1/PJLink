@@ -30,6 +30,7 @@
 #include <cerrno>
 #include <csignal>
 #include <cstdlib>
+#include <fcntl.h>
 
 #if defined(DARWIN_MATHLINK) || defined(X86_DARWIN_MATHLINK) || defined(X86_64_DARWIN_MATHLINK)
 #include <ApplicationServices/ApplicationServices.h>
@@ -225,8 +226,22 @@ int _MLDebugPrint(int level, const char *fmt, ...) {
     if (level <= ML_DEBUG_LEVEL) {
         va_list args;
         va_start(args, fmt);
+        // disable for standard debugging
+//        fflush(stdout);
+//        int fd = open(CUSTOM_STDOUT_FILE, O_APPEND | O_CREAT, 0644);
+//        if (fd == -1) {
+//            perror("open failed");
+//        }
+//        if (dup2(fd, STDOUT_FILENO) == -1) {
+//            perror("dup2 failed");
+//        }
+
         int res = vprintf(fmt, args);
         printf("\n");
+
+        fflush(stdout);
+//        close(fd);
+
         return res;
     } else {
         return 0;
@@ -251,9 +266,13 @@ int _MLDebugPrintNullLink(int level) {
 int _MLDebugPrintNullLink() {
     return _MLDebugMessage("Link is Null");
 }
-const char *_MLRepr(PyObject *o) {
+const char *_MLRepr(PyObject *o, PyObject *repr) {
     PyObject *tmp = PyObject_Repr(o);
-    PyObject *enc = PyUnicode_AsEncodedString(tmp, "utf8", "err~~");
+    PyObject *enc = PyUnicode_AsEncodedString(tmp, "utf-8", "strict");
+    if ( enc == NULL) {
+        Py_XDECREF(tmp);
+        return NULL;
+    }
     const char *str =  PyBytes_AsString(enc);
     Py_XDECREF(enc);
     Py_XDECREF(tmp);
@@ -261,8 +280,11 @@ const char *_MLRepr(PyObject *o) {
     return str;
 }
 int _MLDebugPrintObject(int lvl, PyObject *o){
-
-    return _MLDebugPrint(lvl, _MLRepr(o));
+    PyObject *repr = NULL;
+    const char * buff=_MLRepr(o, repr);
+    int res = _MLDebugPrint(lvl, buff);
+    Py_XDECREF(repr);
+    return res;
 }
 int _MLDebugPrintUserData(int lvl, struct cookie* userData) {
     if (lvl <= ML_DEBUG_LEVEL) {
@@ -295,18 +317,17 @@ int _MLSetError ( int err, PyObject *errMsgOut) {
     return res;
 }
 
-const char *_MLGetString( PyObject* s, const char *enc, const char *err) {
-    PyObject *pyStr;
+const char *_MLGetString( PyObject* s, const char *enc, const char *err, PyObject *pyStr) {
     pyStr = PyUnicode_AsEncodedString(s, enc, err);
     if (pyStr == NULL) return NULL;
     const char *strExcType =  PyBytes_AsString(pyStr);
-    Py_XDECREF(pyStr);
+//    Py_XDECREF(pyStr);
     return strExcType;
 }
-const char *_MLGetString( PyObject* s) {
-    return _MLGetString( s, "utf-8", "Error~");
+const char *_MLGetString( PyObject* s, PyObject *pyStr) {
+    return _MLGetString( s, "utf-8", "strict", pyStr);
 }
-const unsigned short *_MLGetUCS2String( PyObject* s, Py_ssize_t *len) {
+/*const unsigned short *_MLGetUCS2String( PyObject* s, Py_ssize_t *len) {
 //    PyObject *ucs2 = PyUnicode_AsEncodedString(s, "utf16", "Error~");
 //    if ( ucs2 == NULL) return NULL;
 //    const char *str =  PyBytes_AsString(ucs2);
@@ -326,7 +347,7 @@ const unsigned short *_MLGetUCS2String( PyObject* s, Py_ssize_t *len) {
     *len = PyObject_Size(s);
 //    Py_DECREF(ucs2);
     return buff;
-}
+}*/
 /*Useless _MLGetPythonUTF16String
 PyObject *_MLGetPythonUTF16String(const unsigned short *s, Py_ssize_t len) {
     unsigned short tmp_s[len+1];
@@ -348,13 +369,15 @@ PyObject *_MLGetPythonUTF16String(const unsigned short *s, Py_ssize_t len) {
     free(us);
     return str;
 }*/
-const char *_MLGetUTF8String( PyObject* s, Py_ssize_t *len) {
-    PyObject *pyStr;
-    pyStr = PyUnicode_AsEncodedString(s, "utf8", "Error~");
+const char *_MLGetUTF8String( PyObject* s, Py_ssize_t *len, PyObject *pyStr) {
+
+    pyStr = PyUnicode_AsEncodedString(s, "utf-8", "strict");
     if (pyStr == NULL) return NULL;
-    *len = PyObject_Size(pyStr);
+    *len = PyObject_Length(pyStr);
     const char *chars =  PyBytes_AsString(pyStr);
-    Py_XDECREF(pyStr);
+
+//    _MLDebugPrint(0, "Get UTF8 String:\n len %ld\n string:\n %s", *len, chars);
+
     return chars;
 }
 
@@ -392,7 +415,7 @@ PyObject *_MLDecodePythonUTF16(const unsigned short *s, Py_ssize_t len, Py_ssize
 }
 
 int _MLGetStringLength( PyObject* s, const char *enc, const char *err) {
-    PyObject *pyStr;
+    PyObject *pyStr = NULL;
     pyStr = PyUnicode_AsEncodedString(s, enc, err);
     int len = PyObject_Size(pyStr);
     Py_XDECREF(pyStr);
@@ -511,10 +534,16 @@ char _MLTypeChar(int type) {
 Py_buffer *_MLGetDataBuffer(PyObject *data) {
 
     Py_buffer view;
-    if (PyObject_CheckBuffer(data)) {
-        _MLDebugMessage(4, "Extracting data buffer");
-        PyObject_GetBuffer(data, &view, PyBUF_CONTIG_RO);
-    };
+    _MLDebugMessage(4, "Extracting data buffer");
+    PyObject_GetBuffer(data, &view, PyBUF_CONTIG_RO);
+//    if (PyObject_CheckBuffer(data)) {
+//        _MLDebugMessage(4, "Extracting data buffer");
+//        PyObject_GetBuffer(data, &view, PyBUF_CONTIG_RO);
+//    } else {
+//      PyObject *strBase = Py_BuildValue("s", "Object {} has no buffer");
+
+//      PyErr_SetString(PyExc_TypeError, "Object {} has no buffer");
+//    };
 
     return &view;
 
@@ -542,14 +571,14 @@ int _MLPutDataBuffer
 
     int flag = 1;
     switch (type) {
-        case 'i':
+        case 'i':{
             switch (size) {
                 case 4:{
-                    const int *c_data = _MLGetDataBufferArray<int> (view);
+                    const char *c_data = _MLGetDataBufferArray<char> (view);
                     if (c_data == NULL) {
                         flag = 0;
                     } else {
-                        MLPutIntegerArray(mlink, c_data, (const long *)dims, heads, depth);
+                        MLPutIntegerArray(mlink, (int *)c_data, (const long *)dims, heads, depth);
                     }
                     break;
                 }
@@ -590,12 +619,17 @@ int _MLPutDataBuffer
                     break;
                 }
                 default:{
+                    char *msg = (char *) malloc(250*sizeof(char));
+                    sprintf(msg, "don't know how to put array of type int%d on link", size);
+                    PyErr_SetString(PyExc_TypeError, msg);
+                    free(msg);
                     flag = 0;
                     break;
                 }
             }
             break;
-        case 'r':
+        }
+        case 'r':{
             switch (size) {
                 case 32:{
                     float *c_data = _MLGetDataBufferArray<float> (view);
@@ -625,11 +659,21 @@ int _MLPutDataBuffer
                     break;
                 }
                 default:{
+                    char *msg = (char *) malloc(250*sizeof(char));
+                    sprintf(msg, "don't know how to put array of type real%d on link", size);
+                    PyErr_SetString(PyExc_TypeError, msg);
+                    free(msg);
                     flag = 0;
                     break;
-                }
-         }
+                };
+            };
+            break;
+        }
         default:{
+            char *msg = (char *) malloc(250*sizeof(char));
+            sprintf(msg, "don't know how to put array of type %c%d on link", type, size);
+            PyErr_SetString(PyExc_TypeError, msg);
+            free(msg);
             flag = 0;
             break;
         }
@@ -963,15 +1007,17 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
             break;
         }
         case TYPE_STRING: {
-            const unsigned short *s;
+            const char *s;
             while ( (item = PyIter_Next(iterator)) ) {
                 Py_ssize_t len;
-                s = _MLGetUCS2String(item, &len);
+                PyObject *pyStr = NULL;
+                s = _MLGetUTF8String(item, &len, pyStr);
                 if (s != NULL) {
-                    MLPutUCS2String(mlink, s, len);
+                    MLPutUTF8String(mlink, reinterpret_cast<const unsigned char *>(s), len);
                 } else {
                     MLPutSymbol(mlink, "Null");
                 }
+                Py_XDECREF(pyStr);
                 Py_DECREF(item);
                 // PyMem_Free(s); // whenever _MLGetUCS2String is called we need this
             }
@@ -1167,9 +1213,11 @@ MLFUNCWITHARGS(MLOpen) {
         }
 
         // Add char* to argv
-        argstr=_MLGetString(item);
+        PyObject *pyStr = NULL;
+        argstr=_MLGetString(item, pyStr);
         if ( argstr == NULL ) return NULL;
         c_argv[i] = strdup(argstr);
+        Py_XDECREF(pyStr);
 
         // release reference when done
         Py_DECREF(item);
@@ -1290,10 +1338,13 @@ MLFUNCWITHARGS(MLSetEnvIDString) {
     PyObject *ml, *strObj;
     MLPARSEARGS("O", &ml, &strObj);
 
-    const char* id = _MLGetString(strObj);
+    PyObject *pyStr = NULL;
+    const char* id = _MLGetString(strObj, pyStr);
     if (id == NULL) {
+        Py_XDECREF(pyStr);
        return NULL;
     } else {
+       Py_XDECREF(pyStr);
        MLSetEnvIDString(gMLEnv, id);
     }
 
@@ -2102,14 +2153,18 @@ MLFUNCWITHARGS(MLPutString) {
 //            Py_ssize_t len;
 //            chars = _MLGetUCS2String(strObj, &len);
             Py_ssize_t len;
-            const unsigned char * chars = (unsigned char *) _MLGetUTF8String(strObj, &len);
+            PyObject *pyStr = NULL;
+            const char *chars = _MLGetUTF8String(strObj, &len, pyStr);
             if ( chars == NULL) {
+                Py_XDECREF(pyStr);
                 return NULL;
             };
             _MLDebugPrint(3, "Putting string of length %d on link MathLink(%p)", len, mlink);
 //            MLPutUTF16String(mlink, chars, len);
 //            MLPutUCS2String(mlink, chars, len);
-            MLPutUTF8String(mlink, chars, len);
+
+            MLPutUTF8String(mlink, reinterpret_cast<const unsigned char*>(chars), len);
+            Py_XDECREF(pyStr);
         }
     }
 
@@ -2200,9 +2255,10 @@ MLFUNCWITHARGS(MLPutByteString) {
     // Basic structure o be used whenever a link is needed
     PyObject *ml;
     Py_buffer bytes;
+    Py_ssize_t len;
     // This is dangerous but potentially very useful?
     // If the bytes object may be mutated this could be highly efficient
-    MLPARSEARGS("Oy*", &ml, &bytes);
+    MLPARSEARGS("Oy*n", &ml, &bytes, &len);
     MLINK mlink = _MLGetMLINK(ml);
     // Py_XDECREF(ml);
 
@@ -2211,7 +2267,9 @@ MLFUNCWITHARGS(MLPutByteString) {
     } else {
         const unsigned char *c_data;
         c_data = (const unsigned char *) bytes.buf;
-        Py_ssize_t len = bytes.len;
+        if ( len == 0 ) {
+            len = bytes.len;
+        }
         if (c_data == NULL) {
             _MLDebugMessage(4, "Got empty byte string");
             MLSetError(mlink, MLE_MEMORY);
@@ -2324,12 +2382,17 @@ MLFUNCWITHARGS(MLPutSymbol) {
 //            Py_ssize_t len = 0;
 //            chars = _MLGetUCS2String(strObj, &len);
             Py_ssize_t len;
-            const unsigned char * chars = (unsigned char *) _MLGetUTF8String(strObj, &len);
-            if (chars == NULL) return NULL;
+            PyObject *pyStr = NULL;
+            const char *chars = _MLGetUTF8String(strObj, &len, pyStr);
+            if ( chars == NULL) {
+                Py_XDECREF(pyStr);
+                return NULL;
+            };
             _MLDebugPrint(3, "Putting symbol of length %d on link MathLink(%p)", len, mlink);
 //            MLPutUTF16Symbol(mlink, chars, (int) len);
 //            MLPutUCS2Symbol(mlink, chars, (int) len);
-            MLPutUTF8Symbol(mlink, chars, len);
+            MLPutUTF8Symbol(mlink, reinterpret_cast<const unsigned char*>(chars), len);
+            Py_XDECREF(pyStr);
         }
     }
 
@@ -2527,13 +2590,16 @@ MLFUNCWITHARGS(MLCheckFunction) {
         _MLDebugMessage(3, "No function string found");
         MLRETURNINT(0);
     } else {
-        const char* f = _MLGetString(s);
+        PyObject *pyStr = NULL;
+        const char* f = _MLGetString(s, pyStr);
         if (f == NULL) {
             MLSetError(mlink, MLE_MEMORY);
+            Py_XDECREF(pyStr);
             MLRETURNINT(0);
         } else {
             long argCount = 0;
             MLCheckFunction(mlink, f, &argCount);
+            Py_XDECREF(pyStr);
             MLRETURNINT(argCount);
         }
     };
@@ -2583,13 +2649,16 @@ MLFUNCWITHARGS(MLCheckFunctionWithArgCount) {
         _MLDebugMessage(3, "Passed function was None");
         MLRETURNINT(0);
     } else {
-        const char* f = _MLGetString(s);
+        PyObject *pyStr = NULL;
+        const char* f = _MLGetString(s, pyStr);
         _MLDebugPrint(3, "Checking function %s with argcount %d", f, argCount);
         if (f == NULL) {
             MLSetError(mlink, MLE_MEMORY);
+            Py_XDECREF(pyStr);
             MLRETURNINT(0);
         } else {
             MLCheckFunction(mlink, f, &argCount);
+            Py_XDECREF(pyStr);
             MLRETURNINT(argCount);
         }
     };
@@ -2932,7 +3001,15 @@ MLFUNCWITHARGS(MLGetArray) {
             break;
         case TYPE_CHAR:
         case TYPE_INT:
+//            _MLDebugPrint(0, "Getting array of ints of depth %d", depth);
             res = MLGetInteger32Array(mlink, (int**) &data, &dims, &heads, &actualDepth);
+//            _MLDebugPrint(0, "Got array of ints of depth %d", actualDepth);
+//            for ( int i = 0; i < sizeof(dims) /sizeof(dims[0]); i++) {
+//                printf("%d ", dims[i]);
+//            }
+            break;
+        case TYPE_LONG:
+            res = MLGetInteger64Array(mlink, (mlint64**) &data, &dims, &heads, &actualDepth);
             break;
         case TYPE_FLOAT:
             res = MLGetReal32Array(mlink, (float**) &data, &dims, &heads, &actualDepth);
@@ -2987,6 +3064,9 @@ MLFUNCWITHARGS(MLGetArray) {
         case TYPE_INT:
             MLReleaseInteger32Array(mlink, (int*)data, dims, heads, actualDepth);
             break;
+        case TYPE_LONG:
+            MLReleaseInteger64Array(mlink, (mlint64*) data, dims, heads, actualDepth);
+            break;
         case TYPE_FLOAT:
             MLReleaseReal32Array(mlink, (float*)data, dims, heads, actualDepth);
             break;
@@ -2998,6 +3078,8 @@ MLFUNCWITHARGS(MLGetArray) {
     // Py_DECREF(headsArray);
 
     MLCHECKERROR();
+
+//    _MLDebugMessage(0, "Returning array?");
 
     return retval;
 }
@@ -3173,6 +3255,7 @@ MLFUNCWITHARGS(MLPutArrayFlat){
 
     if (mlink == 0) {
         _MLDebugPrintNullLink(3);
+        PyErr_SetString(PyExc_ValueError, "MathLink is NULL");
         return NULL;
     } else if (data == Py_None) {
         PyErr_SetString(PyExc_TypeError, "object 'None' is not an array");
@@ -3186,8 +3269,15 @@ MLFUNCWITHARGS(MLPutArrayFlat){
             if ( s == NULL ) {
                 return NULL;
             };
-            const char *p = _MLGetString(s);
+            PyObject *pyStr = NULL;
+            const char* p = _MLGetString(s, pyStr);
+            if ( p == NULL) {
+                Py_XDECREF(pyStr);
+                Py_XDECREF(s);
+                return NULL;
+            }
             strncpy(c_heads[i], p, 255);
+            Py_XDECREF(pyStr);
             c_heads[i][255] = 0;
             Py_DECREF(s);
         }
@@ -3239,7 +3329,10 @@ MLFUNCWITHARGS(MLPutArrayFlat){
 
     // Py_DECREF(data);
 
-    if (!flag) return NULL;
+    if (!flag) {
+        PyErr_SetString(PyExc_ValueError, "failed to put data buffer onto link");
+        return NULL;
+    };
     Py_RETURN_NONE;
 
 }
@@ -3437,10 +3530,12 @@ MLFUNCWITHARGS(MLPutArray) {
         _MLDebugPrint(4, "Putting array of type %d onto the link", type);
 
         if ( head != Py_None ) {
-            const char *p = _MLGetString(head);
+            PyObject *pyStr = NULL;
+            const char* p = _MLGetString(head, pyStr);
             strncpy(c_head, p == NULL ? "List" : p, 255);
             c_head[255] = 0;
             _MLDebugPrint(4, "Proper head %s was found", c_head);
+            Py_XDECREF(pyStr);
             // Py_DECREF(head);
         } else {
             _MLDebugMessage(4, "None head found. Using 'List'");

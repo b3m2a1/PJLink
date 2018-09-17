@@ -2,6 +2,16 @@ from PJLink import *
 
 #########################################################################################################
 
+from PJLink.HelperClasses import *
+
+dims = [5, 3, 2, 5]
+size = 1
+for d in dims:
+    size *= d
+barr = BufferedNDArray.from_iterable(range(size), dims)
+
+#########################################################################################################
+
 # link = create_math_link(debug_level=3)
 # link.connect()
 # print("Error:", link._error())
@@ -32,14 +42,14 @@ from PJLink import *
 
 #########################################################################################################
 
-reader = create_reader_link()
-link = reader.link
-link.drain()
-def test_call():
-    return link.evaluate(link.M.ToExpression("LinkWrite[Links[][[1]], CallPacket[1, 1]]"))
-def test_eval(evstr):
-    return link.evaluate(link.M.ToExpression('LinkWrite[Links[][[1]], CallPacket[1, "Evaluate"@"{}"]]'.format(evstr)))
-# print(test_call())
+# reader = create_reader_link()
+# link = reader.link
+# link.drain()
+# def test_call():
+#     return link.evaluate(link.M.ToExpression("LinkWrite[Links[][[1]], CallPacket[1, 1]]"))
+# def test_eval(evstr):
+#     return link.evaluate(link.M.ToExpression('LinkWrite[Links[][[1]], CallPacket[1, "Evaluate"@"{}"]]'.format(evstr)))
+# # print(test_call())
 
-import code;
+import code
 code.interact(banner = "", local=locals())

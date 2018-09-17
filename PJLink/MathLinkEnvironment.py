@@ -2,6 +2,7 @@
 
 """
 from decimal import Decimal as decimal
+import os
 
 ##############################################################################################
 #                                                                                            #
@@ -337,6 +338,8 @@ class MathLinkEnvironment:
 
     if HAS_NUMPY:
         del np
+
+    LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log.txt")
 
     def __init__(self):
         raise TypeError("{} is a standalone class and cannot be instantiated".format(type(self).__name__))
@@ -705,3 +708,11 @@ class MathLinkEnvironment:
             raise ValueError("Couldn't find binary for platform {} ({} is not a file)".format(plat, bin))
 
         return bin
+
+    @classmethod
+    def log(cls, *expr):
+        mode = "w+"
+        if os.path.isfile(cls.LOG_FILE):
+            mode = "a"
+        with open(cls.LOG_FILE, mode) as logger:
+            print(*expr, file=logger)

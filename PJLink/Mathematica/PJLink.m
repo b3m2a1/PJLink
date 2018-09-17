@@ -1,5 +1,9 @@
 (* ::Package:: *)
 
+(* ::Section:: *)
+(*PJLink*)
+
+
 (* Mathematica Package *)
 (* Created by Mathematica Plugin for IntelliJ IDEA *)
 
@@ -12,14 +16,28 @@
 (* :Keywords: *)
 (* :Discussion: *)
 
+
+(* ::Subsection:: *)
+(*PJLink*)
+
+
 BeginPackage["PJLink`"]
 (* Exported symbols added here with SymbolName::usage *)
 
 InstallPython::usage="InstallPython[] Loads and installs a python kernel link";
 FindPython::usage="FindPython[] finds an installed python kernel";
 ClosePython::usage="ClosePython[] closes a python kernel";
-PyEvaluate::usage"PyEval[] Evaluates code on the python side";
+PyEvaluate::usage="PyEval[] evaluates code on the python side";
 PyEvaluateString::usage="PyEval[] Evaluates a code string on the python side";
+PyWrite::usage="PyWrite[] writes a command to the python stdin";
+PyWriteString::usage="PyWriteString[] writes a command string to the python stdin";
+PyRead::usage="PyRead[] reads from the python stdout";
+PyReadErr::usage="PyRead[] reads from the python stderr";
+
+
+(* ::Subsubsection::Closed:: *)
+(* Package*)
+
 
 BeginPackage["`Package`"]
 
@@ -31,17 +49,37 @@ CallPythonPacket::usage="A packet of info for python on what to call";
 
 EndPackage[]
 
+
+(* ::Subsubsection::Closed:: *)
+(*SymbolicPython*)
+
+
 BeginPackage["`SymbolicPython`"]
 
 Get@FileNameJoin@{DirectoryName@$InputFileName, "SymbolicPython.m"};
 
 EndPackage[]
 
+
+(* ::Subsection:: *)
+(*Private*)
+
+
 Begin["`Private`"]
+
+
+(* ::Subsubsection::Closed:: *)
+(*$PythonKernels*)
+
 
 If[Not@AssociationQ@$PythonKernels,
   $PythonKernels=<||>
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Bin Stuff*)
+
 
 pjlinkDir = Nest[DirectoryName, $InputFileName, 2];
 
@@ -73,6 +111,11 @@ $pySessionPathExtension = (* I need this because Mathematica's $PATH isn't quit 
       ""
     ]
 
+
+(* ::Subsubsection:: *)
+(*InstallPython*)
+
+
 (*
   I have plans to come back and clean this up a bunch but for now this is what it is
   It's pretty trivial and simple, but it gets the job done
@@ -81,53 +124,90 @@ If[!AssociationQ@$DefaultPythonKernel,
   $DefaultPythonKernel = None
   ];
 $defaultPython = "python3";
+Options[InstallPython] = 
+  Join[
+    {
+      LinkProtocol->Automatic,
+      "LinkName"->Automatic,
+      "Blocking"->True,
+      "DebugLevel"->0
+      },
+    Options[StartProcess]
+    ];
 InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[]]:=
     Module[
       {
         pyExe,
-        pyKer = <||>,
-        link
+        pyKer = FindPython[version],
+        link,
+        lname = Replace[OptionValue["LinkName"], Except[String]:>Sequence@@{}]
       },
-
-      If[!KeyExistsQ[$PythonKernels, version],
-        $PythonKernels[version] = {}
-      ];
-      link = LinkCreate[];
-      pyExe =
-        Which[
-          NumberQ@version,
-            "python"<>ToString[version],
-          StringQ@version && FileExistsQ@version,
-            version,
-          StringQ@version && !StringStartsQ[version, "python"],
-            "python"<>version,
-          Not@StringQ@version,
-            $defaultPython,
-          True,
-            version
+      If[!AssociationQ@pyKer,
+        pyKer=<||>;
+        If[!KeyExistsQ[$PythonKernels, version],
+          $PythonKernels[version] = {}
           ];
-      pyKer["Python"]  = pyExe;
-      pyKer["Link"]    = link;
-      pyKer["Name"]    = link[[1]];
-      pyKer["Process"] =
+        link = 
+          LinkCreate[
+            lname,
+            FilterRules[{ops}, {LinkProtocol}]
+            ];
+        pyExe =
+          Which[
+            NumberQ@version,
+              "python"<>ToString[version],
+            StringQ@version && FileExistsQ@version,
+              version,
+            StringQ@version && !StringStartsQ[version, "python"],
+              "python"<>version,
+            Not@StringQ@version,
+              $defaultPython,
+            True,
+              version
+            ];
+        pyKer["Python"]  = pyExe;
+        pyKer["Link"]    = link;
+        pyKer["Name"]    = link[[1]];
+        pyKer["Process"] =
           StartProcess[
-            {pyExe, startKernelPy, "-b", "-linkmode", "connect", "-linkname", pyKer["Name"] },
             {
-              If[$OperatingSystem =!= "Windows",
-                ProcessEnvironment ->
-                    <|
-                      "PATH" -> $pySessionPathExtension <> Environment["PATH"]
-                    |>,
-                Nothing
-              ],
-              ProcessDirectory -> pjlinkDir
-            }
-          ];
-      AppendTo[$PythonKernels[version], pyKer];
-      If[!AssociationQ@$DefaultPythonKernel, $DefaultPythonKernel=pyKer];
-      LinkWrite[pyKer["Link"],  InputNamePacket["In[1]:="]];
-      pyKer
-    ]
+              pyExe, 
+              startKernelPy, 
+              "--blocking="<>ToString@TrueQ@OptionValue["Blocking"],
+              "--debug="<>ToString@OptionValue["DebugLevel"],
+              "-linkmode", "connect",
+              "-linkname", pyKer["Name"] 
+              },
+            FilterRules[
+              {
+                ops,
+                If[$OperatingSystem =!= "Windows",
+                  ProcessEnvironment ->
+                      <|
+                        "PATH" -> $pySessionPathExtension <> Environment["PATH"]
+                      |>,
+                  Nothing
+                ],
+                ProcessDirectory -> pjlinkDir
+                },
+              Options@StartProcess
+              ]
+            ];
+        AppendTo[$PythonKernels[version], pyKer];
+        If[!AssociationQ@$DefaultPythonKernel, $DefaultPythonKernel=pyKer];
+        LinkWrite[pyKer["Link"],  InputNamePacket["In[1]:="]]
+        ];
+      If[PyEvaluate[version, "'Init'", TimeConstraint->2]===$Aborted,
+        ClosePython[version];
+        $Failed,
+        pyKer
+        ]
+      ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*FindPython*)
+
 
 FindPython[version:_?NumberQ|_String|Automatic:Automatic]:=
     Replace[$PythonKernels[version],
@@ -136,6 +216,11 @@ FindPython[version:_?NumberQ|_String|Automatic:Automatic]:=
         _->None
         }
       ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*ClosePython*)
+
 
 ClosePython[version:_?NumberQ|_String|Automatic:Automatic]:=
     With[{ker = FindPython[version]},
@@ -147,36 +232,60 @@ ClosePython[version:_?NumberQ|_String|Automatic:Automatic]:=
         ]
       ];
       
+
+
+(* ::Subsubsection::Closed:: *)
+(*pyEvalPacket*)
+
+
 pyEvalPacket[link_, packet_, timeout_:10]:=
     Module[{pkt = packet, start = Now, to = Quantity[timeout, "Seconds"], res},
-    
-      (*AbortProtect*)Identity[
-        While[Now - start < to,
-          If[
-            SameQ[LinkWrite[link, pkt], $Failed],
-            Return[$Failed]
-          ];
-          res = TimeConstrained[LinkRead[link, HoldComplete], timeout];
-          Switch[res,
-            HoldComplete @ EvaluatePacket @ _,
-              pkt = ReturnPacket[CheckAbort[res[[1, 1]], $Aborted]],
-            HoldComplete @ ReturnPacket @ _,
-              Return[res[[1, 1]]],
-            HoldComplete @ _Sequence,
-              sequenceResult = res[[1]];
-              Break[],
-            HoldComplete @ _,
-              Return[res[[1]]],
-            _,
-              Return[res]
-            ]
+      While[Now - start < to,
+        If[SameQ[LinkWrite[link, pkt], $Failed], Return[$Failed]];
+        res = TimeConstrained[LinkRead[link, HoldComplete], timeout];
+        Switch[res,
+          HoldComplete @ EvaluatePacket @ _,
+            pkt = ReturnPacket[CheckAbort[res[[1, 1]], $Aborted]],
+          HoldComplete @ ReturnPacket @ _,
+            Return[res[[1, 1]]],
+          HoldComplete @ _Sequence,
+            sequenceResult = res[[1]];
+            Break[],
+          HoldComplete @ _,
+            Return[res[[1]]],
+          _,
+            Return[res]
           ]
-        ]
+        ];
+      sequenceResult
       ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*cleanUpEnv*)
+
+
+cleanUpEnv//Clear
+
+
+(*cleanUpEnv[pker_, version_, $Aborted]:=
+  If[(
+      Quiet[MatchQ[MathLink`LinkDeviceInformation[pker["Link"]],{Rule__}]] || 
+      ProcessStatus@pker["Process"]==="Finished"
+      ), 
+    ClosePython[version],
+    $Aborted
+    ];*)
+cleanUpEnv[_, _, p_]:=p
+
+
+(* ::Subsubsection::Closed:: *)
+(*Evaluate*)
+
 
 Options[PyEvaluate] = 
   {
-    TimeConstraint->10,
+    TimeConstraint->5,
     Version->Automatic,
     "EchoSymbolicForm"->False
     };
@@ -189,17 +298,24 @@ PyEvaluate[expr_, ops:OptionsPattern[]]:=
         cm,
         to = If[NumericQ@OptionValue[TimeConstraint], OptionValue[TimeConstraint], 10]
       },
-      sym = ToPython@ToSymbolicPython[expr];
-      If[OptionValue@"EchoSymbolicForm", Echo@sym];
-      link = pker["Link"];
-      Internal`WithLocalSettings[
-        cm = Internal`$ContextMarks;
-        Internal`$ContextMarks = False,
-        pyEvalPacket[link, CallPacket[1, sym], to],
-        Internal`$ContextMarks = cm
+      If[AssociationQ@pker,
+        sym = ToPython@ToSymbolicPython[expr];
+        If[OptionValue@"EchoSymbolicForm", Echo@sym];
+        link = pker["Link"];
+        cleanUpEnv[
+          pker, 
+          OptionValue["Version"],
+          pyEvalPacket[link, CallPacket[1, sym], to]
+          ],
+        $Failed (* TODO: Throw a message... *)
         ]
       ];
 PyEvaluate~SetAttributes~HoldFirst;
+
+
+(* ::Subsubsection::Closed:: *)
+(*EvaluateString*)
+
 
 Options[PyEvaluateString] = 
   {
@@ -214,9 +330,105 @@ PyEvaluateString[expr_, ops:OptionsPattern[]]:=
         sym,
         to = If[NumericQ@OptionValue[TimeConstraint], OptionValue[TimeConstraint], 10]
       },
-      link = pker["Link"];
-      pyEvalPacket[link, CallPacket[1, "Evaluate"@expr], to] (* this is a hack but ah well *)
+      If[AssociationQ@pker,
+        link = pker["Link"];
+        cleanUpEnv[
+            pker, 
+            OptionValue["Version"],
+            pyEvalPacket[link, CallPacket[1, "Evaluate"@expr], to] (* this is a hack but ah well *)
+            ],
+        $Failed
+        ]
     ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Write*)
+
+
+Options[PyWrite]=
+  {
+    Version->Automatic
+    };
+PyWrite[expr_, ops:OptionsPattern[]]:=
+  Module[
+      {
+        pker = FindPython[OptionValue[Version]],
+        cmd
+        },
+      If[AssociationQ@pker,
+        Block[{$ToPythonStrings=True},
+          cmd = TToPython@ToSymbolicPython[pker]
+          ];
+        WriteLine[pker["Process"], cmd],
+        $Failed
+        ]
+      ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*WriteString*)
+
+
+Options[PyWriteString]=
+  {
+    Version->Automatic
+    };
+PyWriteString[cmd_, ops:OptionsPattern[]]:=
+  Module[
+      {
+        pker = FindPython[OptionValue[Version]]
+        },
+      If[AssociationQ@pker,
+        WriteLine[pker["Process"], cmd],
+        $Failed
+        ]
+      ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Read*)
+
+
+Options[PyRead]=
+  {
+    Version->Automatic
+    };
+PyRead[ops:OptionsPattern[]]:=
+  Module[
+      {
+        pker = FindPython[OptionValue[Version]]
+        },
+      If[AssociationQ@pker,
+        ReadString[pker["Process"], EndOfBuffer],
+        $Failed
+        ]
+      ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ReadErr*)
+
+
+Options[PyReadErr]=
+  {
+    Version->Automatic
+    };
+PyReadErr[ops:OptionsPattern[]]:=
+  Module[
+      {
+        pker = FindPython[OptionValue[Version]]
+        },
+      If[AssociationQ@pker,
+        ReadString[ProcessConnection[pker["Process"], "StandardError"], EndOfBuffer],
+        $Failed
+        ]
+      ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*AddTypeHints*)
+
 
 AddTypeHints[eval_] :=
     Block[{expr = eval},
@@ -226,6 +438,11 @@ AddTypeHints[eval_] :=
         expr
         ]
       ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*End*)
+
 
 End[] (* `Private` *)
 
