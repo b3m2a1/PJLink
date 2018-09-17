@@ -112,7 +112,7 @@ $pySessionPathExtension = (* I need this because Mathematica's $PATH isn't quit 
     ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*InstallPython*)
 
 
@@ -197,7 +197,7 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
         If[!AssociationQ@$DefaultPythonKernel, $DefaultPythonKernel=pyKer];
         LinkWrite[pyKer["Link"],  InputNamePacket["In[1]:="]]
         ];
-      If[PyEvaluate[version, "'Init'", TimeConstraint->2]===$Aborted,
+      If[PyEvaluate[version, "'Init'", TimeConstraint->10]===$Aborted,
         ClosePython[version];
         $Failed,
         pyKer
