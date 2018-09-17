@@ -5,19 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/HelperClasses.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/HelperClasses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/KernelLink.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/KernelLink.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/MathLink.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/MathLink.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/Mathematica/PJLink.m" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/Mathematica/PJLink.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/Mathematica/SymbolicPython.m" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/Mathematica/SymbolicPython.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/NativeLink.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/NativeLink.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/Reader.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/Reader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/start_kernel.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/start_kernel.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PJLink/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PJLink/project/README.nb" beforeDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -87,7 +76,7 @@
         <entry file="file://$PROJECT_DIR$/test.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="90">
-              <caret line="6" column="19" lean-forward="true" selection-start-line="6" selection-start-column="19" selection-end-line="6" selection-end-column="19" />
+              <caret line="6" column="19" selection-start-line="6" selection-start-column="19" selection-end-line="6" selection-end-column="19" />
               <folding>
                 <element signature="e#0#20#0" expanded="true" />
                 <marker date="1537144141098" expanded="true" signature="389:840" ph="..." />
@@ -102,7 +91,7 @@
         <entry file="file://$PROJECT_DIR$/PJLink/KernelLink.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="62">
-              <caret line="50" lean-forward="true" selection-start-line="50" selection-end-line="50" />
+              <caret line="50" selection-start-line="50" selection-end-line="50" />
               <folding>
                 <element signature="e#0#30#0" expanded="true" />
                 <marker date="1537142691177" expanded="true" signature="619:620" ph="..." />
@@ -152,8 +141,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/PJLink/HelperClasses.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="220">
-              <caret line="246" column="31" lean-forward="true" selection-start-line="246" selection-start-column="31" selection-end-line="246" selection-end-column="31" />
+            <state relative-caret-position="205">
+              <caret line="245" column="42" selection-start-line="245" selection-start-column="42" selection-end-line="245" selection-end-column="42" />
               <folding>
                 <element signature="e#81#140#0" expanded="true" />
                 <element signature="e#24612#24731#0" />
@@ -309,7 +298,7 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
+  <component name="ProjectFrameBounds" extendedState="1">
     <option name="x" value="332" />
     <option name="y" value="23" />
     <option name="width" value="1108" />
@@ -483,7 +472,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="332" y="23" width="1108" height="877" extended-state="0" />
+    <frame x="332" y="23" width="1108" height="877" extended-state="1" />
     <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.23545966" />
@@ -494,7 +483,7 @@
       <window_info anchor="bottom" id="Message" order="1" />
       <window_info anchor="bottom" id="Find" order="2" weight="0.32866243" />
       <window_info anchor="bottom" id="Run" order="3" weight="0.28535032" />
-      <window_info active="true" anchor="bottom" id="Debug" order="4" sideWeight="0.4990619" visible="true" weight="0.35923567" />
+      <window_info anchor="bottom" id="Debug" order="4" sideWeight="0.4990619" weight="0.35923567" />
       <window_info anchor="bottom" id="Cvs" order="5" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="6" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="7" weight="0.32866243" />
@@ -902,7 +891,7 @@ print(link._error())</expression-string>
     <entry file="file://$PROJECT_DIR$/test.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="90">
-          <caret line="6" column="19" lean-forward="true" selection-start-line="6" selection-start-column="19" selection-end-line="6" selection-end-column="19" />
+          <caret line="6" column="19" selection-start-line="6" selection-start-column="19" selection-end-line="6" selection-end-column="19" />
           <folding>
             <element signature="e#0#20#0" expanded="true" />
             <marker date="1537144141098" expanded="true" signature="389:840" ph="..." />
@@ -915,7 +904,7 @@ print(link._error())</expression-string>
     <entry file="file://$PROJECT_DIR$/PJLink/KernelLink.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="62">
-          <caret line="50" lean-forward="true" selection-start-line="50" selection-end-line="50" />
+          <caret line="50" selection-start-line="50" selection-end-line="50" />
           <folding>
             <element signature="e#0#30#0" expanded="true" />
             <marker date="1537142691177" expanded="true" signature="619:620" ph="..." />
@@ -930,8 +919,8 @@ print(link._error())</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/HelperClasses.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="220">
-          <caret line="246" column="31" lean-forward="true" selection-start-line="246" selection-start-column="31" selection-end-line="246" selection-end-column="31" />
+        <state relative-caret-position="205">
+          <caret line="245" column="42" selection-start-line="245" selection-start-column="42" selection-end-line="245" selection-end-column="42" />
           <folding>
             <element signature="e#81#140#0" expanded="true" />
             <element signature="e#24612#24731#0" />
