@@ -4,11 +4,13 @@ from PJLink import *
 
 from PJLink.HelperClasses import *
 
-dims = [5, 3, 2, 5]
-size = 1
-for d in dims:
-    size *= d
-barr = BufferedNDArray.from_iterable(range(size), dims)
+# dims = [5, 3, 2, 5]
+# size = 1
+# for d in dims:
+#     size *= d
+# barr = BufferedNDArray.from_iterable(range(size), dims)
+
+M = MPackage
 
 #########################################################################################################
 

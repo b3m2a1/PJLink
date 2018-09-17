@@ -20,6 +20,7 @@ MLFunction         = namedtuple("MLFunction",         ["head", "argCount"])
 # expr_repr.name = "__repr__"
 # MLExpr.__repr__ = expr_repr
 # del expr_repr
+###############################################################################################
 #                                            MLExpr                                           #
 MLExpr             = namedtuple("MLExpr",             ["head", "args", "end"])
 MLExpr.__new__.__defaults__ = (False,)
@@ -28,7 +29,7 @@ def expr_repr(expr):
 expr_repr.name = "__repr__"
 MLExpr.__repr__ = expr_repr
 del expr_repr
-
+###############################################################################################
 #                                            MLSym                                            #
 MLSym              = namedtuple("MLSym",              ["name"]            )
 def sym_repr(sym):
@@ -36,7 +37,11 @@ def sym_repr(sym):
 sym_repr.name = "__repr__"
 MLSym.__repr__ =sym_repr
 del sym_repr
-
+def call_sym(sym, *args, **kwargs):
+    return MExprUtils.F(sym.name, *args, **kwargs)
+MLSym.__call__=call_sym
+del call_sym
+###############################################################################################
 #                                            MLUnevaluated                                    #
 MLUnevaluated      = namedtuple("MLUnevaluated",      ["arg"]             )
 def uneval_repr(uneval):
@@ -44,10 +49,10 @@ def uneval_repr(uneval):
 uneval_repr.name = "__repr__"
 MLUnevaluated.__repr__ = uneval_repr
 del uneval_repr
-
+###############################################################################################
 #                                            PacketArrivedEvent                               #
 PacketArrivedEvent = namedtuple("PacketArrivedEvent", ["packet", "link"]  )
-
+###############################################################################################
 #                                            MsgHandlerRecord                                 #
 MsgHandlerRecord   = namedtuple("MsgHandlerRecord",   ["method", "target"])
 
@@ -579,8 +584,6 @@ This includes things like getting array dimensions, casts to BufferedNDArray, ty
 
         return depth
 
-
-
 ###############################################################################################
 #                                                                                             #
 #                                        MExprUtils                                           #
@@ -654,6 +657,12 @@ for the JLink package on the Mathematica side
                         rhead = "SetDelayed"
                     opts[i] = MLExpr(rhead, (key, val))
         return cls.List(*opts)
+
+    @classmethod
+    def _symbol(cls, name):
+        return MLSym(name)
+    S =  _symbol
+
     @classmethod
     def _function(cls, head, *args, **kwargs):
         """Unwraps into a function call
@@ -781,6 +790,12 @@ for the JLink package on the Mathematica side
             expr
         )
 
+    None_ = MLSym("None")
+    Failed_ = MLSym("$Failed")
+    Aborted_ = MLSym("$Aborted")
+    Canceled_ = MLSym("$Canceled")
+
+
     @classmethod
     def register_symbol(cls, name):
         import re
@@ -798,6 +813,9 @@ for the JLink package on the Mathematica side
         :return:
         """
         import re
+
+        if hasattr(cls, fname):
+            return None
 
         sym_re    = "([^\W\d_])+"
         sym_re    = re.compile(sym_re, re.U)
@@ -860,22 +878,21 @@ def template_classmethod(clas{}):
             template_classmethod.__name__ = fname
             setattr(cls, fname, template_classmethod)
 
+###############################################################################################
+#                                                                                             #
+#                                     MExprUtilsConfig                                        #
+#                                                                                             #
+###############################################################################################
+
 MExprUtils.register_function("Needs", "pkg", "file___")
 MExprUtils.register_function("Get", "pkg")
 MExprUtils.register_function("Import", "file", "fmt___", OptionsPattern=True)
 MExprUtils.register_function("Export", "file", "expr", "fmt___", OptionsPattern=True)
 MExprUtils.register_function("ExportString", "expr", "fmt___", OptionsPattern=True)
 
-MExprUtils.register_symbol("True")
-MExprUtils.register_symbol("False")
-MExprUtils.register_symbol("Null")
-MExprUtils.register_symbol("Automatic")
-
+MExprUtils.register_function("Which", "test1", "body1", "testBodies___")
 MExprUtils.register_function("Switch", "type", "pat1", "body1", "patBodies___")
 MExprUtils.register_function("If", "test", "true", "false", "indet___")
-MExprUtils.register_function("Greater", "a", "b")
-MExprUtils.register_function("Less", "a", "b")
-MExprUtils.register_function("Less", "a", "b")
 
 MExprUtils.register_function("Names", 'pat', IgnoreCase_=None, SpellingCorrection_=None)
 MExprUtils.register_function("ToString", 'expr', FormatType_=None, PageWidth_=None, OptionsPattern=True)
@@ -896,35 +913,39 @@ for pkt in (
     ):
     MExprUtils.register_function(pkt+"Packet", "expr___")
 
-
 ###############################################################################################
 #                                                                                             #
 #                                        MPackage                                             #
 #                                                                                             #
 ###############################################################################################
 
-class MPackage(MExprUtils):
+class MPackageClass(MExprUtils):
     """MPackage is a class that holds high-level package functions lifted from JLink for use in PJLink
 
     """
 
     JLinkContext           = "JLink`"
     JLinkEvaluateToContext = JLinkContext + "EvaluateTo`"
+    __The_One_True_Package = None
 
-    @classmethod
-    def _add_type_hints(cls, to_eval):
+    def __init__(self):
+        if self.__The_One_True_Package is not None:
+            raise TypeError("MPackageClass is not intended to be a single instance class")
+        self.__The_One_True_Package = self
+
+    def _add_type_hints(self, to_eval):
         expr = MLSym("expr")
-        return cls.in_package(
-            cls.Block(
+        return self.in_package(
+            self.Block(
                 [ "expr" ],
-                cls.Set(expr, cls.F("Developer`ToPackedArray", to_eval)),
-                cls.If(
-                    cls.F("Developer`PackedArrayQ", expr),
-                    cls.F(cls.PackagePackage+"PackedArrayInfo",
+                self.Set(expr, self.F("Developer`ToPackedArray", to_eval)),
+                self.If(
+                    self.F("Developer`PackedArrayQ", expr),
+                    self.F(self.PackagePackage+"PackedArrayInfo",
                         # type
-                        cls.F("Head", cls.F("Extract", expr, cls.F("Table", 1, cls.List(cls.F("ArrayDepth", expr))))),
+                        self.F("Head", self.F("Extract", expr, self.F("Table", 1, self.List(self.F("ArrayDepth", expr))))),
                         # dimensions
-                        cls.F("Dimensions", expr),
+                        self.F("Dimensions", expr),
                         # data
                         expr
                     ),
@@ -932,12 +953,11 @@ class MPackage(MExprUtils):
                 )
             )
         )
-    @classmethod
-    def _eval(cls, expr, add_type_hints = True):
-        return cls.EvaluatePacket(expr, _EndPacket=True)
 
-    @classmethod
-    def __get_evaluate_to_parameters(cls, obj, page_width, format):
+    def _eval(self, expr, add_type_hints = True):
+        return self.EvaluatePacket(expr, _EndPacket=True)
+
+    def __get_evaluate_to_parameters(self, obj, page_width, format):
         import math
 
         if page_width is None:
@@ -956,14 +976,12 @@ class MPackage(MExprUtils):
         if not isinstance(format, str):
             raise TypeError("Format type should be a string instead of {}".format(format))
 
-        return cls.ToExpression(obj) if isinstance(obj, str) else obj, page_width, MLSym(format)
+        return self.ToExpression(obj) if isinstance(obj, str) else obj, page_width, MLSym(format)
 
-    @classmethod
-    def _load_JLink_packet(cls):
-        return cls._eval(cls.Needs(cls.JLinkContext))
+    def _load_JLink_packet(self):
+        return self._eval(self.Needs(self.JLinkContext))
 
-    @classmethod
-    def _to_cell_expr(cls, obj, page_width = None, format = None, **kw):
+    def _to_cell_expr(self, obj, page_width = None, format = None, **kw):
         """Python rep of:
             Block[
                 {$DisplayFunction = Identity, expr, pWidth},
@@ -984,32 +1002,30 @@ class MPackage(MExprUtils):
                 ]
             ];
         """
-        obj, page_width, format = cls.__get_evaluate_to_parameters(obj, page_width, format)
+        obj, page_width, format = self.__get_evaluate_to_parameters(obj, page_width, format)
         expr = MLSym("expr")
         kw.update(ShowCellBracket_=False, CellMargins_=[[0, 0], [0, 0]], PageWidth_=page_width)
-        return cls.Block(
+        return self.Block(
             {
                 "$DisplayFunction_" : MLSym("Identity"),
                 "expr"   : None
             },
-            cls.Set(expr, obj),
-            cls.Switch(expr,
-                cls.Blank("Cell"),    expr,
-                cls.Blank("BoxData"), cls.F("Cell", expr, "Output", *kw),
-                cls.Blank(),          cls.F("Cell", cls.ToBoxes(expr, format), "Output", *kw)
-                )
+            self.Set(expr, obj),
+            self.Switch(expr,
+                self.Blank("Cell"),    expr,
+                self.Blank("BoxData"), self.F("Cell", expr, "Output", *kw),
+                self.Blank(),          self.F("Cell", self.ToBoxes(expr, format), "Output", *kw)
+             )
         )
 
-    @classmethod
-    def _front_end_shared_q(cls):
-        return cls.F("SameQ", cls.F("Head", MLSym("MathLink`ServiceLink")), MLSym("LinkObject"))
+    def _front_end_shared_q(self):
+        return self.F("SameQ", self.F("Head", MLSym("MathLink`ServiceLink")), MLSym("LinkObject"))
 
-    @classmethod
-    def _eval_to_string(cls, obj, page_width=None, format=None, **ops):
-        obj, page_width, format = cls.__get_evaluate_to_parameters(obj, page_width, format)
-        return cls.ToString(obj, FormatType = format, PageWidth = page_width, **ops)
-    @classmethod
-    def _eval_to_typset_string(cls, obj, page_width = None, format = None, export_format = None, **kw):
+    def _eval_to_string(self, obj, page_width=None, format=None, **ops):
+        obj, page_width, format = self.__get_evaluate_to_parameters(obj, page_width, format)
+        return cselfls.ToString(obj, FormatType = format, PageWidth = page_width, **ops)
+
+    def _eval_to_typset_string(self, obj, page_width = None, format = None, export_format = None, **kw):
         """Python rep of:
              Block[
                 {cellExpr, result},
@@ -1018,41 +1034,52 @@ class MPackage(MExprUtils):
               ];
         """
 
-        expr_packet = cls._to_cell_expr(obj, page_width, format, **kw)
+        expr_packet = self._to_cell_expr(obj, page_width, format, **kw)
         expr = MLSym("cellExpr")
         if export_format is None:
             export_format = "GIF"
-        return cls.with_context(
-            cls.PackagePrivate,
-            [ cls.PackagePrivate, "System`" ],
-            cls.Block(
+        return self.with_context(
+            self.PackagePrivate,
+            [ self.PackagePrivate, "System`" ],
+            self.Block(
                 [ "cellExpr", "res" ],
-                cls.Set(expr, expr_packet),
-                cls.Set(MLSym("res"), cls.F("ExportString", expr, export_format, **kw))
+                self.Set(expr, expr_packet),
+                self.Set(MLSym("res"), self.F("ExportString", expr, export_format, **kw))
                 )
             )
-    @classmethod
-    def _eval_to_image_string(cls, obj, export_format = None, **kw):
+
+    def _eval_to_image_string(self, obj, export_format = None, **kw):
         """Python rep of:
              ExportString[cellExpr, format, ops]
         """
 
         if export_format is None:
             export_format = "GIF"
-        return cls.F("ExportString", obj, export_format, **kw)
-    @classmethod
-    def _eval_to_image_data(cls, obj, **kw):
-        return cls.F("ImageData", cls.F("Rasterize", obj, **kw))
+        return self.F("ExportString", obj, export_format, **kw)
 
-    @classmethod
-    def _eval_to_string_packet(cls, obj, page_width=None, format=None, **ops):
-        return cls._eval(cls._eval_to_string(obj, page_width=page_width, format=format, **ops))
-    @classmethod
-    def _eval_to_typeset_packet(cls, obj, page_width=None, format=None, export_format=None, **ops):
-        return cls._eval(cls._eval_to_typset_string(obj, page_width=page_width, format=format, export_format = None, **ops))
-    @classmethod
-    def _eval_to_image_packet(cls, obj, export_format=None, **ops):
-        return cls._eval(cls._eval_to_image_string(obj, export_format = None, **ops))
+    def _eval_to_image_data(self, obj, **kw):
+        return self.F("ImageData", self.F("Rasterize", obj, **kw))
+
+    def _eval_to_string_packet(self, obj, page_width=None, format=None, **ops):
+        return self._eval(self._eval_to_string(obj, page_width=page_width, format=format, **ops))
+
+    def _eval_to_typeset_packet(self, obj, page_width=None, format=None, export_format=None, **ops):
+        return self._eval(self._eval_to_typset_string(obj, page_width=page_width, format=format, export_format = None, **ops))
+
+    def _eval_to_image_packet(self, obj, export_format=None, **ops):
+        return self._eval(self._eval_to_image_string(obj, export_format = None, **ops))
+
+    def __getattr__(self, sym):
+        if sym.endswith("_"):
+            sym = sym.split("_")[:-1]
+            sym[-1] = "$" + sym[-1]
+            sym = "`".join(sym)
+        else:
+            sym = sym.strip("_")
+        sym = sym.replace("_", "`")
+        return MLSym(sym)
+
+MPackage = MPackageClass()
 
 ###############################################################################################
 #                                                                                             #
@@ -1203,8 +1230,6 @@ class ObjectHandler:
         for chunk in args:
             chunk = cls.clean_symbol_names(chunk)
             exec(chunk, env, env)
-
-
 
 ###############################################################################################
 #                                                                                             #

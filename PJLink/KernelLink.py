@@ -39,7 +39,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
 
     def __init__(self):
         super().__init__()
-        self._EXEC_ENV = { "Kernel":self }
+        self._EXEC_ENV = { "Kernel":self , "Mathematica":self.M, "Evaluate":self.evaluateString }
 
     def get(self):
         # Replace TYPE_FLOATORINT and TYPE_DOUBLEORINT (and arrays of them) with just TYPE_FLOAT and TYPE_DOUBLE.
