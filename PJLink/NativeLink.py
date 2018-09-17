@@ -511,6 +511,8 @@ class NativeLink(MathLink):
 
         tname = self.Env.getTypeNameFromTypeInt(otype)
 
+        self.use_numpy # just to get the right response
+
         tc = self.Env.getTypeCodeFromTypeInt(tname)
         if isinstance(tc, str) and tc in array.typecodes and ( depth == 1 or not self.Env.allowRagged()):
             with self._wrap(check=0):
@@ -532,15 +534,18 @@ class NativeLink(MathLink):
             # we must make sure that arrays with a 0 anywhere in their dimensions get sent the slow way: putArraySlices().
 
             arr, tint, dims, depth = self._get_put_array_params(o) # will not be accurate for ragged arrays, but we won't use the result in that case.
-            # print(arr, tint, dims, depth)
 
-            # self.Env.log("PutArray:", arr, tint, dims, depth)
+            self.Env.logf("Putting array {} of type {} with dimensions {} and {} on link", arr, tint, dims, depth)
 
             if tint is not None:
                 sent = False
                 if depth == 1:
                     if isinstance(arr, BufferedNDArray):
-                        arr = arr._buffer
+                        ostart, ostop = arr.offsets == (0, 0)
+                        if ostart == 0 and ostop == 0:
+                            arr = arr._buffer
+                        else:
+                            arr = arr._buffer[ostart:len(arr._buffer) - ostop]
                     self._call("PutArray", tint, arr, None if headList is None else headList[0])
                     sent = True
                 elif depth > 1 and tint not in map(self.Env.toTypeInt, ("String", "Boolean")):

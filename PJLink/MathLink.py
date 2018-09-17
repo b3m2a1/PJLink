@@ -662,11 +662,11 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
     from decimal import Decimal as decimal
     from fractions import Fraction as fraction
     _putter_map = {
+        bool       : 'Bool',
         str        : 'String',
         complex    : 'Complex',
         int        : 'Int',
         float      : 'Float',
-        bool       : 'Boolean',
         Expr       : "Expr",
         decimal    : "Decimal",
         fraction   : "Rational",
@@ -723,7 +723,11 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
         if not isinstance(head, str):
             head = "List"
 
-        olen = len(o)
+        try:
+            olen = len(o)
+        except TypeError:
+            olen = 0
+
         if olen > 0:
             self._putFunction(head, olen)
             head_index += 1
@@ -966,3 +970,6 @@ class MathLink(MathLinkImplBase):
     def drain(self):
         self.flush()
         return [ pkt for pkt in self ]
+
+    def setLogging(self, val=True):
+        self.Env.ALLOW_LOGGING = bool(val)

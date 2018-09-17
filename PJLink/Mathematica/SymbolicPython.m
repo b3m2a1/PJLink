@@ -2464,7 +2464,7 @@ $PyLangTranslationSymbols=
     1]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Symbolic Python*)
 
 
@@ -2491,7 +2491,7 @@ ToSymbolicPython[symbols:{___Symbol}:{},expr_]:=
               {
                 p_PyString:>p (* Protects the inner string from further replacement *),
                 HoldPattern[String[s_]]:>PyString[s],
-                s_String?(Not@StringMatchQ[#,(WordCharacter|"_"|".")..]&):>
+                s_String(*?(Not@StringMatchQ[#,(WordCharacter|"_"|".")..]&)*):>
                   RuleCondition[
                     PyString[s,
                       If[Length@StringSplit[s,EndOfLine]>1,

@@ -163,7 +163,7 @@ class MathLinkEnvironment:
     try:
         import numpy
         HAS_NUMPY = True
-    except ImportError:
+    except ImportError as e:
         HAS_NUMPY = False
 
     ### For PIL support
@@ -339,6 +339,8 @@ class MathLinkEnvironment:
     if HAS_NUMPY:
         del np
 
+    # Used to turn logging on or off
+    ALLOW_LOGGING = False
     LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log.txt")
 
     def __init__(self):
@@ -711,8 +713,14 @@ class MathLinkEnvironment:
 
     @classmethod
     def log(cls, *expr):
-        mode = "w+"
-        if os.path.isfile(cls.LOG_FILE):
-            mode = "a"
-        with open(cls.LOG_FILE, mode) as logger:
-            print(*expr, file=logger)
+        if cls.ALLOW_LOGGING:
+            mode = "w+"
+            if os.path.isfile(cls.LOG_FILE):
+                mode = "a"
+            with open(cls.LOG_FILE, mode) as logger:
+                print(*expr, file=logger)
+
+    @classmethod
+    def logf(cls, logs, *args, **kwargs):
+        if cls.ALLOW_LOGGING:
+            cls.log(logs.format(*args, **kwargs))

@@ -440,6 +440,17 @@ AddTypeHints[eval_] :=
       ]
 
 
+(* ::Subsubsection:: *)
+(*PythonTraceback*)
+
+
+Format[pt:PythonTraceback[ts_]]:=
+  Interpretation[
+    Style[ts, Red],
+    pt
+    ]
+
+
 (* ::Subsubsection::Closed:: *)
 (*End*)
 
