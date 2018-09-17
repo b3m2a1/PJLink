@@ -670,7 +670,7 @@ class MathLinkEnvironment:
         return root
 
     @classmethod
-    def get_Mathematica_binary(cls, version = None):
+    def get_Kernel_binary(cls, version = None):
         import platform, os
 
         plat = platform.system()
@@ -687,6 +687,30 @@ class MathLinkEnvironment:
             bin = os.path.join(root, "SystemFiles", "Kernel", "Binaries", "Linux-x86-64", "WolframKernel")
         elif plat == "Windows":
             bin = os.path.join(root, "wolfram")
+
+        if not os.path.isfile(bin):
+            raise ValueError("Couldn't find binary for platform {} ({} is not a file)".format(plat, bin))
+
+        return bin
+
+    @classmethod
+    def get_Mathematica_binary(cls, version = None):
+        import platform, os
+
+        plat = platform.system()
+
+        try:
+            root = cls.get_Mathematica_root(version)
+        except ValueError:
+            if not (isinstance(version, str) and os.path.isfile(version)):
+                raise ValueError("Don't know how to find the Mathematica executable on system {}".format(plat))
+
+        if plat == "Darwin":
+            bin = os.path.join(root, "MacOS", "Mathematica")
+        elif plat == "Linux":
+            bin = os.path.join(root, "SystemFiles", "Kernel", "Binaries", "Linux-x86-64", "Mathematica")
+        elif plat == "Windows":
+            bin = os.path.join(root, "Mathematica")
 
         if not os.path.isfile(bin):
             raise ValueError("Couldn't find binary for platform {} ({} is not a file)".format(plat, bin))

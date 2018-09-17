@@ -33,12 +33,12 @@ class NativeLink(MathLink):
         import os, re
 
         if init is None:
-            bin = self.Env.get_Mathematica_binary()
+            bin = self.Env.get_Kernel_binary()
             init = ["-linkmode", "launch", "-linkname", "'{}' -mathlink -wstp".format(bin)]#, "-mathlink", "-wstp"]
         elif isinstance(init, str) and os.path.isfile(init):
             init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink -wstp'".format(init)]#, "-mathlink", "-wstp"]
         elif isinstance(init, float) or (isinstance(init, str) and re.match(r"\d\d.\d", init)):
-            bin = self.Env.get_Mathematica_binary(init)
+            bin = self.Env.get_Kernel_binary(init)
             init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink -wstp'".format(bin)]#, "-mathlink", "-wstp"]
 
 
@@ -59,7 +59,7 @@ class NativeLink(MathLink):
                 )
                 self.__link = link
                 self._MLINK = cap
-                time.sleep(.5)
+                # time.sleep(.5)
             elif isinstance(init, tuple) and isinstance(init[0], int):
                 cap, link = init
                 self.__link = link
@@ -74,7 +74,7 @@ class NativeLink(MathLink):
                 )
                 self.__link = link
                 self._MLINK = cap
-                time.sleep(.5)
+                # time.sleep(.5)
 
         if self.__link == 0:
             if len(self.__errMsgOut) > 0:
@@ -469,7 +469,7 @@ class NativeLink(MathLink):
             return self._call("MessageReady")
 
     def _createMark(self):
-        with self._wrap(checkError=False, lock=False):
+        with self._wrap(checkError=False):
             mark = self._call("CreateMark")
             if mark == 0:
                 raise MathLinkException("Memory", "Not enough memory to create Mark")

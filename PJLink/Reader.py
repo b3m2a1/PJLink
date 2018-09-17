@@ -31,13 +31,14 @@ class Reader:
         self.__quit_on_link_end = quit_on_link_end
         self.__stop_requested = False
         self.__thread = threading.Thread(target=self.run)
+        self.__always_poll = always_poll
         self.__killer = threading.Event()
         #  The Reader needs to operate slightly differently on the mainLink (JavaLink[]) than when used
         #  on the new preemptiveLink. Specifically, it never polls on the preemptiveLink because that
         #  link can never participate in DoModal[]. This variables distinguishes the two behaviors of this class.
         self.__is_main_link = is_main_link
         self.__sleep_interval = 2
-        link._addMessageHandlerOn(self, "terminateMsgHandler");
+        link._addMessageHandlerOn(self, "terminateMsgHandler")
 
     @property
     def link(self):
@@ -74,7 +75,7 @@ class Reader:
         # you start the Reader. And don't forget that when the Reader is running, _every_ computation you send must be
         # guarded by StdLink.requestTransaction() and synchronized(ml), whether from the main thread or the UI thread.
 
-        reader = cls(link, quit_on_link_end = quit_on_link_end, is_main_link = True)
+        reader = cls(link, quit_on_link_end = quit_on_link_end, is_main_link = True, always_poll = False)
         # We set StdLink to be the main link primarily for pre-5.1 kernels. For 5.1+ kernels there is a second UI link
         # that will be used for calls to M from the UI thread (unless we are in the modal state, in which case
         # the link we set here is used).
@@ -101,7 +102,7 @@ class Reader:
         import time
 
         loops_ago = 0
-        must_poll = False
+        must_poll = self.__always_poll
         try:
             while not self.__stop_requested:
                 if self.__killer.is_set():
@@ -139,13 +140,16 @@ class Reader:
                     # or a yield function callback into Java; otherwise, all threads in the JVM will hang.
                     with self.__link._wrap(checkError=False, checkLink=False):
                         try:
+                            self.__link.Env.log("Hitting nextPacket and blocking")
                             pkt = self.__link._nextPacket()
                             self.__link._handlePacket(pkt)
                             self.__link._newPacket()
                             must_poll = StdLink.must_poll
                         except MathLinkException as e:
                             # 11 is "other side closed link"; not sure why this succeeds clearError, but it does.
-                            if e.no == 11 or not self.__link._clearError():
+                            import traceback as tb
+                            self.__link.Env.log(tb.format_exc())
+                            if e.no == 11 or e.no == 1 or not self.__link._clearError():
                                 return None
                             self.__link._newPacket()
 
@@ -153,6 +157,9 @@ class Reader:
             # Get here on unrecoverable MathLinkException, ThreadDeath exception caused by "hard" aborts
             # from Mathematica (see KernelLinkImpl.msgHandler()), or other Error exceptions (except during invoke()).
             # TODO: For sake of JavaKernel, do I want to move the link-closing stuff up here before the quitWhenLinkEnds test?
+            import traceback as tb
+            self.__link.Env.log(tb.format_exc())
+            self.__link.Env.log("Bailing out of run")
             if self.__quit_on_link_end:
                 self.__link.close()
                 self.__link = None

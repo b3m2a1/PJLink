@@ -61,6 +61,13 @@ variable that holds the link in C-language "installable" MathLink programs gener
         raise NotImplemented
 
     @property
+    def last_packet_was_allow_UI_comps(self):
+        return self.__last_packet_was_allow_UI_comps
+    @last_packet_was_allow_UI_comps.setter
+    def last_packet_was_allow_UI_comps(self, val):
+        self.__last_packet_was_allow_UI_comps = bool(val)
+
+    @property
     def lock(self):
         return self.__lock
 

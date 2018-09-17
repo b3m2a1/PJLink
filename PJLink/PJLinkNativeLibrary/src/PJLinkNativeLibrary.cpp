@@ -75,6 +75,7 @@
 #define MLRETURNSTR(car) return Py_BuildValue("s", car);
 #define MLRETURNPTR(ptr) return PyLong_FromVoidPtr(ptr);
 #define MLRETURNBOOL(boo) if (boo) { Py_RETURN_TRUE; } else { Py_RETURN_FALSE; };
+#define MLTHREADED(op) Py_BEGIN_ALLOW_THREADS; op; Py_END_ALLOW_THREADS;
 
 /***********************************************************************************************************/
 
@@ -578,7 +579,7 @@ int _MLPutDataBuffer
                     if (c_data == NULL) {
                         flag = 0;
                     } else {
-                        MLPutIntegerArray(mlink, (int *)c_data, (const long *)dims, heads, depth);
+                        MLTHREADED(MLPutIntegerArray(mlink, (int *)c_data, (const long *)dims, heads, depth));
                     }
                     break;
                 }
@@ -587,7 +588,7 @@ int _MLPutDataBuffer
                     if (c_data == NULL) {
                         flag = 0;
                     } else {
-                        MLPutInteger8Array(mlink, c_data, dims, heads, depth);
+                        MLTHREADED(MLPutInteger8Array(mlink, c_data, dims, heads, depth));
                     }
                     break;
                 }
@@ -596,7 +597,7 @@ int _MLPutDataBuffer
                     if (c_data == NULL) {
                         flag = 0;
                     } else {
-                        MLPutInteger16Array(mlink, c_data, dims, heads, depth);
+                        MLTHREADED(MLPutInteger16Array(mlink, c_data, dims, heads, depth));
                     }
                     break;
                 }
@@ -605,7 +606,7 @@ int _MLPutDataBuffer
                     if (c_data == NULL) {
                         flag = 0;
                     } else {
-                        MLPutInteger32Array(mlink, c_data, dims, heads, depth);
+                        MLTHREADED(MLPutInteger32Array(mlink, c_data, dims, heads, depth));
                     }
                     break;
                 }
@@ -614,7 +615,7 @@ int _MLPutDataBuffer
                     if (c_data == NULL) {
                         flag = 0;
                     } else {
-                        MLPutInteger64Array(mlink, (mlint64 *)c_data, dims, heads, depth);
+                        MLTHREADED(MLPutInteger64Array(mlink, (mlint64 *)c_data, dims, heads, depth));
                     }
                     break;
                 }
@@ -636,7 +637,7 @@ int _MLPutDataBuffer
                     if (c_data == NULL) {
                         flag = 0;
                     } else {
-                        MLPutReal32Array(mlink, c_data, dims, heads, depth);
+                        MLTHREADED(MLPutReal32Array(mlink, c_data, dims, heads, depth));
                     }
                     break;
                 }
@@ -645,7 +646,7 @@ int _MLPutDataBuffer
                     if (c_data == NULL) {
                         flag = 0;
                     } else {
-                        MLPutReal64Array(mlink, c_data, dims, heads, depth);
+                        MLTHREADED(MLPutReal64Array(mlink, c_data, dims, heads, depth));
                     }
                     break;
                 }
@@ -935,9 +936,9 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
         case TYPE_BOOLEAN: {
             while ( (item = PyIter_Next(iterator)) ) {
                 if (PyObject_IsTrue(item)) {
-                    MLPutSymbol(mlink, "True");
+                    MLTHREADED(MLPutSymbol(mlink, "True"));
                 } else {
-                    MLPutSymbol(mlink, "False");
+                    MLTHREADED(MLPutSymbol(mlink, "False"));
                 }
                 Py_DECREF(item);
             }
@@ -947,7 +948,7 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
             int b;
             while ( (item = PyIter_Next(iterator)) ) {
                 b = (int) PyLong_AsLong(item);
-                MLPutInteger(mlink, b);
+                MLTHREADED(MLPutInteger(mlink, b));
                 Py_DECREF(item);
             }
             break;
@@ -956,7 +957,7 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
             int c;
             while ( (item = PyIter_Next(iterator)) ) {
                 c = (int) PyLong_AsLong(item);
-                MLPutInteger(mlink, c);
+                MLTHREADED(MLPutInteger(mlink, c));
                 Py_DECREF(item);
             }
             break;
@@ -965,7 +966,7 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
             short s;
             while ( (item = PyIter_Next(iterator)) ) {
                 s = (short) PyLong_AsLong(item);
-                MLPutInteger16(mlink, s);
+                MLTHREADED(MLPutInteger16(mlink, s));
                 Py_DECREF(item);
             }
             break;
@@ -974,7 +975,7 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
             int i;
             while ( (item = PyIter_Next(iterator)) ) {
                 i = (int) PyLong_AsLong(item);
-                MLPutInteger32(mlink, i);
+                MLTHREADED(MLPutInteger32(mlink, i));
                 Py_DECREF(item);
             }
             break;
@@ -983,7 +984,7 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
             long l;
             while ( (item = PyIter_Next(iterator)) ) {
                 l = PyLong_AsLong(item);
-                MLPutInteger64(mlink, l);
+                MLTHREADED(MLPutInteger64(mlink, l));
                 Py_DECREF(item);
             }
             break;
@@ -992,7 +993,7 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
             float f;
             while ( (item = PyIter_Next(iterator)) ) {
                 f = (float) PyFloat_AsDouble(item);
-                MLPutReal32(mlink, f);
+                MLTHREADED(MLPutReal32(mlink, f));
                 Py_DECREF(item);
             }
             break;
@@ -1001,7 +1002,7 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
             double d;
             while ( (item = PyIter_Next(iterator)) ) {
                 d = PyFloat_AsDouble(item);
-                MLPutReal64(mlink, d);
+                MLTHREADED(MLPutReal64(mlink, d));
                 Py_DECREF(item);
             }
             break;
@@ -1013,9 +1014,9 @@ int _MLIterPut(MLINK mlink, PyObject *data, const char *head, int type){
                 PyObject *pyStr = NULL;
                 s = _MLGetUTF8String(item, &len, pyStr);
                 if (s != NULL) {
-                    MLPutUTF8String(mlink, reinterpret_cast<const unsigned char *>(s), len);
+                    MLTHREADED(MLPutUTF8String(mlink, reinterpret_cast<const unsigned char *>(s), len));
                 } else {
-                    MLPutSymbol(mlink, "Null");
+                    MLTHREADED(MLPutSymbol(mlink, "Null"));
                 }
                 Py_XDECREF(pyStr);
                 Py_DECREF(item);
@@ -1073,7 +1074,7 @@ MLFUNCWITHARGS(MLInitialize) {
 
     _MLDebugMessage(2, ":Initialize:");
 
-    initEnvironment();
+    MLTHREADED(initEnvironment());
 
     Py_RETURN_NONE;
 
@@ -1121,7 +1122,7 @@ MLFUNCWITHARGS(MLOpenString) {
     if (!initEnvironment())
         return 0;
 
-    link = MLOpenString(gMLEnv, cmdLine, &err);
+    MLTHREADED(link = MLOpenString(gMLEnv, cmdLine, &err));
     if (link != NULL) {
         gEnvUseCount++;
         setupUserData(link, gMLEnv, ml);
@@ -1231,7 +1232,7 @@ MLFUNCWITHARGS(MLOpen) {
     if (!initEnvironment())
         return Py_BuildValue("i", 0);
 
-    link = MLOpenInEnv(gMLEnv, i, c_argv, &err);
+    MLTHREADED(link = MLOpenInEnv(gMLEnv, i, c_argv, &err));
 
     for (int j = 0; j < i; j++){
         free(c_argv[j]);
@@ -1294,7 +1295,7 @@ MLFUNCWITHARGS(MLLoopbackOpen) {
 
     if (!initEnvironment())
         return 0;
-    link = MLLoopbackOpen(gMLEnv, &err);
+    MLTHREADED(link = MLLoopbackOpen(gMLEnv, &err));
     if (link != NULL) {
         gEnvUseCount++;
         // Don't call setupUserData. No yield function for loopbacks.
@@ -1345,7 +1346,7 @@ MLFUNCWITHARGS(MLSetEnvIDString) {
        return NULL;
     } else {
        Py_XDECREF(pyStr);
-       MLSetEnvIDString(gMLEnv, id);
+       MLTHREADED(MLSetEnvIDString(gMLEnv, id));
     }
 
     Py_RETURN_NONE;
@@ -1381,9 +1382,9 @@ MLFUNCWITHARGS(MLGetLinkedEnvIDString) {
         MLRETURNSTR("");
     } else {
         const char *s;
-        MLGetLinkedEnvIDString(mlink, &s);
+        MLTHREADED(MLGetLinkedEnvIDString(mlink, &s));
         PyObject *result = Py_BuildValue("s", s);
-        MLReleaseEnvIDString(mlink, s);
+        MLTHREADED(MLReleaseEnvIDString(mlink, s));
         return result;
     }
 
@@ -1415,7 +1416,7 @@ MLFUNCWITHARGS(MLConnect) {
     if (mlink ==0 ) {
         _MLDebugPrintNullLink(3);
     } else {
-        MLConnect(mlink);
+        MLTHREADED(MLConnect(mlink));
     }
 
     _MLDebugPrint(3, "Connected link MathLink(%p)", mlink);
@@ -1464,7 +1465,7 @@ MLFUNCWITHARGS(MLClose) {
     } else {
         _MLDebugPrint(3, "Closing link MathLink(%p)", link);
         struct cookie* c = (struct cookie*) MLUserData(mlink, NULL);
-        MLSetUserData(mlink, NULL, NULL);
+        MLTHREADED(MLSetUserData(mlink, NULL, NULL));
         if (c != NULL) {
             // A C-side yieldfunction and its accoutrements were set. Clean it up.
             MLSetYieldFunction(mlink, (MLYieldFunctionObject) NULL);
@@ -1474,7 +1475,7 @@ MLFUNCWITHARGS(MLClose) {
             // if (c->ml != NULL) Py_DECREF(c->ml); // A Python-side handler for yield or msg was set.
             free(c);
         }
-        MLClose(mlink);
+        MLTHREADED(MLClose(mlink));
         gEnvUseCount--;
         if (gEnvUseCount == 0)
             destroyEnvironment();
@@ -1515,7 +1516,7 @@ MLFUNCWITHARGS(MLName) {
         s = "";
     } else {
         _MLDebugPrint(3, "Getting name off link MathLink(%p)", mlink);
-        s = MLName(mlink);
+        MLTHREADED(s = MLName(mlink));
     }
 
     PyObject *name;
@@ -1544,7 +1545,7 @@ MLFUNCWITHARGS(MLSetYieldFunction) {
         _MLDebugPrintNullLink(3);
     } else {
         _MLDebugPrint(3, "Setting up yield function", mlink);
-        setupCallback(ml, kYield, revoke);
+        MLTHREADED(setupCallback(ml, kYield, revoke);)
     }
 
     Py_RETURN_NONE;
@@ -1568,7 +1569,7 @@ MLFUNCWITHARGS(MLSetMessageHandler) {
     if (mlink ==0 ) {
         _MLDebugPrintNullLink(3);
     } else {
-        setupCallback(ml, kMsg, 0);
+        MLTHREADED(setupCallback(ml, kMsg, 0));
     }
 
     Py_RETURN_NONE;
@@ -1601,7 +1602,7 @@ MLFUNCWITHARGS(MLNewPacket) {
         _MLDebugPrintNullLink(3);
     } else {
         _MLDebugPrint(3, "Opening new packet on link MathLink(%p)", mlink);
-        MLNewPacket(mlink);
+        MLTHREADED(MLNewPacket(mlink));
     }
 
     Py_RETURN_NONE;
@@ -1670,7 +1671,10 @@ MLFUNCWITHARGS(MLNextPacket) {
     } else {
         // Py_RETURN_NONE;
         _MLDebugPrint(3, "Getting next packet off link MathLink(%p)", mlink);
-        int pkt = MLNextPacket(mlink);
+        int pkt;
+        Py_BEGIN_ALLOW_THREADS;
+        pkt = MLNextPacket(mlink);
+        Py_END_ALLOW_THREADS;
         MLRETURNINT(pkt);
     }
 
@@ -1873,7 +1877,9 @@ MLFUNCWITHARGS(MLFlush) {
          _MLDebugPrintNullLink(3);
     } else {
         _MLDebugPrint(3, "Flushing link MathLink(%p)", mlink);
+        Py_BEGIN_ALLOW_THREADS;
         MLFlush(mlink);
+        Py_END_ALLOW_THREADS;
     }
 
     Py_RETURN_NONE;
@@ -1908,7 +1914,9 @@ MLFUNCWITHARGS(MLGetNext) {
         MLRETURNINT(MLTKERR);
     } else {
         _MLDebugPrint(3, "Getting next type on link MathLink(%p)", mlink);
-        MLRETURNINT(MLGetNext(mlink));
+        int next;
+        MLTHREADED(next = MLGetNext(mlink));
+        MLRETURNINT(next);
     }
 }
 
@@ -1940,7 +1948,8 @@ MLFUNCWITHARGS(MLGetType) {
         MLRETURNINT(MLTKERR);
     } else {
         _MLDebugPrint(3, "Getting current type on link MathLink(%p)", mlink);
-        int type = MLGetType(mlink);
+        int type;
+        MLTHREADED(type = MLGetType(mlink));
         _MLDebugPrint(4, "Got type %d off link MathLink(%p)", type, mlink);
         MLRETURNINT(type);
     }
@@ -1974,7 +1983,7 @@ MLFUNCWITHARGS(MLPutNext) {
         _MLDebugPrintNullLink(3);
     } else {
         _MLDebugPrint(3, "Putting next type (%d) on link MathLink(%p)", type, mlink);
-        MLPutNext(mlink, type);
+        MLTHREADED(MLPutNext(mlink, type));
     };
 
     Py_RETURN_NONE;
@@ -2015,7 +2024,9 @@ MLFUNCWITHARGS(MLGetArgCount) {
     } else {
         _MLDebugPrint(3, "Getting arg count on link MathLink(%p)", mlink);
         int argc;
-        if (MLGetArgCount(mlink, &argc) != 0) {
+        int res;
+        MLTHREADED(res = MLGetArgCount(mlink, &argc));
+        if (res != 0) {
             MLRETURNINT(argc);
         } else {
             MLRETURNINT(0);
@@ -2051,7 +2062,7 @@ MLFUNCWITHARGS(MLPutArgCount) {
         _MLDebugPrintNullLink(3);
     } else {
         _MLDebugPrint(3, "Putting arg count (%d) on link MathLink(%p)", cnt, mlink);
-        MLPutArgCount(mlink, cnt);
+        MLTHREADED(MLPutArgCount(mlink, cnt));
     };
 
     Py_RETURN_NONE;
@@ -2101,14 +2112,16 @@ MLFUNCWITHARGS(MLGetString) {
         int charn;
 //        if (MLGetUTF16String(mlink, &s, &len, &charn) == 0) {
 //        if (MLGetUCS2String(mlink, &s, &len) == 0) {
-        if (MLGetUTF8String(mlink, &s, &len, &charn)  == 0) {
+        int res;
+        MLTHREADED( res = MLGetUTF8String(mlink, &s, &len, &charn) );
+        if ( res == 0) {
             _MLDebugPrint(3, "No string on link MathLink(%p)", mlink);
             MLRETURNSTR("");
         }
         _MLDebugPrint(3, "Getting string on link MathLink(%p)", mlink);
 //        PyObject *str = _MLDecodePythonUTF16(s, len, charn);
         PyObject *str = Py_BuildValue("s", s);
-        MLReleaseUTF8String(mlink, s, len);
+        MLTHREADED(MLReleaseUTF8String(mlink, s, len));
 //        MLReleaseUTF16String(mlink, s, len);
 //        MLReleaseUCS2String(mlink, s, len);
         return str;
@@ -2163,7 +2176,7 @@ MLFUNCWITHARGS(MLPutString) {
 //            MLPutUTF16String(mlink, chars, len);
 //            MLPutUCS2String(mlink, chars, len);
 
-            MLPutUTF8String(mlink, reinterpret_cast<const unsigned char*>(chars), len);
+            MLTHREADED(MLPutUTF8String(mlink, reinterpret_cast<const unsigned char*>(chars), len));
             Py_XDECREF(pyStr);
         }
     }
@@ -2215,12 +2228,14 @@ MLFUNCWITHARGS(MLGetByteString) {
         const unsigned char *s;
         int len;
         _MLDebugPrint(3, "Getting byte string off link MathLink(%p)", mlink);
-        if (MLGetByteString(mlink, &s, &len, missing) == 0) {
+        int res;
+        MLTHREADED(res = MLGetByteString(mlink, &s, &len, missing));
+        if ( res == 0) {
             _MLDebugPrint(4, "Got empty byte string off link MathLink(%p)", mlink);
             bytes = Py_BuildValue("y", NULL);
         }
         bytes = Py_BuildValue("y", s);
-        MLReleaseByteString(mlink, s, len);
+        MLTHREADED(MLReleaseByteString(mlink, s, len));
     }
 
     return bytes;
@@ -2276,7 +2291,7 @@ MLFUNCWITHARGS(MLPutByteString) {
             return NULL;
         }
         _MLDebugPrint(3, "Putting byte string onto link MathLink(%p)", mlink);
-        MLPutByteString(mlink, c_data, len);
+        MLTHREADED(MLPutByteString(mlink, c_data, len));
     }
 
     Py_RETURN_NONE;
@@ -2329,7 +2344,9 @@ MLFUNCWITHARGS(MLGetSymbol) {
         const unsigned char *s;
         int len;
         int charn;
-        if (MLGetUTF8String(mlink, &s, &len, &charn) == 0) {
+        int res;
+        MLTHREADED( res = MLGetUTF8String(mlink, &s, &len, &charn) );
+        if ( res == 0) {
 //        if (MLGetUTF16Symbol(mlink, &s, &len, &charn) == 0) {
 //        if (MLGetUCS2Symbol(mlink, &s, &len) == 0) {
             _MLDebugPrint(4, "Got no symbol");
@@ -2339,7 +2356,7 @@ MLFUNCWITHARGS(MLGetSymbol) {
 //        PyObject *str = _MLDecodePythonUTF16(s, len, charn);
         PyObject *str = Py_BuildValue("s", s);
 //        MLReleaseUTF16Symbol(mlink, s, len);
-        MLReleaseUTF8Symbol(mlink, s, len);
+        MLTHREADED(MLReleaseUTF8Symbol(mlink, s, len));
         return str;
     }
 
@@ -2391,7 +2408,7 @@ MLFUNCWITHARGS(MLPutSymbol) {
             _MLDebugPrint(3, "Putting symbol of length %d on link MathLink(%p)", len, mlink);
 //            MLPutUTF16Symbol(mlink, chars, (int) len);
 //            MLPutUCS2Symbol(mlink, chars, (int) len);
-            MLPutUTF8Symbol(mlink, reinterpret_cast<const unsigned char*>(chars), len);
+            MLTHREADED(MLPutUTF8Symbol(mlink, reinterpret_cast<const unsigned char*>(chars), len));
             Py_XDECREF(pyStr);
         }
     }
@@ -2431,7 +2448,9 @@ MLFUNCWITHARGS(MLGetInteger) {
         MLRETURNINT(0);
     } else {
         int i;
-        if (MLGetInteger(mlink, &i) != 0) {
+        int res;
+        MLTHREADED( res = MLGetInteger(mlink, &i));
+        if ( res != 0 ) {
             MLRETURNINT(i);
         } else {
             MLRETURNINT(0);
@@ -2466,7 +2485,7 @@ MLFUNCWITHARGS(MLPutInteger) {
         _MLDebugPrintNullLink(3);
     } else {
         _MLDebugPrint(3, "Putting integer %d on link MathLink(%p)", i, mlink);
-        MLPutInteger(mlink, i);
+        MLTHREADED(MLPutInteger(mlink, i));
     }
 
     Py_RETURN_NONE;
@@ -2505,7 +2524,9 @@ MLFUNCWITHARGS(MLGetDouble) {
         MLRETURNFLOAT(0.0);
     } else {
         double d;
-        if (MLGetDouble(mlink, &d) != 0) {
+        int res;
+        MLTHREADED( res = MLGetDouble(mlink, &d));
+        if ( res != 0) {
             MLRETURNFLOAT(d);
         } else {
             MLRETURNFLOAT(0.0);
@@ -2540,7 +2561,7 @@ MLFUNCWITHARGS(MLPutDouble) {
         _MLDebugPrintNullLink(3);
     } else {
         _MLDebugPrint(3, "Putting double %f on link MathLink(%p)", d, mlink);
-        MLPutDouble(mlink, d);
+        MLTHREADED(MLPutDouble(mlink, d));
     }
 
     Py_RETURN_NONE;
@@ -2653,11 +2674,11 @@ MLFUNCWITHARGS(MLCheckFunctionWithArgCount) {
         const char* f = _MLGetString(s, pyStr);
         _MLDebugPrint(3, "Checking function %s with argcount %d", f, argCount);
         if (f == NULL) {
-            MLSetError(mlink, MLE_MEMORY);
+            MLTHREADED(MLSetError(mlink, MLE_MEMORY));
             Py_XDECREF(pyStr);
             MLRETURNINT(0);
         } else {
-            MLCheckFunction(mlink, f, &argCount);
+            MLTHREADED(MLCheckFunction(mlink, f, &argCount));
             Py_XDECREF(pyStr);
             MLRETURNINT(argCount);
         }
@@ -2707,17 +2728,21 @@ MLFUNCWITHARGS(MLGetData) {
         Py_RETURN_NONE;
     } else {
         int cnt;
+        int res;
 
         char *buf = (char *) malloc(len);
         if (buf == NULL) {
             MLSetError(mlink, MLE_MEMORY);
-        } else if (!MLGetData(mlink, buf, len, &cnt)) {
-           NULL;
-        } else {
-            PyObject *res;
-            res = PyByteArray_FromStringAndSize(buf, cnt);
-            if (buf) free(buf);
-            return res;
+        } else  {
+            MLTHREADED(res = MLGetData(mlink, buf, len, &cnt));
+            if (!res) {
+                NULL;
+            } else {
+                PyObject *res;
+                res = PyByteArray_FromStringAndSize(buf, cnt);
+                if (buf) free(buf);
+                return res;
+            }
         }
         if (buf) free(buf);
         Py_RETURN_NONE;
@@ -2766,10 +2791,10 @@ MLFUNCWITHARGS(MLPutData) {
         c_data = (const char *) bytes.buf;
         int64_t len = bytes.len;
         if (c_data == NULL) {
-            MLSetError(mlink, MLE_MEMORY);
+            MLTHREADED(MLSetError(mlink, MLE_MEMORY));
             return NULL;
         }
-        MLPutData(mlink, c_data, len);
+        MLTHREADED(MLPutData(mlink, c_data, len));
     }
 
     Py_RETURN_NONE;
@@ -2809,7 +2834,9 @@ MLFUNCWITHARGS(MLBytesToGet) {
         MLRETURNINT(0);
     } else {
         int i;
-        if (MLBytesToGet(mlink, &i) != 0) {
+        int res;
+        MLTHREADED( res = MLBytesToGet(mlink, &i) )
+        if ( res != 0) {
             MLRETURNINT(i);
         } else {
             MLRETURNINT(0);
@@ -2841,8 +2868,10 @@ MLFUNCWITHARGS(MLPutSize) {
     // Py_XDECREF(ml);
 
 
-    if (mlink != 0) {
-        MLPutSize(mlink, len);
+    if (mlink == 0) {
+        _MLDebugPrintNullLink(3);
+    } else {
+        MLTHREADED(MLPutSize(mlink, len));
     }
 
     Py_RETURN_NONE;
@@ -2881,7 +2910,9 @@ MLFUNCWITHARGS(MLBytesToPut) {
         MLRETURNINT(0);
     } else {
         int i;
-        if (MLBytesToPut(mlink, &i) != 0) {
+        int res;
+        MLTHREADED( res = MLBytesToPut(mlink, &i) );
+        if ( res != 0) {
             MLRETURNINT(i);
         } else {
             MLRETURNINT(0);
@@ -2997,25 +3028,25 @@ MLFUNCWITHARGS(MLGetArray) {
     switch (type) {
         case TYPE_BYTE:
         case TYPE_SHORT:
-            res = MLGetInteger16Array(mlink, (short**) &data, &dims, &heads, &actualDepth);
+            MLTHREADED(res = MLGetInteger16Array(mlink, (short**) &data, &dims, &heads, &actualDepth));
             break;
         case TYPE_CHAR:
         case TYPE_INT:
 //            _MLDebugPrint(0, "Getting array of ints of depth %d", depth);
-            res = MLGetInteger32Array(mlink, (int**) &data, &dims, &heads, &actualDepth);
+            MLTHREADED(res = MLGetInteger32Array(mlink, (int**) &data, &dims, &heads, &actualDepth));
 //            _MLDebugPrint(0, "Got array of ints of depth %d", actualDepth);
 //            for ( int i = 0; i < sizeof(dims) /sizeof(dims[0]); i++) {
 //                printf("%d ", dims[i]);
 //            }
             break;
         case TYPE_LONG:
-            res = MLGetInteger64Array(mlink, (mlint64**) &data, &dims, &heads, &actualDepth);
+            MLTHREADED(res = MLGetInteger64Array(mlink, (mlint64**) &data, &dims, &heads, &actualDepth));
             break;
         case TYPE_FLOAT:
-            res = MLGetReal32Array(mlink, (float**) &data, &dims, &heads, &actualDepth);
+            MLTHREADED(res = MLGetReal32Array(mlink, (float**) &data, &dims, &heads, &actualDepth));
             break;
         case TYPE_DOUBLE:
-            res = MLGetReal64Array(mlink, (double**) &data, &dims, &heads, &actualDepth);
+            MLTHREADED(res = MLGetReal64Array(mlink, (double**) &data, &dims, &heads, &actualDepth));
             break;
         default:
             // Don't have to worry about proper cleanup here since this is only to catch bugs during development.
@@ -3058,20 +3089,20 @@ MLFUNCWITHARGS(MLGetArray) {
     switch (type) {
         case TYPE_BYTE:
         case TYPE_SHORT:
-            MLReleaseInteger16Array(mlink, (short*)data, dims, heads, actualDepth);
+            MLTHREADED(MLReleaseInteger16Array(mlink, (short*)data, dims, heads, actualDepth));
             break;
         case TYPE_CHAR:
         case TYPE_INT:
-            MLReleaseInteger32Array(mlink, (int*)data, dims, heads, actualDepth);
+            MLTHREADED(MLReleaseInteger32Array(mlink, (int*)data, dims, heads, actualDepth));
             break;
         case TYPE_LONG:
-            MLReleaseInteger64Array(mlink, (mlint64*) data, dims, heads, actualDepth);
+            MLTHREADED(MLReleaseInteger64Array(mlink, (mlint64*) data, dims, heads, actualDepth));
             break;
         case TYPE_FLOAT:
-            MLReleaseReal32Array(mlink, (float*)data, dims, heads, actualDepth);
+            MLTHREADED(MLReleaseReal32Array(mlink, (float*)data, dims, heads, actualDepth));
             break;
         case TYPE_DOUBLE:
-            MLReleaseReal64Array(mlink, (double*)data, dims, heads, actualDepth);
+            MLTHREADED(MLReleaseReal64Array(mlink, (double*)data, dims, heads, actualDepth));
             break;
     }
 
@@ -3548,7 +3579,7 @@ MLFUNCWITHARGS(MLPutArray) {
             // MLPutXXXArray functions in the MathLink C API cannot handle arrays of length 0, so we do these
             // differently. All arrays with a 0 anywhere in their dims are routed in Java so that they will go through here
             // (never MLPutArrayFlat()).
-            MLPutFunction(mlink, c_head, 0);
+            MLTHREADED(MLPutFunction(mlink, c_head, 0));
         } else {
             switch (type) {
                 case TYPE_BOOLEAN: {
@@ -3733,7 +3764,7 @@ MLFUNCWITHARGS(MLTransferExpression) {
 
 
     if (dest != 0 && source != 0) {
-        MLTransferExpression(dest, source);
+        MLTHREADED(MLTransferExpression(dest, source));
     };
 
     Py_RETURN_NONE;
@@ -3760,7 +3791,7 @@ MLFUNCWITHARGS(MLTransferToEndOfLoopbackLink) {
     MLINK source = (MLINK) ldest;
 
     if (dest != 0 && source != 0) {
-        MLTransferToEndOfLoopbackLink(dest, source);
+        MLTHREADED(MLTransferToEndOfLoopbackLink(dest, source));
     }
 
     Py_RETURN_NONE;
@@ -3796,7 +3827,7 @@ MLFUNCWITHARGS(MLGetMessage) {
         MLRETURNINT(0);
     } else {
         int m1 = 0, m2 = 0;
-        MLGetMessage(mlink, &m1, &m2);
+        MLTHREADED(MLGetMessage(mlink, &m1, &m2));
         MLRETURNINT(m1);
     }
 
@@ -3825,7 +3856,7 @@ MLFUNCWITHARGS(MLPutMessage) {
     // Py_XDECREF(ml);
 
     if (mlink != 0) {
-        MLPutMessage(mlink, msg);
+        MLTHREADED(MLPutMessage(mlink, msg));
     }
 
     Py_RETURN_NONE;
@@ -3858,7 +3889,9 @@ MLFUNCWITHARGS(MLMessageReady) {
     if (mlink == 0) {
         MLRETURNBOOL(0);
     } else {
-        MLRETURNBOOL(MLMessageReady(mlink));
+        int res;
+        MLTHREADED( res = MLMessageReady(mlink) );
+        MLRETURNBOOL(res);
     }
 
 }
@@ -3889,7 +3922,9 @@ MLFUNCWITHARGS(MLCreateMark) {
     if (mlink == 0) {
         MLRETURNPTR(0);
     } else {
-        MLRETURNPTR(MLCreateMark(mlink));
+        MLINKMark mark;
+        MLTHREADED( mark = MLCreateMark(mlink));
+        MLRETURNPTR(mark);
     }
 
 }
@@ -3915,9 +3950,8 @@ MLFUNCWITHARGS(MLSeekMark) {
     MLPARSEARGS("Ol", &ml, &mark);
     MLINK mlink = _MLGetMLINK(ml);
 
-
     if (mlink != 0) {
-        MLSeekMark(mlink, (MLINKMark) mark, 0);
+        MLTHREADED(MLSeekMark(mlink, (MLINKMark) mark, 0));
     }
 
     Py_RETURN_NONE;
@@ -3946,7 +3980,7 @@ MLFUNCWITHARGS(MLDestroyMark) {
     MLINK mlink = _MLGetMLINK(ml);
 
     if (mlink != 0) {
-        MLDestroyMark(mlink, (MLINKMark) mark);
+        MLTHREADED(MLDestroyMark(mlink, (MLINKMark) mark));
     }
 
     Py_RETURN_NONE;

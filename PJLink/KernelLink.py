@@ -633,10 +633,12 @@ from Mathematica), will want to start with the handleCallPacket() method here.
                 self._endPacket()
 
     def __handleCallPacket(self):
-        """
+        """handles a CallPacket originating on the other side of the link
 
         :return:
         """
+
+        from .StdLink import StdLink
 
         ind = 0
         try:
@@ -651,6 +653,8 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         try:
             name = self.Env.getCallName(ind)
             self.Env.logf("Enter call packet {}", name)
+            StdLink.setup(self)
+            StdLink.last_packet_was_allow_UI_comps = False
             if name == "CallPython":
                 self.__callPython()
             elif name == "Throw":
@@ -716,6 +720,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             # self.Env.log(tb.format_exc())
         finally:
             # self.Env.log("end handle call packet")
+            StdLink.remove
             self._clearError()
             try:
                 self._newPacket()
@@ -1000,6 +1005,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
 
         # try:
         res = self.__do_call_recursive(pkt)
+        self.Env.logf("Returning data {}", res)
         if res is None:
             self._putSymbol("Null")
         else:
@@ -1104,8 +1110,8 @@ class WrappedKernelLink(KernelLink):
         if not self.__link_connected:
             # time.sleep(.5) # I guess the kernel has to start up or else things lock?
             self.connect()
-            if self.__link_connected:
-                time.sleep(1)
+            # if self.__link_connected:
+            #     time.sleep(1)
 
     def close(self):
         # self.__ensure_connection()
@@ -1245,10 +1251,11 @@ class WrappedKernelLink(KernelLink):
     def put(self, o):
         self.__ensure_connection()
         if isinstance(o, type):
-            self.Env.log("Putting repr of type {} on link", o.__name__)
+            self.Env.logf("Putting repr of type {} on link", o.__name__)
             return self.__impl.put(repr(o))
         else:
             try:
+                self.Env.logf("Putting object {} on link", o)
                 return self.__impl.put(o)
             except Exception as e:
                 import traceback as tb

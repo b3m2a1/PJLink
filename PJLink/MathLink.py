@@ -708,6 +708,7 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
         :return:
         """
         putter = self._getPutter(o)
+        self.Env.logf("delegating put to {}", putter)
         return putter(o)
 
     def _putArrayPiecemeal(self, o, heads = None, head_index = 0):

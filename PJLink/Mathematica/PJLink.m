@@ -127,6 +127,8 @@ $defaultPython = "python3";
 Options[InstallPython] = 
   Join[
     {
+      LinkObject->Automatic,
+      ProcessObject->Automatic,
       LinkProtocol->Automatic,
       "LinkName"->Automatic,
       "Blocking"->True,
@@ -139,19 +141,22 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
       {
         pyExe,
         pyKer = FindPython[version],
-        link,
-        lname = Replace[OptionValue["LinkName"], Except[String]:>Sequence@@{}]
+        link = OptionValue[LinkObject],
+        lname = Replace[OptionValue["LinkName"], Except[String]:>Sequence@@{}],
+        proc = OptionValue[ProcessObject]
       },
       If[!AssociationQ@pyKer,
         pyKer=<||>;
         If[!KeyExistsQ[$PythonKernels, version],
           $PythonKernels[version] = {}
           ];
-        link = 
-          LinkCreate[
-            lname,
-            FilterRules[{ops}, {LinkProtocol}]
-            ];
+        If[Quiet[!MatchQ[MathLink`LinkDeviceInformation[link],{Rule__}]],
+          link = 
+            LinkCreate[
+              lname,
+              FilterRules[{ops}, {LinkProtocol}]
+              ]
+          ];
         pyExe =
           Which[
             NumberQ@version,
@@ -168,8 +173,8 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
         pyKer["Python"]  = pyExe;
         pyKer["Link"]    = link;
         pyKer["Name"]    = link[[1]];
-        pyKer["Process"] =
-          StartProcess[
+        If[!MatchQ[proc, None|_ProcessObject?(ProcessStatus[#]==="Running"&)],
+          proc = StartProcess[
             {
               pyExe, 
               startKernelPy, 
@@ -192,7 +197,9 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
                 },
               Options@StartProcess
               ]
-            ];
+            ]
+          ];
+        pyKer["Process"] = proc;
         AppendTo[$PythonKernels[version], pyKer];
         If[!AssociationQ@$DefaultPythonKernel, $DefaultPythonKernel=pyKer];
         LinkWrite[pyKer["Link"],  InputNamePacket["In[1]:="]]
@@ -234,52 +241,51 @@ ClosePython[version:_?NumberQ|_String|Automatic:Automatic]:=
       
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*pyEvalPacket*)
 
 
 pyEvalPacket[link_, packet_, timeout_:10]:=
-    Module[{pkt = packet, start = Now, to = Quantity[timeout, "Seconds"], res},
-      While[Now - start < to,
-        If[SameQ[LinkWrite[link, pkt], $Failed], Return[$Failed]];
-        res = TimeConstrained[LinkRead[link, HoldComplete], timeout];
-        Switch[res,
-          HoldComplete @ EvaluatePacket @ _,
-            pkt = ReturnPacket[CheckAbort[res[[1, 1]], $Aborted]],
-          HoldComplete @ ReturnPacket @ _,
-            Return[res[[1, 1]]],
-          HoldComplete @ _Sequence,
-            sequenceResult = res[[1]];
-            Break[],
-          HoldComplete @ _,
-            Return[res[[1]]],
-          _,
-            Return[res]
-          ]
+    Module[{pkt = packet, to = Quantity[timeout, "Seconds"], res},
+      If[SameQ[LinkWrite[link, pkt], $Failed], Return[$Failed]];
+      res = TimeConstrained[LinkRead[Echo@link, HoldComplete], timeout];
+      Switch[res,
+        HoldComplete @ EvaluatePacket @ _,
+          pkt = ReturnPacket[CheckAbort[res[[1, 1]], $Aborted]],
+        HoldComplete @ ReturnPacket @ _,
+          Return[res[[1, 1]]],
+        HoldComplete @ _Sequence,
+          sequenceResult = res[[1]];
+          Break[],
+        HoldComplete @ _,
+          Return[res[[1]]],
+        _,
+          Return[res]
         ];
       sequenceResult
       ];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*cleanUpEnv*)
 
 
 cleanUpEnv//Clear
 
 
-(*cleanUpEnv[pker_, version_, $Aborted]:=
+cleanUpEnv[pker_, version_, $Aborted]:=
   If[(
-      Quiet[MatchQ[MathLink`LinkDeviceInformation[pker["Link"]],{Rule__}]] || 
-      ProcessStatus@pker["Process"]==="Finished"
+      Quiet[!OptionQ[MathLink`LinkDeviceInformation[pker["Link"]]]] || 
+        ProcessStatus@pker["Process"]==="Finished"
       ), 
+    Print@version;
     ClosePython[version],
     $Aborted
-    ];*)
+    ];
 cleanUpEnv[_, _, p_]:=p
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Evaluate*)
 
 
@@ -440,7 +446,7 @@ AddTypeHints[eval_] :=
       ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PythonTraceback*)
 
 

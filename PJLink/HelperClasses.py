@@ -380,13 +380,18 @@ class LinkWrapper:
 
         self.__locked = False
     def __enter__(self):
+
         if self.checkLink:
             self.parent._check_link()
         if self.lock:
             self.__locked = True
+            # import threading
+            # Env.logf("Locking thread {}", threading.current_thread())
             self.parent.thread_lock.acquire()
     def __exit__(self, type, value, traceback):
         if self.__locked:
+            # import threading
+            # Env.logf("Unlocking thread {}", threading.current_thread())
             self.parent.thread_lock.release()
         if self.checkError:
             self.parent._check_error(self.check)
