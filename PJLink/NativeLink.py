@@ -34,12 +34,12 @@ class NativeLink(MathLink):
 
         if init is None:
             bin = self.Env.get_Kernel_binary()
-            init = ["-linkmode", "launch", "-linkname", "'{}' -mathlink -wstp".format(bin)]#, "-mathlink", "-wstp"]
+            init = ["-linkmode", "launch", "-linkname", "'{}' -mathlink".format(bin)]#, "-mathlink", "-wstp"]
         elif isinstance(init, str) and os.path.isfile(init):
-            init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink -wstp'".format(init)]#, "-mathlink", "-wstp"]
+            init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink'".format(init)]#, "-mathlink", "-wstp"]
         elif isinstance(init, float) or (isinstance(init, str) and re.match(r"\d\d.\d", init)):
             bin = self.Env.get_Kernel_binary(init)
-            init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink -wstp'".format(bin)]#, "-mathlink", "-wstp"]
+            init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink'".format(bin)]#, "-mathlink", "-wstp"]
 
 
         import threading
@@ -178,8 +178,12 @@ class NativeLink(MathLink):
     def thread_lock(self):
         return self.__lock
 
-    def _wrap(self, checkLink = True, checkError = True, check = None, lock = True):
-        return LinkWrapper(self, checkLink, checkError, check, lock)
+    def _wrap(self, checkLink = True, checkError = True, check = None, lock = True, timeout = None, poll = 20):
+        self.Env.logf("acquiring LinkWrapper(checkLink = {}, checkError = {}, check = {}, lock = {}, timeout = {}, poll = {})", checkLink, checkError, check, lock, timeout, poll)
+        return LinkWrapper(self, checkLink = checkLink, checkError = checkError, check = check, lock = lock, timeout=timeout, poll=poll)
+
+    def activate(self):
+        return self.__lib.Activate(self)
 
     def close(self):
         if self.__link != 0:
@@ -416,8 +420,11 @@ class NativeLink(MathLink):
         elif argCount is None:
             raise ValueError("Can't put function without argcount")
         with self._wrap():
+            self.Env.logf("Puting argcount {}", argCount)
             self._call("PutNext", self.Env.toTypeToken('Function'))
+            self.Env.logf("Puting argcount {}", argCount)
             self._call("PutArgCount", argCount)
+            self.Env.logf("Puting symbol {}", f)
             self._call("PutSymbol", f)
 
     def _checkFunction(self, f, argCount = None):

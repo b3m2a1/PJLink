@@ -1,7 +1,10 @@
 import threading
+from .KernelLink import KernelLink
 from .StdLink import StdLink
 from .MathLinkExceptions import MathLinkException
 from .MathLinkEnvironment import MathLinkEnvironment as Env
+from collections import deque
+from .HelperClasses import MPackage
 
 class Reader:
     """
@@ -33,12 +36,23 @@ class Reader:
         self.__thread = threading.Thread(target=self.run)
         self.__always_poll = always_poll
         self.__killer = threading.Event()
+
+        # this is for a polling setup, mainly
+        self.__eval_queue = deque([])
+        self.__results_queue = deque([])
+        self.__eval_number = 0
+        self.__results_number = 0
+
         #  The Reader needs to operate slightly differently on the mainLink (JavaLink[]) than when used
         #  on the new preemptiveLink. Specifically, it never polls on the preemptiveLink because that
         #  link can never participate in DoModal[]. This variables distinguishes the two behaviors of this class.
         self.__is_main_link = is_main_link
         self.__sleep_interval = 2
         link._addMessageHandlerOn(self, "terminateMsgHandler")
+        self.__started = False
+
+        if isinstance(link, KernelLink):
+            link._reader = self
 
     @property
     def link(self):
@@ -75,7 +89,7 @@ class Reader:
         # you start the Reader. And don't forget that when the Reader is running, _every_ computation you send must be
         # guarded by StdLink.requestTransaction() and synchronized(ml), whether from the main thread or the UI thread.
 
-        reader = cls(link, quit_on_link_end = quit_on_link_end, is_main_link = True, always_poll = False)
+        reader = cls(link, quit_on_link_end = quit_on_link_end, is_main_link = True, always_poll = always_poll)
         # We set StdLink to be the main link primarily for pre-5.1 kernels. For 5.1+ kernels there is a second UI link
         # that will be used for calls to M from the UI thread (unless we are in the modal state, in which case
         # the link we set here is used).
@@ -88,6 +102,26 @@ class Reader:
         StdLink.reader = reader
 
         return reader
+
+    @property
+    def started(self):
+        return self.__started
+
+    def evaluate(self, expr, wait=True):
+        if self.__started:
+            self.__eval_queue.append(expr)
+            if wait:
+                import time
+                self.__eval_number += 1
+                eval_num = self.__eval_number
+                while eval_num > self.__results_number:
+                    time.sleep(.05)
+                return self.__results_queue.popleft()
+        else:
+            return self.__link.evaluate(expr, wait)
+
+    def evaluateString(self, expr, wait=True):
+        self.evaluate(MPackage.ToExpression(expr), wait)
 
     def stop_reader(self):
         # StopReader() will generally only be effective if you have called startReader() with alwaysPoll=true. Always call this
@@ -102,14 +136,29 @@ class Reader:
         import time
 
         loops_ago = 0
-        must_poll = self.__always_poll
+        self.__started = True
         try:
             while not self.__stop_requested:
+                if len(self.__eval_queue) > 0:
+                    try:
+                        to_eval = self.__eval_queue.popleft()
+                    except IndexError as e:
+                        # import traceback as tb
+                        # self.__link.Env.log(tb.format_exc())
+                        pass
+                    else:
+                        ev_res = self.__link._evaluate(to_eval, wait = True)
+                        self.__results_queue.append(ev_res)
+                        self.__results_number += 1
+
+                    continue
+
                 if self.__killer.is_set():
                     self.__link.Env.log("Done!")
                     self.__stop_requested = True
                     break
-                if self.__is_main_link and must_poll:
+
+                if self.__is_main_link and self.must_poll:
                     # Polling is much less efficient than blocking. It is used only in special circumstances (such as while the kernel is
                     # executing DoModal[], or after the kernel has called jAllowUIComputations[True]). It is also used on non-native threads
                     # UNIX JVMs (this use is controlled from Mathematica via jForcePolling).
@@ -129,7 +178,6 @@ class Reader:
                                 pkt = self.__link._nextPacket()
                                 self.__link._handlePacket(pkt)
                                 self.__link._newPacket()
-                                must_poll = StdLink.must_poll
                         except MathLinkException as e:
                             # 11 is "other side closed link"; not sure why this succeeds clearError, but it does.
                             if e.no == 11 or not self.__link._clearError():
@@ -153,13 +201,16 @@ class Reader:
                                 return None
                             self.__link._newPacket()
 
+        except Exception as e:
+            import traceback as tb
+            self.__link.Env.log(tb.format_exc())
+
         finally:
             # Get here on unrecoverable MathLinkException, ThreadDeath exception caused by "hard" aborts
             # from Mathematica (see KernelLinkImpl.msgHandler()), or other Error exceptions (except during invoke()).
             # TODO: For sake of JavaKernel, do I want to move the link-closing stuff up here before the quitWhenLinkEnds test?
-            import traceback as tb
-            self.__link.Env.log(tb.format_exc())
             self.__link.Env.log("Bailing out of run")
+            self.__started = False
             if self.__quit_on_link_end:
                 self.__link.close()
                 self.__link = None
@@ -186,3 +237,7 @@ class Reader:
 
     def _terminateYielder(self):
         return True
+
+    @property
+    def must_poll(self):
+        return self.__always_poll or StdLink.must_poll

@@ -1,6 +1,7 @@
 from .MathLink import MathLink
 from .MathLinkExceptions import MathLinkException
 from .HelperClasses import *
+from .NativeLink import NativeLink
 
 ###############################################################################################
 #                                                                                             #
@@ -36,6 +37,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
     def __init__(self):
         self.M = MPackage
         self.ObjectHandler = ObjectHandler
+        self._reader = None
         super().__init__()
         self._EXEC_ENV = { "Kernel":self , "Mathematica": self.M, "Evaluate": self.evaluateString }
 
@@ -130,17 +132,26 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             pkt = None
         return pkt
 
-    def evaluate(self, expr, wait = True):
+    def _evaluate(self, expr, wait = True):
         self._evaluateExpr(self.M._add_type_hints(expr))
         if wait:
             self.waitForAnswer()
             return self.get()
 
+    def evaluate(self, expr, wait = True):
+        if self._reader is not None:
+            return self._reader.evaluate(expr, wait = wait)
+        else:
+            return self._evaluate(self.M._add_type_hints(expr), wait = wait)
+
     def evaluateString(self, expr, wait=True):
-        self._evaluateString(self.M._add_type_hints(expr))
-        if wait:
-            self.waitForAnswer()
-            return self.get()
+        if self._reader is not None:
+            return self._reader.evaluateString(expr, wait = wait)
+        else:
+            self._evaluateString(self.M._add_type_hints(expr), wait = wait)
+            if wait:
+                self.waitForAnswer()
+                return self.get()
 
     def _evaluateExpr(self, s):
         self.put(self.M._eval(s))
@@ -196,6 +207,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
     def _handlePacket(self, pkt):
         pkt_name = self.Env.getPacketName(pkt)
         self.Env.logf("Handling packet {}", pkt_name)
+
         if pkt_name in ("Return", "InputName", "ReturnText", "ReturnExpr", "Menu", "Message"):
             # maybe debug print them?
             pass
@@ -1096,7 +1108,7 @@ class WrappedKernelLink(KernelLink):
 
     def __init__(self, link = None):
         self.__USE_NUMPY = None
-        self.__link_connected = False
+        self._link_connected = False
         self.__impl = link
 
         if isinstance(link, MathLink):
@@ -1105,21 +1117,33 @@ class WrappedKernelLink(KernelLink):
 
         super().__init__()
 
+    @classmethod
+    def from_init(cls, init, debug_level=0):
+        return cls(NativeLink(init, debug_level=debug_level))
+    @classmethod
+    def from_link_name(cls, link_name, debug_level=0, mode="listen"):
+        return cls.from_init(["-linkmode", mode, "-linkname", "{}".format(link_name)], debug_level=debug_level)
+    @classmethod
+    def from_new_kernel(cls, debug_level=0):
+        return cls.from_init(None, debug_level=debug_level)
+
     def __ensure_connection(self):
         import time
-        if not self.__link_connected:
+        self._link_connected = self.ready
+        if not self._link_connected:
             # time.sleep(.5) # I guess the kernel has to start up or else things lock?
             self.connect()
-            # if self.__link_connected:
+            # if self._link_connected:
             #     time.sleep(1)
 
     def close(self):
         # self.__ensure_connection()
         return self.__impl.close()
-
+    def activate(self):
+        return self.__impl.activate()
     def connect(self, timeout=None):
-        self.__link_connected = self.__impl.connect(timeout=timeout)
-        return self.__link_connected
+        self._link_connected = self.__impl.connect(timeout=timeout)
+        return self._link_connected
 
     @property
     def link_number(self):
@@ -1247,6 +1271,12 @@ class WrappedKernelLink(KernelLink):
     def _putBool(self, s):
         self.__ensure_connection()
         return self.__impl._putBool(s)
+
+    def _check_link(self):
+        return self.__impl._check_link(self)
+
+    def _check_error(self, allowed = None):
+        return self.__impl._check_error(allowed)
 
     def put(self, o):
         self.__ensure_connection()
@@ -1378,9 +1408,9 @@ class WrappedKernelLink(KernelLink):
                 self._clearError()
                 self._seekMark(mark)
                 f = self._getFunction()
-                if f.name == "ExpressionPacket":
+                if f.head == "ExpressionPacket":
                     pkt = self.Env.getPacketInt("Expression")
-                elif f.name == "BoxData":
+                elif f.head == "BoxData":
                     self._seekMark(mark)
                     pkt = self.Env.getPacketInt("Expression")
                 else:

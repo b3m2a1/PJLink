@@ -371,26 +371,58 @@ class LinkWrapper:
     """A wrapper to allow with ...: syntax on a link
 
     """
-    def __init__(self, parent, checkLink = True, checkError = True, check = None, lock = True):
-        self.parent = parent
-        self.check = check
-        self.checkLink = checkLink
+    def __init__(self, parent, checkLink = True, checkError = True, check = None, lock = True, timeout = None, poll = 20):
+        self.parent     = parent
+        self.check      = check
+        self.checkLink  = checkLink
         self.checkError = checkError
-        self.lock = lock
+        self.lock       = lock
+        self.timeout    = timeout
+        self.poll_rate  = poll
+        self.__started  = None
+        self.__locked   = False
+        self.__thread   = None
 
-        self.__locked = False
+    def poll(self):
+        import time, threading
+
+        if self.__started is None:
+            self.__started = time.time()
+
+        if self.timeout:
+            if time.time() - self.__started > 1000*self.timeout:
+                # Env.logf("Aborting wrap call")
+                self.__exit__(None, None, None)
+            else:
+                if self.__thread is None:
+                    self.__thread = threading.Thread(target=self.poll)
+                    self.__thread.start()
+
+                time.sleep(self.poll_rate/1000)
+
+        elif self.__started:
+            self.__exit__(None, None, None)
+
     def __enter__(self):
 
         if self.checkLink:
             self.parent._check_link()
         if self.lock:
             self.__locked = True
-            # import threading
+            import threading
             # Env.logf("Locking thread {}", threading.current_thread())
             self.parent.thread_lock.acquire()
+
+        if self.timeout:
+            self.poll()
+
+        return self
+
     def __exit__(self, type, value, traceback):
+        if self.__thread is not None:
+            self.timeout = None
         if self.__locked:
-            # import threading
+            import threading
             # Env.logf("Unlocking thread {}", threading.current_thread())
             self.parent.thread_lock.release()
         if self.checkError:
@@ -889,34 +921,30 @@ def template_classmethod(clas{}):
 #                                                                                             #
 ###############################################################################################
 
-MExprUtils.register_function("Needs", "pkg", "file___")
-MExprUtils.register_function("Get", "pkg")
-MExprUtils.register_function("Import", "file", "fmt___", OptionsPattern=True)
-MExprUtils.register_function("Export", "file", "expr", "fmt___", OptionsPattern=True)
-MExprUtils.register_function("ExportString", "expr", "fmt___", OptionsPattern=True)
+# MExprUtils.register_function("Needs", "pkg", "file___")
+# MExprUtils.register_function("Get", "pkg")
+# MExprUtils.register_function("Import", "file", "fmt___", OptionsPattern=True)
+# MExprUtils.register_function("Export", "file", "expr", "fmt___", OptionsPattern=True)
+# MExprUtils.register_function("ExportString", "expr", "fmt___", OptionsPattern=True)
 
 MExprUtils.register_function("Which", "test1", "body1", "testBodies___")
 MExprUtils.register_function("Switch", "type", "pat1", "body1", "patBodies___")
 MExprUtils.register_function("If", "test", "true", "false", "indet___")
 
-MExprUtils.register_function("Names", 'pat', IgnoreCase_=None, SpellingCorrection_=None)
 MExprUtils.register_function("ToString", 'expr', FormatType_=None, PageWidth_=None, OptionsPattern=True)
 MExprUtils.register_function("ToBoxes", 'expr', "fmt___")
 MExprUtils.register_function("ToExpression", 'str', "fmtHead___")
-MExprUtils.register_function("FrontEndExecute", 'expr')
-MExprUtils.register_function("UsingFrontEnd", 'expr')
-MExprUtils.register_function("SystemOpen")
 
-for pkt in (
-    "Illegal", "Call", "Evaluate",
-    "Return", "InputName", "EnterText",
-    "EnterExpression", "OutputName", "ReturnText",
-    "ReturnExpression", "Display", "DisplayEnd",
-    "Message", "Text", "Input", "InputString", "Menu",
-    "Syntax", "Suspend", "Resume", "BeginDialog", "EndDialog",
-    "Expression"
-    ):
-    MExprUtils.register_function(pkt+"Packet", "expr___")
+# for pkt in (
+#     "Illegal", "Call", "Evaluate",
+#     "Return", "InputName", "EnterText",
+#     "EnterExpression", "OutputName", "ReturnText",
+#     "ReturnExpression", "Display", "DisplayEnd",
+#     "Message", "Text", "Input", "InputString", "Menu",
+#     "Syntax", "Suspend", "Resume", "BeginDialog", "EndDialog",
+#     "Expression"
+#     ):
+#     MExprUtils.register_function(pkt+"Packet", "expr___")
 
 ###############################################################################################
 #                                                                                             #
@@ -933,10 +961,53 @@ class MPackageClass(MExprUtils):
     JLinkEvaluateToContext = JLinkContext + "EvaluateTo`"
     __The_One_True_Package = None
 
+    import os
+    __sym_list = os.path.join(os.path.dirname(__file__), "Resources", "sym_list.json")
+    del os
+
     def __init__(self):
         if self.__The_One_True_Package is not None:
             raise TypeError("MPackageClass is not intended to be a single instance class")
         self.__The_One_True_Package = self
+        self.__initialized = False
+        self.__symbols = None
+
+    @property
+    def symbol_list(self):
+        return self.__symbols
+
+    def initialize_from_list(self, names):
+        if not self.__initialized:
+            self.__initialized = True
+            kd = self.__dict__
+            pd = MExprUtils.__dict__
+            self.__symbols = [ None ]*len(names)
+            for i, namePair in enumerate(names):
+                name, sym = namePair
+                self.__symbols[i] = (name, MLSym(sym))
+                if name not in kd and name not in pd: #constant time lookup hopefully
+                    setattr(self, name, MLSym(sym))
+            self.__symbols = tuple( s for s in self.__symbols if s is not None )
+            return True
+        else:
+            return False
+
+    def initialize_from_file(self, file):
+        if not self.__initialized:
+            with open(file) as f:
+                import json
+                names = json.load(f)
+                return self.initialize_from_list(names)
+        else:
+            return False
+    def initialize_from_link(self, link):
+        if not self.__initialized:
+            names = link.evaluate(self.Select(self.Names["System`*"], self.PrintableASCIIQ))
+            return self.initialize_from_file(names)
+        else:
+            return False
+    def initialize_default(self):
+        return self.initialize_from_file(self.__sym_list)
 
     def _add_type_hints(self, to_eval):
         expr = MLSym("expr")
@@ -1085,6 +1156,38 @@ class MPackageClass(MExprUtils):
         return MLSym(sym)
 
 MPackage = MPackageClass()
+
+###############################################################################################
+#                                                                                             #
+#                                      MathematicaBlock                                       #
+#                                                                                             #
+###############################################################################################
+class MathematicaBlock:
+
+    __sym_dict = {}
+
+    def __init__(self, update_globals = True):
+        self.__ns = None
+        self.__getatt = None
+        self.__ug = update_globals
+
+    def __enter__(self):
+        if MPackage.initialize_default():
+            self.__sym_dict.update(dict(MPackage.symbol_list))
+            self.__sym_dict.update((("M", MPackage), ("Sym", MPackage)))
+
+        if self.__ug:
+            self.__glob = globals().copy()
+            globals().update(self.__sym_dict)
+
+        return self.__sym_dict
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+
+        if self.__ug:
+            globals().clear()
+            globals().update(self.__glob)
+            self.__glob = None
 
 ###############################################################################################
 #                                                                                             #

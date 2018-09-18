@@ -1413,17 +1413,43 @@ MLFUNCWITHARGS(MLConnect) {
 
     _MLDebugPrint(3, "Connecting link MathLink(%p)", mlink);
 
+    int res = 0;
     if (mlink ==0 ) {
         _MLDebugPrintNullLink(3);
     } else {
-        MLTHREADED(MLConnect(mlink));
+        MLTHREADED(res = MLConnect(mlink));
     }
 
     _MLDebugPrint(3, "Connected link MathLink(%p)", mlink);
 
-    Py_RETURN_NONE;
+    MLRETURNBOOL(res);
 
     }
+
+MLFUNCWITHARGS(MLActivate) {
+
+    _MLDebugMessage(2, ":MLActivate:");
+
+    PyObject *ml;
+    MLPARSEARGS("O", &ml);
+    MLINK mlink = _MLGetMLINK(ml);
+    // Py_XDECREF(ml);
+
+    _MLDebugPrint(3, "Activating link MathLink(%p)", mlink);
+
+    int res = 0;
+    if (mlink ==0 ) {
+        _MLDebugPrintNullLink(3);
+    } else {
+        MLTHREADED(res = MLActivate(mlink));
+    }
+
+    _MLDebugPrint(3, "Activated link MathLink(%p)", mlink);
+
+    MLRETURNBOOL(res);
+
+    }
+
 
 /*MLClose
 JNIEXPORT void MLFUNC(MLClose), jlong link) {
@@ -4796,6 +4822,7 @@ static PyMethodDef PJLinkNativeLibraryMethods[] = {
     {"SetEnvIDString", PJLink_MLSetEnvIDString, METH_VARARGS, ""},
     {"GetLinkedEnvIDString", PJLink_MLGetLinkedEnvIDString, METH_VARARGS, ""},
     {"Connect", PJLink_MLConnect, METH_VARARGS, ""},
+    {"Activate", PJLink_MLActivate, METH_VARARGS, ""},
     {"Close", PJLink_MLClose, METH_VARARGS, ""},
     {"Name", PJLink_MLName, METH_VARARGS, ""},
     {"SetYieldFunction", PJLink_MLSetYieldFunction, METH_VARARGS, ""},

@@ -112,7 +112,7 @@ $pySessionPathExtension = (* I need this because Mathematica's $PATH isn't quit 
     ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*InstallPython*)
 
 
@@ -204,7 +204,7 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
         If[!AssociationQ@$DefaultPythonKernel, $DefaultPythonKernel=pyKer];
         LinkWrite[pyKer["Link"],  InputNamePacket["In[1]:="]]
         ];
-      If[PyEvaluate[version, "'Init'", TimeConstraint->10]===$Aborted,
+      If[PyEvaluate[version, InputNamePacket["In[1]:="], TimeConstraint->10]===$Aborted,
         ClosePython[version];
         $Failed,
         pyKer
@@ -241,14 +241,14 @@ ClosePython[version:_?NumberQ|_String|Automatic:Automatic]:=
       
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*pyEvalPacket*)
 
 
 pyEvalPacket[link_, packet_, timeout_:10]:=
     Module[{pkt = packet, to = Quantity[timeout, "Seconds"], res},
       If[SameQ[LinkWrite[link, pkt], $Failed], Return[$Failed]];
-      res = TimeConstrained[LinkRead[Echo@link, HoldComplete], timeout];
+      res = TimeConstrained[LinkRead[link, HoldComplete], timeout];
       Switch[res,
         HoldComplete @ EvaluatePacket @ _,
           pkt = ReturnPacket[CheckAbort[res[[1, 1]], $Aborted]],
@@ -266,7 +266,7 @@ pyEvalPacket[link_, packet_, timeout_:10]:=
       ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*cleanUpEnv*)
 
 
@@ -285,7 +285,7 @@ cleanUpEnv[pker_, version_, $Aborted]:=
 cleanUpEnv[_, _, p_]:=p
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Evaluate*)
 
 

@@ -953,7 +953,7 @@ class MathLink(MathLinkImplBase):
     def _get_put_array_params(self, ob):
 
         arr, t = self.Util.get_array_data_and_type(ob, self.use_numpy)
-        print(arr)
+        # print(arr)
         dims = self.Util.get_array_dims(ob, self.use_numpy)
         depth = len(dims)
 
