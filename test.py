@@ -34,7 +34,7 @@ M = MPackage
 
 #########################################################################################################
 
-link = WrappedKernelLink()
+# link = WrappedKernelLink()
 
 # link = create_kernel_link(None, debug_level=0)
 # print("Name:", link.name)
@@ -55,6 +55,12 @@ link = WrappedKernelLink()
 # def test_eval(evstr):
 #     return link.evaluate(link.M.ToExpression('LinkWrite[Links[][[1]], CallPacket[1, "Evaluate"@"{}"]]'.format(evstr)))
 # # print(test_call())
+
+
+link = WrappedKernelLink()
+
+with LinkEnvironment(link):
+    asd = 2
 
 import code
 code.interact(banner = "", local=locals())

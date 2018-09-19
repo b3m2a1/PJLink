@@ -2,6 +2,8 @@
 
 # PJLink
 
+[![version](http://img.shields.io/badge/version-1.0.0-orange.svg)](https://github.com/b3m2a1/PJLink/master/PJLink/PacletInfo.m)  [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 PJLink is a package developed to link python and Mathematica
 
 ---

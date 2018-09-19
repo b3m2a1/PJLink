@@ -1159,6 +1159,69 @@ MPackage = MPackageClass()
 
 ###############################################################################################
 #                                                                                             #
+#                                       LinkEnvironment                                       #
+#                                                                                             #
+###############################################################################################
+class LinkEnvironment:
+
+    def __init__(self, link, update_globals = True, update_locals = False):
+        self.__env = link._EXEC_ENV
+        self.__ug = update_globals
+        self.__ul = update_locals
+
+    def __enter__(self):
+
+        if self.__ul:
+            import inspect
+
+            loc = inspect.currentframe().f_back.f_locals # this is pretty disgusting...
+            self.__cached_keys = set(loc.keys())
+            loc.update(self.__env)
+
+        elif self.__ug:
+            # self.__glob = globals().copy()
+            glob = globals()
+
+            self.__cached_keys = set(glob.keys())
+            glob.update(self.__env)
+
+        return self.__env
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+
+        if self.__ul:
+            import inspect
+
+            loc = inspect.currentframe().f_back.f_locals # this is pretty disgusting...
+
+            now_keys = set(loc.keys())
+            env_keys = set(self.__env)
+            new_keys = now_keys - self.__cached_keys
+
+            for k in new_keys: # slow but without a batch key-remove function not much to be done
+                self.__env[k] = loc[k]
+                del loc[k]
+            for k in env_keys:
+                del loc[k]
+
+        elif self.__ug:
+            glob = globals()
+            # globals().clear()
+            # globals().update(self.__glob)
+
+            now_keys = set(glob.keys())
+            env_keys = set(self.__env)
+            new_keys = now_keys - self.__cached_keys
+
+            for k in new_keys:
+                self.__env[k] = glob[k]
+                del glob[k]
+            for k in env_keys: # slow but without a batch key-remove function not much to be done
+                del glob[k]
+            # self.__glob = None
+
+###############################################################################################
+#                                                                                             #
 #                                      MathematicaBlock                                       #
 #                                                                                             #
 ###############################################################################################
@@ -1166,28 +1229,44 @@ class MathematicaBlock:
 
     __sym_dict = {}
 
-    def __init__(self, update_globals = True):
-        self.__ns = None
-        self.__getatt = None
+    def __init__(self, update_globals = True, update_locals = False):
         self.__ug = update_globals
+        self.__ul = update_locals
 
     def __enter__(self):
         if MPackage.initialize_default():
             self.__sym_dict.update(dict(MPackage.symbol_list))
             self.__sym_dict.update((("M", MPackage), ("Sym", MPackage)))
 
-        if self.__ug:
-            self.__glob = globals().copy()
+        if self.__ul:
+            import inspect
+
+            loc = inspect.currentframe().f_back.f_locals # this is pretty disgusting...
+            loc.update(self.__sym_dict)
+
+        elif self.__ug:
+            # self.__glob = globals().copy()
             globals().update(self.__sym_dict)
 
         return self.__sym_dict
 
     def __exit__(self, exc_type, exc_val, exc_tb):
 
-        if self.__ug:
-            globals().clear()
-            globals().update(self.__glob)
-            self.__glob = None
+        if self.__ul:
+            import inspect
+
+            loc = inspect.currentframe().f_back.f_locals # this is pretty disgusting...
+            for k in self.__sym_dict: # slow but we should try to keep __sym_dict small anyway
+                del loc[k]
+
+        elif self.__ug:
+            # globals().clear()
+            # globals().update(self.__glob)
+
+            glob = globals()
+            for k in self.__sym_dict: # slow but we should try to keep __sym_dict small anyway
+                del glob[k]
+            # self.__glob = None
 
 ###############################################################################################
 #                                                                                             #
