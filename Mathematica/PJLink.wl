@@ -4,9 +4,6 @@
 (*PJLink*)
 
 
-(* Mathematica Package *)
-(* Created by Mathematica Plugin for IntelliJ IDEA *)
-
 (* :Title: PJLink *)
 (* :Context: PJLink` *)
 (* :Date: 2018-09-13 *)
@@ -23,9 +20,9 @@
 
 BeginPackage["PJLink`"]
 (* Exported symbols added here with SymbolName::usage *)
-
+PJLink::usage="Head for messages and things";
 InstallPython::usage="InstallPython[] Loads and installs a python kernel link";
-FindPython::usage="FindPython[] finds an installed python kernel";
+FindInstalledPython::usage="FindInstalledPython[] finds an installed python kernel";
 ClosePython::usage="ClosePython[] closes a python kernel";
 PyEvaluate::usage="PyEval[] evaluates code on the python side";
 PyEvaluateString::usage="PyEval[] Evaluates a code string on the python side";
@@ -33,6 +30,7 @@ PyWrite::usage="PyWrite[] writes a command to the python stdin";
 PyWriteString::usage="PyWriteString[] writes a command string to the python stdin";
 PyRead::usage="PyRead[] reads from the python stdout";
 PyReadErr::usage="PyRead[] reads from the python stderr";
+PythonTraceback::usage="A wrapper head for traceback formatting";
 
 
 (* ::Subsubsection::Closed:: *)
@@ -50,13 +48,24 @@ CallPythonPacket::usage="A packet of info for python on what to call";
 EndPackage[]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*SymbolicPython*)
 
 
 BeginPackage["`SymbolicPython`"]
 
-Get@FileNameJoin@{DirectoryName@$InputFileName, "SymbolicPython.m"};
+Get@FileNameJoin@{DirectoryName@$InputFileName, "SymbolicPython.wl"};
+
+EndPackage[]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Exceptions*)
+
+
+BeginPackage["`Exceptions`"]
+
+Get@FileNameJoin@{DirectoryName@$InputFileName, "Exceptions.wl"};
 
 EndPackage[]
 
@@ -81,7 +90,7 @@ If[Not@AssociationQ@$PythonKernels,
 (*Bin Stuff*)
 
 
-pjlinkDir = FileNameJoin@{DirectoryName@$InputFileName, "PJLink"};
+pjlinkDir = FileNameJoin@{Nest[DirectoryName, $InputFileName, 2], "PJLink"};
 
 startKernelPy = "start_kernel.py";
 
@@ -112,7 +121,7 @@ $pySessionPathExtension = (* I need this because Mathematica's $PATH isn't quit 
     ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*InstallPython*)
 
 
@@ -124,7 +133,7 @@ If[!AssociationQ@$DefaultPythonKernel,
   $DefaultPythonKernel = None
   ];
 $defaultPython = "python3";
-Options[InstallPython] =
+Options[InstallPython] = 
   Join[
     {
       LinkObject->Automatic,
@@ -137,21 +146,23 @@ Options[InstallPython] =
     Options[StartProcess]
     ];
 InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[]]:=
+  PackageExceptionBlock["Kernel"]@
     Module[
       {
         pyExe,
-        pyKer = FindPython[version],
+        pyKer = FindInstalledPython[version],
         link = OptionValue[LinkObject],
         lname = Replace[OptionValue["LinkName"], Except[String]:>Sequence@@{}],
-        proc = OptionValue[ProcessObject]
+        proc = OptionValue[ProcessObject],
+        failed = False
       },
       If[!AssociationQ@pyKer,
         pyKer=<||>;
         If[!KeyExistsQ[$PythonKernels, version],
           $PythonKernels[version] = {}
           ];
-        If[Quiet[!MatchQ[MathLink`LinkDeviceInformation[link],{Rule__}]],
-          link =
+        If[linkDead[link],
+          link = 
             LinkCreate[
               lname,
               FilterRules[{ops}, {LinkProtocol}]
@@ -176,12 +187,12 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
         If[!MatchQ[proc, None|_ProcessObject?(ProcessStatus[#]==="Running"&)],
           proc = StartProcess[
             {
-              pyExe,
-              startKernelPy,
+              pyExe, 
+              startKernelPy, 
               "--blocking="<>ToString@TrueQ@OptionValue["Blocking"],
               "--debug="<>ToString@OptionValue["DebugLevel"],
               "-linkmode", "connect",
-              "-linkname", pyKer["Name"]
+              "-linkname", pyKer["Name"] 
               },
             FilterRules[
               {
@@ -190,7 +201,7 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
                   ProcessEnvironment ->
                       <|
                         "PATH" -> $pySessionPathExtension <> Environment["PATH"]
-                      |>,
+                        |>,
                   Nothing
                 ],
                 ProcessDirectory -> pjlinkDir
@@ -199,28 +210,39 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
               ]
             ]
           ];
-        pyKer["Process"] = proc;
-        AppendTo[$PythonKernels[version], pyKer];
-        If[!AssociationQ@$DefaultPythonKernel, $DefaultPythonKernel=pyKer];
-        LinkWrite[pyKer["Link"],  InputNamePacket["In[1]:="]]
+        If[procDead[proc] || linkDead[link],
+          (*Echo@ReadString[ProcessConnection[proc, "StandardError"], EndOfBuffer];*)
+          failed=True,
+          pyKer["Process"] = proc;
+          AppendTo[$PythonKernels[version], pyKer];
+          If[!AssociationQ@$DefaultPythonKernel, $DefaultPythonKernel=pyKer];
+          LinkWrite[pyKer["Link"],  InputNamePacket["In[1]:="]]
+          ]
         ];
-      If[PyEvaluate[version, InputNamePacket["In[1]:="], TimeConstraint->10]===$Aborted,
+      If[failed || 
+          CheckAbort[
+            pyEvalPacket[link, CallPacket[1, "'Initializing'"], 3]=!="Initializing",
+            True
+            ],
         ClosePython[version];
-        $Failed,
+        PackageRaiseException[Automatic,
+          "Failed to start kernel for python executable ``",
+          pyExe
+          ],
         pyKer
         ]
       ]
 
 
 (* ::Subsubsection::Closed:: *)
-(*FindPython*)
+(*FindInstalledPython*)
 
 
-FindPython[version:_?NumberQ|_String|Automatic:Automatic]:=
+FindInstalledPython[version:_?NumberQ|_String|Automatic:Automatic]:=
     Replace[$PythonKernels[version],
       {
         {l_, ___}:>l,
-        _->None
+        _:>None
         }
       ];
 
@@ -230,15 +252,15 @@ FindPython[version:_?NumberQ|_String|Automatic:Automatic]:=
 
 
 ClosePython[version:_?NumberQ|_String|Automatic:Automatic]:=
-    With[{ker = FindPython[version]},
-      If[AssociationQ@ker,
+    With[{ker = FindInstalledPython[version]},
+      If[AssociationQ@ker, 
         $PythonKernels[version] = Most @ $PythonKernels[version];
         If[ ker == $DefaultPythonKernel, $DefaultPythonKernel = None];
         Quiet@KillProcess@ker["Process"];
         Quiet@LinkClose@ker["Link"];
         ]
       ];
-
+      
 
 
 (* ::Subsubsection::Closed:: *)
@@ -267,6 +289,18 @@ pyEvalPacket[link_, packet_, timeout_:10]:=
 
 
 (* ::Subsubsection::Closed:: *)
+(*linkDead / procDead*)
+
+
+linkDead[link_]:=
+  Quiet[!OptionQ[MathLink`LinkDeviceInformation[link]]]
+
+
+procDead[proc_]:=
+  Quiet[ProcessStatus@proc]=!="Running"
+
+
+(* ::Subsubsection::Closed:: *)
 (*cleanUpEnv*)
 
 
@@ -274,11 +308,7 @@ cleanUpEnv//Clear
 
 
 cleanUpEnv[pker_, version_, $Aborted]:=
-  If[(
-      Quiet[!OptionQ[MathLink`LinkDeviceInformation[pker["Link"]]]] ||
-        ProcessStatus@pker["Process"]==="Finished"
-      ),
-    Print@version;
+  If[(linkDead[pker["Link"]]||procDead[pker["Process"]]),
     ClosePython[version],
     $Aborted
     ];
@@ -289,16 +319,17 @@ cleanUpEnv[_, _, p_]:=p
 (*Evaluate*)
 
 
-Options[PyEvaluate] =
+Options[PyEvaluate] = 
   {
     TimeConstraint->5,
     Version->Automatic,
     "EchoSymbolicForm"->False
     };
 PyEvaluate[expr_, ops:OptionsPattern[]]:=
+  PackageExceptionBlock["Kernel"]@
     Module[
       {
-        pker = FindPython[OptionValue[Version]],
+        pker = FindInstalledPython[OptionValue[Version]],
         link,
         sym,
         cm,
@@ -309,11 +340,14 @@ PyEvaluate[expr_, ops:OptionsPattern[]]:=
         If[OptionValue@"EchoSymbolicForm", Echo@sym];
         link = pker["Link"];
         cleanUpEnv[
-          pker,
+          pker, 
           OptionValue["Version"],
           pyEvalPacket[link, CallPacket[1, sym], to]
           ],
-        $Failed (* TODO: Throw a message... *)
+        PackageRaiseException[Automatic,
+          "Found kernel `` which is not a valid kernel",
+          pker
+          ] (* TODO: Throw a message... *)
         ]
       ];
 PyEvaluate~SetAttributes~HoldFirst;
@@ -323,15 +357,16 @@ PyEvaluate~SetAttributes~HoldFirst;
 (*EvaluateString*)
 
 
-Options[PyEvaluateString] =
+Options[PyEvaluateString] = 
   {
     TimeConstraint->10,
     Version->Automatic
     };
 PyEvaluateString[expr_, ops:OptionsPattern[]]:=
+  PackageExceptionBlock["Kernel"]@
     Module[
       {
-        pker = FindPython[OptionValue[Version]],
+        pker = FindInstalledPython[OptionValue[Version]],
         link,
         sym,
         to = If[NumericQ@OptionValue[TimeConstraint], OptionValue[TimeConstraint], 10]
@@ -339,11 +374,14 @@ PyEvaluateString[expr_, ops:OptionsPattern[]]:=
       If[AssociationQ@pker,
         link = pker["Link"];
         cleanUpEnv[
-            pker,
+            pker, 
             OptionValue["Version"],
             pyEvalPacket[link, CallPacket[1, "Evaluate"@expr], to] (* this is a hack but ah well *)
             ],
-        $Failed
+        PackageRaiseException[Automatic,
+          "Found kernel `` which is not a valid kernel",
+          pker
+          ]
         ]
     ]
 
@@ -357,19 +395,23 @@ Options[PyWrite]=
     Version->Automatic
     };
 PyWrite[expr_, ops:OptionsPattern[]]:=
-  Module[
-      {
-        pker = FindPython[OptionValue[Version]],
-        cmd
-        },
-      If[AssociationQ@pker,
-        Block[{$ToPythonStrings=True},
-          cmd = TToPython@ToSymbolicPython[pker]
-          ];
-        WriteLine[pker["Process"], cmd],
-        $Failed
+  PackageExceptionBlock["Kernel"]@
+    Module[
+        {
+          pker = FindInstalledPython[OptionValue[Version]],
+          cmd
+          },
+        If[AssociationQ@pker,
+          Block[{$ToPythonStrings=True},
+            cmd = TToPython@ToSymbolicPython[pker]
+            ];
+          WriteLine[pker["Process"], cmd],
+          PackageRaiseException[Automatic,
+            "Found kernel `` which is not a valid kernel",
+            pker
+            ]
+          ]
         ]
-      ]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -381,13 +423,17 @@ Options[PyWriteString]=
     Version->Automatic
     };
 PyWriteString[cmd_, ops:OptionsPattern[]]:=
+PackageExceptionBlock["Kernel"]@
   Module[
       {
-        pker = FindPython[OptionValue[Version]]
+        pker = FindInstalledPython[OptionValue[Version]]
         },
       If[AssociationQ@pker,
         WriteLine[pker["Process"], cmd],
-        $Failed
+        PackageRaiseException[Automatic,
+          "Found kernel `` which is not a valid kernel",
+          pker
+          ]
         ]
       ]
 
@@ -401,13 +447,17 @@ Options[PyRead]=
     Version->Automatic
     };
 PyRead[ops:OptionsPattern[]]:=
+PackageExceptionBlock["Kernel"]@
   Module[
       {
-        pker = FindPython[OptionValue[Version]]
+        pker = FindInstalledPython[OptionValue[Version]]
         },
       If[AssociationQ@pker,
         ReadString[pker["Process"], EndOfBuffer],
-        $Failed
+        PackageRaiseException[Automatic,
+          "Found kernel `` which is not a valid kernel",
+          pker
+          ]
         ]
       ]
 
@@ -421,13 +471,17 @@ Options[PyReadErr]=
     Version->Automatic
     };
 PyReadErr[ops:OptionsPattern[]]:=
+PackageExceptionBlock["Kernel"]@
   Module[
       {
-        pker = FindPython[OptionValue[Version]]
+        pker = FindInstalledPython[OptionValue[Version]]
         },
       If[AssociationQ@pker,
         ReadString[ProcessConnection[pker["Process"], "StandardError"], EndOfBuffer],
-        $Failed
+        PackageRaiseException[Automatic,
+          "Found kernel `` which is not a valid kernel",
+          pker
+          ]
         ]
       ]
 
@@ -450,7 +504,7 @@ AddTypeHints[eval_] :=
 (*PythonTraceback*)
 
 
-Format[pt:PythonTraceback[ts_]]:=
+Format[pt:PythonTraceback[ts_], StandardForm]:=
   Interpretation[
     Style[ts, Red],
     pt

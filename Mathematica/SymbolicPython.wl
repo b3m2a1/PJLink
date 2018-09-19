@@ -256,7 +256,7 @@ ToPython[PySymbol[s_Symbol]]:=
     ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Numerics*)
 
 
@@ -356,14 +356,15 @@ ToPython[PyDict[a_Association]]:=
   ToPython[PyDict[Normal@a]];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Sequence*)
 
 
 ToPython[PySequence[args_List]]:=
   IfPS[
     StringJoin@Riffle[ToPython/@args,", "],
-    PyStar[args]
+    (*PyStar[args]*)
+    PyRow[ToPython/@args, ", "]
     ];
 
 
@@ -519,7 +520,7 @@ PyAlias@
 (*Commands*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Command*)
 
 
@@ -815,7 +816,7 @@ PyAlias@PyNot[arg_]:=
   PyPrefix["not ", True][arg];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Star*)
 
 
@@ -1029,7 +1030,7 @@ PyAlias@PyElse[val_,vals__]:=
   PyElse[{val,vals}];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Lambda*)
 
 
