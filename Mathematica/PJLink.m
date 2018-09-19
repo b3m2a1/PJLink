@@ -81,7 +81,7 @@ If[Not@AssociationQ@$PythonKernels,
 (*Bin Stuff*)
 
 
-pjlinkDir = Nest[DirectoryName, $InputFileName, 2];
+pjlinkDir = FileNameJoin@{DirectoryName@$InputFileName, "PJLink"};
 
 startKernelPy = "start_kernel.py";
 
@@ -124,7 +124,7 @@ If[!AssociationQ@$DefaultPythonKernel,
   $DefaultPythonKernel = None
   ];
 $defaultPython = "python3";
-Options[InstallPython] = 
+Options[InstallPython] =
   Join[
     {
       LinkObject->Automatic,
@@ -151,7 +151,7 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
           $PythonKernels[version] = {}
           ];
         If[Quiet[!MatchQ[MathLink`LinkDeviceInformation[link],{Rule__}]],
-          link = 
+          link =
             LinkCreate[
               lname,
               FilterRules[{ops}, {LinkProtocol}]
@@ -176,12 +176,12 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
         If[!MatchQ[proc, None|_ProcessObject?(ProcessStatus[#]==="Running"&)],
           proc = StartProcess[
             {
-              pyExe, 
-              startKernelPy, 
+              pyExe,
+              startKernelPy,
               "--blocking="<>ToString@TrueQ@OptionValue["Blocking"],
               "--debug="<>ToString@OptionValue["DebugLevel"],
               "-linkmode", "connect",
-              "-linkname", pyKer["Name"] 
+              "-linkname", pyKer["Name"]
               },
             FilterRules[
               {
@@ -231,14 +231,14 @@ FindPython[version:_?NumberQ|_String|Automatic:Automatic]:=
 
 ClosePython[version:_?NumberQ|_String|Automatic:Automatic]:=
     With[{ker = FindPython[version]},
-      If[AssociationQ@ker, 
+      If[AssociationQ@ker,
         $PythonKernels[version] = Most @ $PythonKernels[version];
         If[ ker == $DefaultPythonKernel, $DefaultPythonKernel = None];
         Quiet@KillProcess@ker["Process"];
         Quiet@LinkClose@ker["Link"];
         ]
       ];
-      
+
 
 
 (* ::Subsubsection::Closed:: *)
@@ -275,9 +275,9 @@ cleanUpEnv//Clear
 
 cleanUpEnv[pker_, version_, $Aborted]:=
   If[(
-      Quiet[!OptionQ[MathLink`LinkDeviceInformation[pker["Link"]]]] || 
+      Quiet[!OptionQ[MathLink`LinkDeviceInformation[pker["Link"]]]] ||
         ProcessStatus@pker["Process"]==="Finished"
-      ), 
+      ),
     Print@version;
     ClosePython[version],
     $Aborted
@@ -289,7 +289,7 @@ cleanUpEnv[_, _, p_]:=p
 (*Evaluate*)
 
 
-Options[PyEvaluate] = 
+Options[PyEvaluate] =
   {
     TimeConstraint->5,
     Version->Automatic,
@@ -309,7 +309,7 @@ PyEvaluate[expr_, ops:OptionsPattern[]]:=
         If[OptionValue@"EchoSymbolicForm", Echo@sym];
         link = pker["Link"];
         cleanUpEnv[
-          pker, 
+          pker,
           OptionValue["Version"],
           pyEvalPacket[link, CallPacket[1, sym], to]
           ],
@@ -323,7 +323,7 @@ PyEvaluate~SetAttributes~HoldFirst;
 (*EvaluateString*)
 
 
-Options[PyEvaluateString] = 
+Options[PyEvaluateString] =
   {
     TimeConstraint->10,
     Version->Automatic
@@ -339,7 +339,7 @@ PyEvaluateString[expr_, ops:OptionsPattern[]]:=
       If[AssociationQ@pker,
         link = pker["Link"];
         cleanUpEnv[
-            pker, 
+            pker,
             OptionValue["Version"],
             pyEvalPacket[link, CallPacket[1, "Evaluate"@expr], to] (* this is a hack but ah well *)
             ],
