@@ -1183,8 +1183,9 @@ class LinkEnvironment:
         if frame is None:
             frame = self.get_frame(frames_back+1)
         glob = frame.f_back.f_globals
-        self.__cached_keys = set(glob.keys())
+        # print(glob.keys())
         glob.update(self.__env)
+        self.__cached_keys = set(glob.keys())
 
     def detach_global(self, frames_back = 0, frame = None):
 
@@ -1209,8 +1210,8 @@ class LinkEnvironment:
             frame = self.get_frame(frames_back+1)
 
         loc = frame.f_locals # this is pretty disgusting...
-        self.__cached_keys = set(loc.keys())
         loc.update(self.__env)
+        self.__cached_keys = set(loc.keys())
 
     def detach_local(self, frames_back = 0, frame = None):
 
@@ -1231,25 +1232,9 @@ class LinkEnvironment:
 
     def __enter__(self):
         if self.__ul:
-            self.attach_local()
+            self.attach_local(frames_back=0)
         elif self.__ug:
-            self.attach_global()
-        else:
-            self.ensure_init()
-
-        return self.__sym_dict
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.__ul:
-            self.detach_local()
-        elif self.__ug:
-            self.detach_global()
-
-    def __enter__(self):
-        if self.__ul:
-            self.attach_local(frames_back=1)
-        elif self.__ug:
-            self.attach_global(frames_back=1)
+            self.attach_global(frames_back=0)
 
         return self.__env
 

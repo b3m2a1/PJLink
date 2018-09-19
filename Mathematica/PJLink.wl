@@ -48,7 +48,7 @@ CallPythonPacket::usage="A packet of info for python on what to call";
 EndPackage[]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*SymbolicPython*)
 
 
@@ -288,7 +288,7 @@ pyEvalPacket[link_, packet_, timeout_:10]:=
       ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*linkDead / procDead*)
 
 
@@ -511,7 +511,7 @@ Format[pt:PythonTraceback[ts_], StandardForm]:=
     ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*End*)
 
 
