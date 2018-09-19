@@ -1169,56 +1169,95 @@ class LinkEnvironment:
         self.__ug = update_globals
         self.__ul = update_locals
 
+    def get_frame(self, frames_back = 0):
+        import inspect
+
+        frame = inspect.currentframe()
+        for i in range(frames_back+1):
+            frame = frame.f_back
+
+        return frame
+
+    def attach_global(self, frames_back = 0, frame = None):
+
+        if frame is None:
+            frame = self.get_frame(frames_back+1)
+        glob = frame.f_back.f_globals
+        self.__cached_keys = set(glob.keys())
+        glob.update(self.__env)
+
+    def detach_global(self, frames_back = 0, frame = None):
+
+        if frame is None:
+            frame = self.get_frame(frames_back+1)
+
+        glob = frame.f_globals # this is pretty disgusting...
+
+        now_keys = set(glob.keys())
+        env_keys = set(self.__env)
+        new_keys = now_keys - self.__cached_keys
+
+        for k in new_keys:
+            self.__env[k] = glob[k]
+            del glob[k]
+        for k in env_keys: # slow but without a batch key-remove function not much to be done
+            del glob[k]
+
+    def attach_local(self, frames_back = 0, frame = None):
+
+        if frame is None:
+            frame = self.get_frame(frames_back+1)
+
+        loc = frame.f_locals # this is pretty disgusting...
+        self.__cached_keys = set(loc.keys())
+        loc.update(self.__env)
+
+    def detach_local(self, frames_back = 0, frame = None):
+
+        if frame is None:
+            frame = self.get_frame(frames_back+1)
+
+        loc = frame.f_locals # this is pretty disgusting...
+
+        now_keys = set(loc.keys())
+        env_keys = set(self.__env)
+        new_keys = now_keys - self.__cached_keys
+
+        for k in new_keys: # slow but without a batch key-remove function not much to be done
+            self.__env[k] = loc[k]
+            del loc[k]
+        for k in env_keys:
+            del loc[k]
+
     def __enter__(self):
-
         if self.__ul:
-            import inspect
-
-            loc = inspect.currentframe().f_back.f_locals # this is pretty disgusting...
-            self.__cached_keys = set(loc.keys())
-            loc.update(self.__env)
-
+            self.attach_local()
         elif self.__ug:
-            # self.__glob = globals().copy()
-            glob = globals()
+            self.attach_global()
+        else:
+            self.ensure_init()
 
-            self.__cached_keys = set(glob.keys())
-            glob.update(self.__env)
+        return self.__sym_dict
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.__ul:
+            self.detach_local()
+        elif self.__ug:
+            self.detach_global()
+
+    def __enter__(self):
+        if self.__ul:
+            self.attach_local(frames_back=1)
+        elif self.__ug:
+            self.attach_global(frames_back=1)
 
         return self.__env
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-
         if self.__ul:
-            import inspect
-
-            loc = inspect.currentframe().f_back.f_locals # this is pretty disgusting...
-
-            now_keys = set(loc.keys())
-            env_keys = set(self.__env)
-            new_keys = now_keys - self.__cached_keys
-
-            for k in new_keys: # slow but without a batch key-remove function not much to be done
-                self.__env[k] = loc[k]
-                del loc[k]
-            for k in env_keys:
-                del loc[k]
-
+            self.detach_local(frames_back=1)
         elif self.__ug:
-            glob = globals()
-            # globals().clear()
-            # globals().update(self.__glob)
-
-            now_keys = set(glob.keys())
-            env_keys = set(self.__env)
-            new_keys = now_keys - self.__cached_keys
-
-            for k in new_keys:
-                self.__env[k] = glob[k]
-                del glob[k]
-            for k in env_keys: # slow but without a batch key-remove function not much to be done
-                del glob[k]
-            # self.__glob = None
+            self.detach_global(frames_back=1)
 
 ###############################################################################################
 #                                                                                             #
@@ -1233,40 +1272,72 @@ class MathematicaBlock:
         self.__ug = update_globals
         self.__ul = update_locals
 
-    def __enter__(self):
+    def ensure_init(self):
         if MPackage.initialize_default():
             self.__sym_dict.update(dict(MPackage.symbol_list))
             self.__sym_dict.update((("M", MPackage), ("Sym", MPackage)))
 
+    def get_frame(self, frames_back = 0):
+        import inspect
+
+        frame = inspect.currentframe()
+        for i in range(frames_back+1):
+            frame = frame.f_back
+
+        return frame
+
+    def attach_global(self, frames_back = 0, frame = None):
+
+        if frame is None:
+            frame = self.get_frame(frames_back+1)
+
+        self.ensure_init()
+
+        glob = frame.f_globals # this is pretty disgusting...
+        glob.update(self.__sym_dict)
+
+    def detach_global(self, frames_back = 0, frame = None):
+
+        if frame is None:
+            frame = self.get_frame(frames_back+1)
+
+        glob = frame.f_globals # this is pretty disgusting...
+        for k in self.__sym_dict: # slow but we should try to keep __sym_dict small anyway
+            del glob[k]
+
+    def attach_local(self, frames_back = 0, frame = None):
+
+        if frame is None:
+            frame = self.get_frame(frames_back+1)
+
+        self.ensure_init()
+        loc = frame.f_locals # this is pretty disgusting...
+        loc.update(self.__sym_dict)
+
+    def detach_local(self, frames_back = 0, frame = None):
+
+        if frame is None:
+            frame = self.get_frame(frames_back+1)
+
+        loc = frame.f_locals # this is pretty disgusting...
+        for k in self.__sym_dict: # slow but we should try to keep __sym_dict small anyway
+            del loc[k]
+
+    def __enter__(self):
         if self.__ul:
-            import inspect
-
-            loc = inspect.currentframe().f_back.f_locals # this is pretty disgusting...
-            loc.update(self.__sym_dict)
-
+            self.attach_local(frames_back=1)
         elif self.__ug:
-            # self.__glob = globals().copy()
-            globals().update(self.__sym_dict)
+            self.attach_global(frames_back=1)
+        else:
+            self.ensure_init()
 
         return self.__sym_dict
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-
         if self.__ul:
-            import inspect
-
-            loc = inspect.currentframe().f_back.f_locals # this is pretty disgusting...
-            for k in self.__sym_dict: # slow but we should try to keep __sym_dict small anyway
-                del loc[k]
-
+            self.detach_local(frames_back=1)
         elif self.__ug:
-            # globals().clear()
-            # globals().update(self.__glob)
-
-            glob = globals()
-            for k in self.__sym_dict: # slow but we should try to keep __sym_dict small anyway
-                del glob[k]
-            # self.__glob = None
+            self.detach_global(frames_back=1)
 
 ###############################################################################################
 #                                                                                             #

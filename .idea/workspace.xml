@@ -5,11 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PJLink/HelperClasses.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/HelperClasses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/project/README.nb" beforeDir="false" afterPath="$PROJECT_DIR$/project/README.nb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -59,7 +55,7 @@
           <entry key="gitignore" value="17" />
           <entry key="java" value="14" />
           <entry key="m" value="3454" />
-          <entry key="py" value="130451" />
+          <entry key="py" value="130983" />
           <entry key="txt" value="3" />
         </counts>
       </usages-collector>
@@ -69,7 +65,7 @@
           <entry key="JAVA" value="14" />
           <entry key="Mathematica" value="3454" />
           <entry key="PLAIN_TEXT" value="104" />
-          <entry key="Python" value="130449" />
+          <entry key="Python" value="130981" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.vcs.git.usages" />
@@ -95,8 +91,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/PJLink/HelperClasses.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="220">
-              <caret line="1260" lean-forward="true" selection-start-line="1260" selection-end-line="1260" />
+            <state relative-caret-position="55">
+              <caret line="1250" column="23" lean-forward="true" selection-start-line="1250" selection-start-column="23" selection-end-line="1250" selection-end-column="23" />
               <folding>
                 <element signature="e#81#140#0" expanded="true" />
                 <element signature="e#23866#33166#0" />
@@ -104,13 +100,16 @@
                 <element signature="e#36522#44394#0" />
                 <element signature="e#43607#48135#0" />
                 <element signature="e#47509#67984#0" />
-                <marker date="1537376016266" expanded="true" signature="1389:1495" ph="..." />
-                <marker date="1537376016266" expanded="true" signature="16329:16818" ph="..." />
-                <marker date="1537376016266" expanded="true" signature="37191:37227" ph="..." />
-                <marker date="1537376016266" expanded="true" signature="37265:37274" ph="..." />
-                <marker date="1537376016266" expanded="true" signature="38018:38155" ph="..." />
-                <marker date="1537376016266" expanded="true" signature="38503:38509" ph="..." />
-                <marker date="1537376016266" expanded="true" signature="44932:46645" ph="..." />
+                <marker date="1537379742702" expanded="true" signature="1389:1495" ph="..." />
+                <marker date="1537379742702" expanded="true" signature="16329:16818" ph="..." />
+                <marker date="1537379742702" expanded="true" signature="37191:37227" ph="..." />
+                <marker date="1537379742702" expanded="true" signature="37265:37274" ph="..." />
+                <marker date="1537379742702" expanded="true" signature="38018:38155" ph="..." />
+                <marker date="1537379742702" expanded="true" signature="38503:38509" ph="..." />
+                <marker date="1537379742702" expanded="true" signature="44932:47648" ph="..." />
+                <marker date="1537379742702" expanded="true" signature="45156:45319" ph="..." />
+                <marker date="1537379742702" expanded="true" signature="48719:48724" ph="..." />
+                <marker date="1537379742702" expanded="true" signature="49122:49879" ph="..." />
               </folding>
             </state>
           </provider>
@@ -120,7 +119,7 @@
         <entry file="file://$PROJECT_DIR$/PJLink/KernelLink.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="206">
-              <caret line="1118" lean-forward="true" selection-start-line="1118" selection-end-line="1118" />
+              <caret line="1118" selection-start-line="1118" selection-end-line="1118" />
               <folding>
                 <element signature="e#0#30#0" expanded="true" />
                 <marker date="1537307354420" expanded="true" signature="654:655" ph="..." />
@@ -176,7 +175,7 @@
         <entry file="file://$PROJECT_DIR$/PJLink/start_kernel.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="348">
-              <caret line="36" column="25" lean-forward="true" selection-start-line="36" selection-start-column="25" selection-end-line="36" selection-end-column="25" />
+              <caret line="36" column="25" selection-start-line="36" selection-start-column="25" selection-end-line="36" selection-end-column="25" />
             </state>
           </provider>
         </entry>
@@ -357,11 +356,6 @@
             <path>
               <item name="PJLink" type="b2602c69:ProjectViewProjectNode" />
               <item name="PJLink" type="462c0819:PsiDirectoryNode" />
-              <item name="Java" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="PJLink" type="b2602c69:ProjectViewProjectNode" />
-              <item name="PJLink" type="462c0819:PsiDirectoryNode" />
               <item name="PJLink" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -499,7 +493,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1108" height="877" extended-state="1" />
+    <frame x="0" y="23" width="1108" height="877" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.239212" />
@@ -937,14 +931,14 @@ print(link._error())</expression-string>
     <entry file="file://$PROJECT_DIR$/PJLink/start_kernel.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="348">
-          <caret line="36" column="25" lean-forward="true" selection-start-line="36" selection-start-column="25" selection-end-line="36" selection-end-column="25" />
+          <caret line="36" column="25" selection-start-line="36" selection-start-column="25" selection-end-line="36" selection-end-column="25" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/KernelLink.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="206">
-          <caret line="1118" lean-forward="true" selection-start-line="1118" selection-end-line="1118" />
+          <caret line="1118" selection-start-line="1118" selection-end-line="1118" />
           <folding>
             <element signature="e#0#30#0" expanded="true" />
             <marker date="1537307354420" expanded="true" signature="654:655" ph="..." />
@@ -973,8 +967,8 @@ print(link._error())</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/HelperClasses.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="220">
-          <caret line="1260" lean-forward="true" selection-start-line="1260" selection-end-line="1260" />
+        <state relative-caret-position="55">
+          <caret line="1250" column="23" lean-forward="true" selection-start-line="1250" selection-start-column="23" selection-end-line="1250" selection-end-column="23" />
           <folding>
             <element signature="e#81#140#0" expanded="true" />
             <element signature="e#23866#33166#0" />
@@ -982,13 +976,16 @@ print(link._error())</expression-string>
             <element signature="e#36522#44394#0" />
             <element signature="e#43607#48135#0" />
             <element signature="e#47509#67984#0" />
-            <marker date="1537376016266" expanded="true" signature="1389:1495" ph="..." />
-            <marker date="1537376016266" expanded="true" signature="16329:16818" ph="..." />
-            <marker date="1537376016266" expanded="true" signature="37191:37227" ph="..." />
-            <marker date="1537376016266" expanded="true" signature="37265:37274" ph="..." />
-            <marker date="1537376016266" expanded="true" signature="38018:38155" ph="..." />
-            <marker date="1537376016266" expanded="true" signature="38503:38509" ph="..." />
-            <marker date="1537376016266" expanded="true" signature="44932:46645" ph="..." />
+            <marker date="1537379742702" expanded="true" signature="1389:1495" ph="..." />
+            <marker date="1537379742702" expanded="true" signature="16329:16818" ph="..." />
+            <marker date="1537379742702" expanded="true" signature="37191:37227" ph="..." />
+            <marker date="1537379742702" expanded="true" signature="37265:37274" ph="..." />
+            <marker date="1537379742702" expanded="true" signature="38018:38155" ph="..." />
+            <marker date="1537379742702" expanded="true" signature="38503:38509" ph="..." />
+            <marker date="1537379742702" expanded="true" signature="44932:47648" ph="..." />
+            <marker date="1537379742702" expanded="true" signature="45156:45319" ph="..." />
+            <marker date="1537379742702" expanded="true" signature="48719:48724" ph="..." />
+            <marker date="1537379742702" expanded="true" signature="49122:49879" ph="..." />
           </folding>
         </state>
       </provider>
