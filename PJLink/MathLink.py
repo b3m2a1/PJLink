@@ -393,6 +393,7 @@ relevant, but perhaps some maintainability benefits will accrue with the split."
         "Long"       : "Long",
         "Float"      : "Float",
         "Double"     : "Double",
+        "Real"       : "Double",
         "String"     : "String",
         "BigInteger" : "Int",
         "Decimal"    : "Decimal",
@@ -708,7 +709,7 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
         :return:
         """
         putter = self._getPutter(o)
-        self.Env.logf("delegating put to {}", putter)
+        # self.Env.logf("delegating put to {}", putter)
         return putter(o)
 
     def _putArrayPiecemeal(self, o, heads = None, head_index = 0):

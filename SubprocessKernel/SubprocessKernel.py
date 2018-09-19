@@ -36,6 +36,8 @@ class SubprocessKernel(WrappedKernelLink):
             )
         )
 
+        self.setLogging()
+
         self.evaluate(kernel_init)
         self.evaluate(kernel_config)
 

@@ -288,16 +288,16 @@ pyEvalPacket[link_, packet_, timeout_:10]:=
       ];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*linkDead / procDead*)
 
 
 linkDead[link_]:=
-  Quiet[!OptionQ[MathLink`LinkDeviceInformation[link]]]
+  link =!= None && Quiet[!OptionQ[MathLink`LinkDeviceInformation[link]]]
 
 
 procDead[proc_]:=
-  Quiet[ProcessStatus@proc]=!="Running"
+  proc =!= None && Quiet[ProcessStatus@proc] =!= "Running"
 
 
 (* ::Subsubsection::Closed:: *)

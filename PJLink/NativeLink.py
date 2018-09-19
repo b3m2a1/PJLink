@@ -179,7 +179,7 @@ class NativeLink(MathLink):
         return self.__lock
 
     def _wrap(self, checkLink = True, checkError = True, check = None, lock = True, timeout = None, poll = 20):
-        self.Env.logf("acquiring LinkWrapper(checkLink = {}, checkError = {}, check = {}, lock = {}, timeout = {}, poll = {})", checkLink, checkError, check, lock, timeout, poll)
+        # self.Env.logf("acquiring LinkWrapper(checkLink = {}, checkError = {}, check = {}, lock = {}, timeout = {}, poll = {})", checkLink, checkError, check, lock, timeout, poll)
         return LinkWrapper(self, checkLink = checkLink, checkError = checkError, check = check, lock = lock, timeout=timeout, poll=poll)
 
     def activate(self):
@@ -375,8 +375,7 @@ class NativeLink(MathLink):
         with self._wrap(check=0):
             return self._call("GetSymbol") == "True"
     def _getFloat(self):
-        with self._wrap(check=0):
-            return self._call("Get")
+        return self._getDouble()
     def _getDouble(self):
         with self._wrap(check=0):
             return self._call("GetDouble")
@@ -420,7 +419,7 @@ class NativeLink(MathLink):
         elif argCount is None:
             raise ValueError("Can't put function without argcount")
         with self._wrap():
-            self.Env.logf("Puting argcount {}", argCount)
+            self.Env.log("Puting Function type token")
             self._call("PutNext", self.Env.toTypeToken('Function'))
             self.Env.logf("Puting argcount {}", argCount)
             self._call("PutArgCount", argCount)

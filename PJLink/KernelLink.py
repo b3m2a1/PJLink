@@ -53,12 +53,37 @@ from Mathematica), will want to start with the handleCallPacket() method here.
 
         with LinkMark(self) as mark:
 
-            self.Env.logf("Getting {} off link", t1)
+            # self.Env.logf("Getting {} off link", t1)
 
             if t1 == "Function":
                 try:
+
+                    # try:
+                    #     self._getArgCount() # if we're in a ReturnPacket we need this first I think...
+                    # except MathLinkException as e:
+                    #     import traceback as tb
+                    #     self.Env.log(tb.format_exc())
+                    #     self._seekMark(mark)
+                    #
+                    # try:
+                    #     self.Env.log(self._getSymbol()) # if we're in a ReturnPacket we need this first I think...
+                    # except MathLinkException as e:
+                    #     import traceback as tb
+                    #     self.Env.log(tb.format_exc())
+                    # finally:
+                    #     self._seekMark(mark)
+
+
                     self.Env.log("Checking if object is packed array")
-                    self._checkFunction(self.M.PackagePackage+"PackedArrayInfo") # this can get messy with context?
+                    try:
+                        is_packed = self._checkFunction(self.M.PackagePackage+"PackedArrayInfo") # this can get messy with context?
+                    except MathLinkException as e:
+                        self._seekMark(mark)
+                        is_packed =self._checkFunction("PackedArrayInfo")
+
+                    if not is_packed:
+                        raise MathLinkException(2018, "No PackedArrayInfo")
+
                     self.Env.log("Found packed array on link")
 
                     dtype = self._getSymbol()
@@ -84,18 +109,14 @@ from Mathematica), will want to start with the handleCallPacket() method here.
                     if tok in ("Object", "Symbol"):
                         res = self._getObject()
                     else:
-                        # print("Unpacking packed array of type {} and dims {}".format(dtype, dims))
-                        # unpacking = True
                         res = self._getArray(true_type, len(dims))
                 except MathLinkException as e:
-                    # import traceback as tb
 
+                    # import traceback as tb
                     # self.Env.log(tb.format_exc())
+
                     self._clearError()
                     self._seekMark(mark)
-                    # if unpacking:
-                    #     raise e
-                    # print(e)
 
             if res is None:
 
@@ -117,7 +138,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
                         if t1 == "Symbol":
                             res = MLSym(res)
 
-        self.Env.logf("Got {} off link", res)
+        # self.Env.logf("Got {} off link", res)
 
         return res
 
