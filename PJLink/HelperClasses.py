@@ -1174,6 +1174,7 @@ class MPackageClass(MExprUtils):
     __The_One_True_Package = None
 
     import os
+    _package_WL = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Mathematica", "PJLink.wl")
     __sym_list = os.path.join(os.path.dirname(__file__), "Resources", "sym_list.json")
     del os
 
@@ -1230,23 +1231,10 @@ class MPackageClass(MExprUtils):
         return self.initialize_from_file(self.__sym_list)
 
     def _add_type_hints(self, to_eval):
-        expr = self._prsym("expr")
-        return self.Block(
-                [ expr.name ],
-                self.Set(expr, self.F("Developer`ToPackedArray", to_eval)),
-                self.If(
-                    self.F("Developer`PackedArrayQ", expr),
-                    self.F(self.PackagePackage+"PackedArrayInfo",
-                        # type
-                        self.F("Head", self.F("Extract", expr, self.F("Table", 1, self.List(self.F("ArrayDepth", expr))))),
-                        # dimensions
-                        self.F("Dimensions", expr),
-                        # data
-                        expr
-                    ),
-                    expr
-                )
-            )
+        self.CompoundExpression(
+            self._load_PJLink(),
+            self.F(self.PackagePackage+"AddTypeHints", to_eval)
+        )
 
     def _eval(self, expr, add_type_hints = True):
         return self.EvaluatePacket(expr, _EndPacket=True)
@@ -1272,8 +1260,14 @@ class MPackageClass(MExprUtils):
 
         return self.ToExpression(obj) if isinstance(obj, str) else obj, page_width, MLSym(format)
 
+    def _load_JLink(self):
+        return self.Needs(self.JLinkContext)
+
     def _load_JLink_packet(self):
-        return self._eval(self.Needs(self.JLinkContext))
+        return self._eval(self._load_JLink())
+
+    def _load_PJLink(self):
+        return self.Needs(self.PackageContext, self._package_WL)
 
     def _to_cell_expr(self, obj, page_width = None, format = None, **kw):
         """Python rep of:

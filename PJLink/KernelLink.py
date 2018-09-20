@@ -675,7 +675,12 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             mark = self._createMark()
             # Note that this behavior means that the symbol Null on the link will result in MLTKSYM, not MLTKOBJECT.
             # This is desired (?) for backward compatibility.
-            res = self._getObject() is not None
+            try:
+                # res = self._getObject() is not None
+                self._getObject()
+                res = True
+            except (KeyError, AttributeError):
+                res = False
         except MathLinkException as e:
             self._clearError()
         finally:
