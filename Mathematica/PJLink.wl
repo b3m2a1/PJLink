@@ -33,41 +33,45 @@ PyReadErr::usage="PyRead[] reads from the python stderr";
 PythonTraceback::usage="A wrapper head for traceback formatting";
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (* Package*)
 
 
-BeginPackage["`Package`"]
+BeginPackage["`Package`"];
 
 $DefaultPythonKernel::usage="The default kernel for evaluations";
 $PythonKernels::usage="A listing of the configured python kernels";
 AddTypeHints::usage="AddTypeHints[expr] Adds type hints to expr that python can use";
-PackedArrayInfo::usage="A typehint added by AddTypeHints (currently the only one)";
+PackedArrayInfo::usage="A typehint added by AddTypeHints";
+ImageArrayInfo::usage="A typehint added by AddTypeHints";
+SparseArrayInfo::usage="A typehint added by AddTypeHints";
 CallPythonPacket::usage="A packet of info for python on what to call";
 
-EndPackage[]
+EndPackage[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*SymbolicPython*)
 
 
-BeginPackage["`SymbolicPython`"]
+BeginPackage["`SymbolicPython`"];
 
+AppendTo[$ContextPath, $Context//StringReplace["SymbolicPython"->"Package"]];
+AppendTo[$ContextPath, $Context//StringDelete["SymbolicPython`"]];
 Get@FileNameJoin@{DirectoryName@$InputFileName, "SymbolicPython.wl"};
 
-EndPackage[]
+EndPackage[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Exceptions*)
 
 
-BeginPackage["`Exceptions`"]
+BeginPackage["`Exceptions`"];
 
 Get@FileNameJoin@{DirectoryName@$InputFileName, "Exceptions.wl"};
 
-EndPackage[]
+EndPackage[];
 
 
 (* ::Subsection:: *)
@@ -309,7 +313,11 @@ cleanUpEnv//Clear
 
 cleanUpEnv[pker_, version_, $Aborted]:=
   If[(linkDead[pker["Link"]]||procDead[pker["Process"]]),
-    ClosePython[version],
+    ClosePython[version];
+    PackageRaiseException[Automatic,
+      "Kernel `` for version `` has died",
+      pker, version
+      ],
     $Aborted
     ];
 cleanUpEnv[_, _, p_]:=p
@@ -341,7 +349,7 @@ PyEvaluate[expr_, ops:OptionsPattern[]]:=
         link = pker["Link"];
         cleanUpEnv[
           pker, 
-          OptionValue["Version"],
+          OptionValue[Version],
           pyEvalPacket[link, CallPacket[1, sym], to]
           ],
         PackageRaiseException[Automatic,
@@ -403,7 +411,7 @@ PyWrite[expr_, ops:OptionsPattern[]]:=
           },
         If[AssociationQ@pker,
           Block[{$ToPythonStrings=True},
-            cmd = TToPython@ToSymbolicPython[pker]
+            cmd = ToPython@ToSymbolicPython[pker]
             ];
           WriteLine[pker["Process"], cmd],
           PackageRaiseException[Automatic,
@@ -486,16 +494,73 @@ PackageExceptionBlock["Kernel"]@
       ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*AddTypeHints*)
 
 
 AddTypeHints[eval_] :=
     Block[{expr = eval},
+      expr = 
+        Replace[expr,
+          {
+            _RawArray:>Normal[expr]
+            (* I'll need more of these in the future *)
+           }
+          ];
       expr = Developer`ToPackedArray[expr];
-      If[Developer`PackedArrayQ[expr],
-        PackedArrayInfo[Head@Extract[expr, Table[1, {ArrayDepth@expr}]], Dimensions@expr, expr],
-        expr
+      Which[
+        Developer`PackedArrayQ[expr],
+          PackedArrayInfo[Head@Extract[expr, Table[1, {ArrayDepth@expr}]], Dimensions@expr, expr],
+        ImageQ@expr,
+          With[
+            {
+              id=Replace[Image`InternalImageData[expr], 
+                {
+                  _Image`InternalImageData:>ImageData@expr
+                  }
+                ],
+              it=ImageType@expr
+              },
+            ImageArrayInfo[
+              Dimensions@id,
+              ImageColorSpace@expr, 
+              it,
+              If[it == "Real" || it == "Real32",
+                "Double",
+                "Integer"
+                ],
+              If[Head@id===RawArray,
+                Normal@id,
+                Which[
+                  it=="Byte", 
+                    255*id,
+                  it=="Bit16",
+                    65535*id,
+                  True,
+                    id
+                  ]
+                ]
+              ]
+            ],
+        Head[expr]===SparseArray,
+          With[
+            {
+              nzvs = expr["NonzeroValues"],
+              cis = expr["ColumnIndices"],
+              rps = expr["RowPointers"]
+              },
+            SparseArrayInfo[
+              Dimensions@expr,
+              Head@nzvs[[1]],
+              nzvs,
+              Dimensions[cis],
+              cis,
+              Dimensions[rps],
+              rps
+              ]
+            ],
+        True,
+          expr
         ]
       ]
 
@@ -511,7 +576,7 @@ Format[pt:PythonTraceback[ts_], StandardForm]:=
     ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*End*)
 
 

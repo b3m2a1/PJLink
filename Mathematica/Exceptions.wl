@@ -24,11 +24,11 @@ PackageFailureException::usage="";
 PackageRaiseException::usage="";
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Begin*)
 
 
-Begin["`Exceptions`Private`"]
+Begin["`Private`"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -312,7 +312,7 @@ PackageExceptionBlock[Optional[Automatic, Automatic]]:=
 PackageExceptionBlock~SetAttributes~HoldFirst;
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*End*)
 
 

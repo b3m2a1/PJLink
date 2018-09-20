@@ -58,6 +58,99 @@ MsgHandlerRecord   = namedtuple("MsgHandlerRecord",   ["method", "target"])
 
 ###############################################################################################
 #                                                                                             #
+#                                       SparseArrayData                                       #
+#                                                                                             #
+###############################################################################################
+class SparseArrayData:
+    """Holder class for SparseArray data
+
+    """
+    def __init__(self, dims, nzvs, rps, cis):
+        self.shape = dims
+        self.non_zero_values = nzvs
+        self.row_pointers = rps
+        self.column_indices = cis
+
+    @staticmethod
+    def _tonumpy(dims, nzvs, rps, cis):
+        import scipy.sparse as sp
+        return sp.csr_matrix((nzvs, cis, rps), dims)
+
+    def tonumpy(self):
+        return self._tonumpy(self.shape, self.non_zero_values, self.row_pointers, self.column_indices)
+
+###############################################################################################
+#                                                                                             #
+#                                           ImageData                                         #
+#                                                                                             #
+###############################################################################################
+class ImageData:
+    """Holder class for Image data
+
+    """
+    def __init__(self, dims, cs, itype, data):
+        self.dimensions = dims[:2]
+        self.data = data
+        self.color_space = cs
+        self.image_type = itype
+        self.channels = dims[2] if len(dims) > 2 else 1
+
+    @staticmethod
+    def _detmode(cs, itype, channels):
+
+        mode = cs
+        dtype = None
+        if itype == "Bit":
+            mode = "1"
+            dtype = "uint8"
+        elif itype == "Byte":
+            dtype = "uint8"
+            if cs == "Grayscale":
+                mode = "L"
+            elif cs == "RGB":
+                mode = "RGB"
+                if channels == 4:
+                    mode = "RGBA"
+            if cs == "HSB":
+                mode = "HSV"
+        elif itype == "Bit16":
+            dtype = "int32"
+            mode = "I"
+        elif itype == "Real" or itype == "Real32":
+            mode = "F"
+            dtype = "float32"
+
+        return mode, dtype
+
+    @classmethod
+    def _topil(cls, dims, cs, itype, data, channels):
+        from PIL import Image
+        mode, dtype = cls._detmode(cs, itype, channels)
+
+        try:
+            cast = data.astype(dtype)
+        except AttributeError:
+            cast = data
+
+        try:
+            dbuf = cast.data.tobytes()
+        except AttributeError:
+            try:
+                dbuf = cast.tobytes()
+            except AttributeError:
+                dbuf = cast.data
+
+        return Image.frombuffer(mode, dims, dbuf, "raw", mode, 0, 1)
+
+    @property
+    def pil_mode(self):
+        return self._detmode(self.color_space, self.image_type, self.channels)
+
+    def topil(self):
+        return self._topil(self.dimensions, self.color_space, self.image_type, self.data, self.channels)
+
+###############################################################################################
+#                                                                                             #
 #                                       BufferedNDArray                                       #
 #                                                                                             #
 ###############################################################################################
@@ -73,6 +166,40 @@ Some slicing capability is added for giggles
         self._buffer = buff
         self.__shape = tuple(dims)
         self.__offsets = tuple(offsets)
+
+    @property
+    def data(self):
+        mm = memoryview(self._buffer)
+        mm = mm.cast("B")
+        return mm.cast(self.typecode, self.shape)
+
+    @property
+    def itemsize(self):
+        return self._buffer.itemsize
+    def byteswap(self):
+        return self._buffer.byteswap()
+    def buffer_info(self):
+        return self._buffer.buffer_info()
+
+    def copy(self):
+        return type(self)(self._buffer.copy(), self.__shape, self.__offsets)
+
+    def astype(self, typestr):
+        import array
+
+        tnames = {
+            "int8" : "b", "uint8" : "B",
+            "int16" : "h", "uint16" : "H",
+            "int32" : "i", "uint32" : "I",
+            "int64" : "l", "uint64" : "L",
+            "float32" : "f", "float64" : "d"
+        }
+        if typestr in tnames:
+            typestr = tnames[typestr]
+
+        cast = array.array(typestr, self._buffer)
+
+        return type(self)(cast, self.__shape, self.__offsets)
 
     @classmethod
     def from_buffers(cls, buffs, dims = None):
@@ -151,6 +278,10 @@ Some slicing capability is added for giggles
         except ValueError:
             self.__shape = old
             raise ValueError("New dimension would exceed buffer size")
+
+    @property
+    def ndim(self):
+        return len(self.__shape)
 
     @property
     def offsets(self):
@@ -800,12 +931,11 @@ for the JLink package on the Mathematica side
         return cls.F("System`Private`RestoreContextPath")
     @classmethod
     def with_context(cls, context, cpath, expr):
-        # print(type(cls._psym("cachedContext")))
         setup = [
-            cls.Set(cls._psym("cachedContext"), MLSym("$Context"))
+            cls.Set(cls._prsym("cachedContext"), MLSym("$Context"))
         ]
         teardown = [
-            cls.Set(MLSym("$Context"), cls._psym("cachedContext"))
+            cls.Set(MLSym("$Context"), cls._prsym("cachedContext"))
         ]
         if context is not None:
             setup.append(cls.Set(MLSym("$Context"), context))
@@ -818,13 +948,6 @@ for the JLink package on the Mathematica side
             cls.do(*setup),
             expr,
             cls.do(*teardown)
-        )
-    @classmethod
-    def in_package(cls, expr):
-        return cls.with_context(
-            cls.PackagePackage,
-            ["System`", cls.PackageContext, cls.PackagePackage, cls.PackagePrivate],
-            expr
         )
 
     None_ = MLSym("None")
@@ -976,6 +1099,14 @@ class MPackageClass(MExprUtils):
     def symbol_list(self):
         return self.__symbols
 
+    @classmethod
+    def in_package(cls, expr):
+        return cls.with_context(
+            cls.PackagePackage,
+            ["System`", cls.PackageContext, cls.PackagePackage, cls.PackagePrivate],
+            expr
+        )
+
     def initialize_from_list(self, names):
         if not self.__initialized:
             self.__initialized = True
@@ -1010,10 +1141,9 @@ class MPackageClass(MExprUtils):
         return self.initialize_from_file(self.__sym_list)
 
     def _add_type_hints(self, to_eval):
-        expr = MLSym("expr")
-        return self.in_package(
-            self.Block(
-                [ "expr" ],
+        expr = self._prsym("expr")
+        return self.Block(
+                [ expr.name ],
                 self.Set(expr, self.F("Developer`ToPackedArray", to_eval)),
                 self.If(
                     self.F("Developer`PackedArrayQ", expr),
@@ -1028,7 +1158,6 @@ class MPackageClass(MExprUtils):
                     expr
                 )
             )
-        )
 
     def _eval(self, expr, add_type_hints = True):
         return self.EvaluatePacket(expr, _EndPacket=True)
@@ -1099,7 +1228,7 @@ class MPackageClass(MExprUtils):
 
     def _eval_to_string(self, obj, page_width=None, format=None, **ops):
         obj, page_width, format = self.__get_evaluate_to_parameters(obj, page_width, format)
-        return cselfls.ToString(obj, FormatType = format, PageWidth = page_width, **ops)
+        return self.ToString(obj, FormatType = format, PageWidth = page_width, **ops)
 
     def _eval_to_typset_string(self, obj, page_width = None, format = None, export_format = None, **kw):
         """Python rep of:
@@ -1163,6 +1292,7 @@ MPackage = MPackageClass()
 #                                                                                             #
 ###############################################################################################
 class LinkEnvironment:
+
 
     def __init__(self, link, update_globals = True, update_locals = False):
         self.__env = link._EXEC_ENV

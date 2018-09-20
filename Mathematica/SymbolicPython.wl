@@ -2258,29 +2258,40 @@ PyAlias@(struct_?SymbolicPythonQ)[a___][b___][c___][d___]:=
 $PySymbolsContext=$Context;
 
 
-(* ::Subsubsubsection::Closed:: *)
+$PyLangPreEvaluate//Clear
+$PyLangTranslations//Clear
+
+
+(* ::Subsubsubsection:: *)
 (*$PyLangPreEvaluate*)
 
 
 If[!ValueQ@$PyLangPreEvaluate,
   $PyLangPreEvaluate=
     {
-      l_List:>
-        With[{d=Developer`ToPackedArray@l, uuid=CreateUUID[]},
-          $$blockDataBits[uuid]=d;$$$blockDataBit[uuid]/;Developer`PackedArrayQ[d]
+      l_List?(Apply[Times, Dimensions[#]]>50&):>
+        With[{d=System`Private`SetNoEntry@AddTypeHints[l]},
+          d/;Head[d]=!=List
           ]
       }
 ]
 
 
-(* ::Subsubsubsection::Closed:: *)
+(* ::Subsubsubsection:: *)
 (*$PyLangTranslations*)
 
 
 If[!ValueQ@$PyLangTranslations,
 
 $PyLangTranslations=
-  {
+  { 
+    p:_PyVerbatim:>p,
+    inf:_ImageArrayInfo|_PackedArrayInfo|_SparseArrayInfo:>
+      PyVerbatim[inf],
+    i:_Image?ImageQ:>
+      RuleCondition[System`Private`SetNoEntry@AddTypeHints[i], True],
+    s:_SparseArray:>
+      RuleCondition[System`Private`SetNoEntry@AddTypeHints[s], True],
     
     Equal->PyEqual,
     Rule->Rule (* Just protecting it from later replacement *),
@@ -2483,11 +2494,11 @@ ToSymbolicPython[symbols:{___Symbol}:{},expr_]:=
     ptCont=
       $PackageName<>"`*"
     },
-    Block[
-      { $$blockDataBits=<||> },
+    (*Block[
+      { $$blockDataBits=<||> },*)
       ReleaseHold[
         ReplaceRepeated[
-          ReplaceRepeated[Hold[expr], $PyLangPreEvaluate]/.
+          (*ReplaceRepeated*)ReplaceRepeated[Hold[expr], $PyLangPreEvaluate]/.
             Join[syms,
               {
                 p_PyString:>p (* Protects the inner string from further replacement *),
@@ -2517,8 +2528,8 @@ ToSymbolicPython[symbols:{___Symbol}:{},expr_]:=
               PySymbol[s],
           Dispatch@$PyLangTranslations
           ]
-        ]/.PySymbol[$$$blockDataBit][PyString[k_, _]]:>$$blockDataBits[k]
-      ]
+        ](*/.PySymbol[$$$blockDataBit][PyString[k_, _]]:>$$blockDataBits[k]
+      ]*)
     ];
 ToSymbolicPython~SetAttributes~HoldAll;
 

@@ -56,11 +56,15 @@ M = MPackage
 #     return link.evaluate(link.M.ToExpression('LinkWrite[Links[][[1]], CallPacket[1, "Evaluate"@"{}"]]'.format(evstr)))
 # # print(test_call())
 
+#
+#
+# link = WrappedKernelLink()
+#
+# with LinkEnvironment(link):
+#     asd = 2
 
-link = WrappedKernelLink()
-
-with LinkEnvironment(link):
-    asd = 2
+# banda = BufferedNDArray.from_iterable(range(27), [3, 3, 3])
+# print(banda.data)
 
 import code
 code.interact(banner = "", local=locals())
