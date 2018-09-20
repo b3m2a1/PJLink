@@ -37,10 +37,10 @@ from Mathematica), will want to start with the handleCallPacket() method here.
 
     def __init__(self):
         self.M = MPackage
-        self.ObjectHandler = ObjectHandler
         self._reader = None
         super().__init__()
         self._EXEC_ENV = { "Kernel":self , "Mathematica": self.M, "Evaluate": self.evaluateString }
+        self.ObjectHandler = ObjectHandler(self._EXEC_ENV)
 
     def get(self):
         # Replace TYPE_FLOATORINT and TYPE_DOUBLEORINT (and arrays of them) with just TYPE_FLOAT and TYPE_DOUBLE.
@@ -111,6 +111,10 @@ from Mathematica), will want to start with the handleCallPacket() method here.
 
         return res
 
+    def _putReference(self, o):
+
+        return self.put(self.ObjectHandler.PyObject(o))
+
     def _getPackedArray(self):
 
         dtype = self._getSymbol()
@@ -166,7 +170,9 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         rp_dims = list(self._getArray(self.Env.toTypeInt("Integer"), 1))
         rps = self._getArray(self.Env.toTypeInt("Integer"), len(rp_dims))
 
-        res = SparseArrayData(dims, nzvals, rps, cis)
+        bg = self.get()
+
+        res = SparseArrayData(dims, nzvals, rps, cis, bg)
 
         if self.use_numpy:
             res=res.tonumpy()
@@ -652,7 +658,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
     def _getObject(self):
         obj = None
         try:
-            obj = self.ObjectHandler.get_object(self._getSymbol(), self._EXEC_ENV)
+            obj = self.ObjectHandler.get(self._getSymbol())
         except (MathLinkException, NameError): # might be more if the symbol is malformatted...
             # Convert exceptions thrown by getSymbol() (wasn't a symbol at all) or ObjectHandler.getObject()
             # (symbol wasn't a valid object ref) into MLE_BAD_OBJECT exceptions.
@@ -737,9 +743,9 @@ from Mathematica), will want to start with the handleCallPacket() method here.
                 self.__callPython()
             elif name == "Throw":
                 raise NotImplemented
-            elif name == "ReleaseObject":
+            elif name == "Clear":
                 raise NotImplemented
-            elif name == "Val":
+            elif name == "Get":
                 raise NotImplemented
             elif name == "OnLoadCLass":
                 raise NotImplemented
@@ -798,7 +804,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             # self.Env.log(tb.format_exc())
         finally:
             # self.Env.log("end handle call packet")
-            StdLink.remove
+            StdLink.remove()
             self._clearError()
             try:
                 self._newPacket()
@@ -1350,12 +1356,13 @@ class WrappedKernelLink(KernelLink):
 
     def put(self, o):
         self.__ensure_connection()
+
         if isinstance(o, type):
-            self.Env.logf("Putting repr of type {} on link", o.__name__)
+            # self.Env.logf("Putting repr of type {} on link", o.__name__)
             return self.__impl.put(repr(o))
         else:
             try:
-                self.Env.logf("Putting object {} on link", o)
+                # self.Env.logf("Putting object {} on link", o)
                 return self.__impl.put(o)
             except Exception as e:
                 import traceback as tb

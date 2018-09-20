@@ -31,6 +31,7 @@ PyWriteString::usage="PyWriteString[] writes a command string to the python stdi
 PyRead::usage="PyRead[] reads from the python stdout";
 PyReadErr::usage="PyRead[] reads from the python stderr";
 PythonTraceback::usage="A wrapper head for traceback formatting";
+PythonObject::usage="A little head for holding references to python objects";
 
 
 (* ::Subsubsection:: *)
@@ -546,8 +547,9 @@ AddTypeHints[eval_] :=
           With[
             {
               nzvs = expr["NonzeroValues"],
-              cis = expr["ColumnIndices"],
-              rps = expr["RowPointers"]
+              cis = First@Transpose@expr["ColumnIndices"],
+              rps = expr["RowPointers"],
+              bg = expr["Background"]
               },
             SparseArrayInfo[
               Dimensions@expr,
@@ -556,7 +558,8 @@ AddTypeHints[eval_] :=
               Dimensions[cis],
               cis,
               Dimensions[rps],
-              rps
+              rps,
+              bg
               ]
             ],
         True,

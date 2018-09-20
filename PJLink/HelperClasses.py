@@ -65,19 +65,37 @@ class SparseArrayData:
     """Holder class for SparseArray data
 
     """
-    def __init__(self, dims, nzvs, rps, cis):
+
+    SPARSE_ARRAY_VERSION = 1
+
+    def __init__(self, dims, nzvs, rps, cis, bg):
         self.shape = dims
         self.non_zero_values = nzvs
         self.row_pointers = rps
         self.column_indices = cis
+        self.background = bg
 
     @staticmethod
-    def _tonumpy(dims, nzvs, rps, cis):
+    def _tonumpy(dims, nzvs, rps, cis, bg):
         import scipy.sparse as sp
         return sp.csr_matrix((nzvs, cis, rps), dims)
 
     def tonumpy(self):
-        return self._tonumpy(self.shape, self.non_zero_values, self.row_pointers, self.column_indices)
+        return self._tonumpy(self.shape, self.non_zero_values, self.row_pointers, self.column_indices, self.background)
+
+    @property
+    def expr(self):
+        return MPackage.SparseArray(
+            MPackage.Automatic,
+            self.shape,
+            self.background,
+            [ self.SPARSE_ARRAY_VERSION,
+              [
+                  [ self.row_pointers, [ MPackage.Transpose(self.column_indices) ] ],
+                  self.non_zero_values
+              ]
+            ]
+        )
 
 ###############################################################################################
 #                                                                                             #
@@ -122,6 +140,37 @@ class ImageData:
 
         return mode, dtype
 
+    _mode_cs_map = {
+        "1" : "Grayscale",
+        "L" : "Grayscale",
+        "RGB" : "RGB",
+        "RGBA" : "RGB",
+        "HSV"  : "HSB",
+        "CMYK" : "CMYK",
+        "LAB"  : "LAB",
+        "F"    : "RGB",
+        "I"    : "RGB"
+    }
+
+    _mode_it_map = {
+        "1" : "Bit",
+        "L" : "Byte",
+        "RGB" : "Byte",
+        "RGBA" : "Byte",
+        "HSV"  : "Byte",
+        "CMYK" : "Byte",
+        "LAB"  : "Byte",
+        "F"    : "Real32",
+        "I"    : "Bit16"
+    }
+
+    @classmethod
+    def _invmode(cls, mode):
+        cs = cls._mode_cs_map[mode]
+        itype = cls._mode_it_map[mode]
+
+        return cs, itype
+
     @classmethod
     def _topil(cls, dims, cs, itype, data, channels):
         from PIL import Image
@@ -146,8 +195,48 @@ class ImageData:
     def pil_mode(self):
         return self._detmode(self.color_space, self.image_type, self.channels)
 
+    @classmethod
+    def frompil(cls, img):
+        """frompil constructs a ImageData object from a PIL image
+
+        :param img:
+        :return:
+        """
+
+        cs, itype = cls._invmode(img.mode)
+
+        if Env.HAS_NUMPY:
+            import numpy as np
+            dats = np.asarray(img)
+        else:
+            import array
+
+            array_data = img.__array_interface__
+            # to_type_code = array_data["typestr"]
+            # bom = to_type_code[0]
+            # form = to_type_code[1]
+            # num_bits = to_type_code[2]
+            if itype == "Bit" or itype == "Byte":
+                tc = "B"
+            elif itype == "Bit16":
+                tc = "h"
+            elif itype == "Real32":
+                tc = "f"
+            dbuf = array.array(tc, array_data["data"])
+            dats = BufferedNDArray(dbuf, array_data["shape"])
+
+        return cls(dats.shape, cs, itype, dats)
+
     def topil(self):
         return self._topil(self.dimensions, self.color_space, self.image_type, self.data, self.channels)
+
+    @property
+    def expr(self):
+        return MPackage.Image(
+                self.data,
+                self.image_type,
+                ColorSpace_ = self.color_space
+            )
 
 ###############################################################################################
 #                                                                                             #
@@ -1261,7 +1350,6 @@ class MPackageClass(MExprUtils):
         if export_format is None:
             export_format = "GIF"
         return self.F("ExportString", obj, export_format, **kw)
-
     def _eval_to_image_data(self, obj, **kw):
         return self.F("ImageData", self.F("Rasterize", obj, **kw))
 
@@ -1271,8 +1359,11 @@ class MPackageClass(MExprUtils):
     def _eval_to_typeset_packet(self, obj, page_width=None, format=None, export_format=None, **ops):
         return self._eval(self._eval_to_typset_string(obj, page_width=page_width, format=format, export_format = None, **ops))
 
-    def _eval_to_image_packet(self, obj, export_format=None, **ops):
+    def _eval_to_image_string_packet(self, obj, export_format=None, **ops):
         return self._eval(self._eval_to_image_string(obj, export_format = None, **ops))
+
+    def _eval_to_image_packet(self, obj, **ops):
+        return self._eval(self.Rasterize(obj, **ops))
 
     def __getattr__(self, sym):
         if sym.endswith("_"):
@@ -1460,25 +1551,29 @@ class MathematicaBlock:
 #                                                                                             #
 ###############################################################################################
 class ObjectHandler:
-    """The utility of this is up for grabs in a dynamic language like python
+    """The utility of this is up for grabs... basically it'll one day just be a thing that makes it possible to drop a bunch of
+    PyEvaluate calls on the Mathematica side... for now it's only partially implemented
 
     """
+
+    __ref_table = {}
+    __obj_counter = 1
 
     class Context:
         """A kludge for object lookup
 
         """
 
-        __context_cache = {}
         __in_constructor = False
 
-        def __init__(self, name, envid):
-            self.__env   = envid
+        def __init__(self, name, handler):
+            self.__env   = handler.env
+            self.__handler = handler
+            self.__context_cache = handler.context_cache
             self.__name  = name
             self.__names = {}
             if not self.__in_constructor:
                 raise NotImplemented
-
 
         @property
         def name(self):
@@ -1486,7 +1581,7 @@ class ObjectHandler:
 
         def __getattr__(self, item):
             try:
-                names = super().__getattr__("__names")
+                names = super().__getattribute__("__names")
             except AttributeError:
                 names = {}
             try:
@@ -1496,7 +1591,7 @@ class ObjectHandler:
                     return self.get_subcontext(item[:-(len("__Context__")+1)])
                 else:
                     try:
-                        name = super().__getattr_("__name")
+                        name = self.name
                     except AttributeError:
                         name = "UnnamedContext`"
                     raise NameError("Symbol '{}{}' not found".format(name, item))
@@ -1519,26 +1614,19 @@ class ObjectHandler:
             return cont
 
         @classmethod
-        def from_string(cls, full_name, env):
-            try:
-                cache = cls.__context_cache[id(env)]
-            except KeyError:
-                cache = {}
-                cls.__context_cache[id(env)] = cache
+        def from_string(cls, full_name, handler):
+            cache = handler.contexts
+
             try:
                 cont = cache[full_name]
             except KeyError:
                 bits = full_name.split("`")
-                cont = cls.from_parts(bits, env)
+                cont = cls.from_parts(bits, handler)
             return cont
 
         @classmethod
-        def from_parts(cls, bits, env):
-            try:
-                cache = cls.__context_cache[id(env)]
-            except KeyError:
-                cache = {}
-                cls.__context_cache[id(env)] = cache
+        def from_parts(cls, bits, handler):
+            cache = handler.contexts
 
             if len(bits) == 0:
                 raise ValueError("Empty context")
@@ -1550,7 +1638,7 @@ class ObjectHandler:
                     cont = cache[bits[0]+"`"]
                 except KeyError:
                     cls.__in_constructor = True
-                    cont = cls(bits[0]+"`", id(env))
+                    cont = cls(bits[0]+"`", handler)
                     cls.__in_constructor = False
 
                 for b in bits[1:]:
@@ -1558,8 +1646,16 @@ class ObjectHandler:
 
             return cont
 
-    def __init__(self):
-        raise NotImplemented
+    def __init__(self, env):
+        self.__env = env
+        self.__context_cache = {}
+
+    @property
+    def env(self):
+        return self.__env
+    @property
+    def contexts(self):
+        return self.__context_cache
 
     @staticmethod
     def clean_symbol_names(name):
@@ -1567,42 +1663,124 @@ class ObjectHandler:
         name = name.replace("`", "__Context__.")
         return name
 
-    @classmethod
-    def get_object(cls, name, env):
-        obj = None
-        bits = name.split("`")
-        if len(bits)>1:
-            cont = cls.Context.from_string(bits[0]+"`", env)
-            env[bits[0]+"__Context__"] = cont
-        name = cls.clean_symbol_names(name)
-        if name != "Null":
-            obj = eval(name, env, env)
-        return obj
-
-    @classmethod
-    def set_object(cls, name, val, env):
-        bits = name.split("`")
-        if len(bits)>1:
-            # set the head context if necessary
-            cont = cls.Context.from_string(bits[0]+"`", env)
-            env[bits[0]+"__Context__"] = cont
-        name = cls.clean_symbol_names(name)
-        assign_bits = name.split(".")
-        if len(assign_bits) == 1:
-            env[name] = val
-        else:
-            assign_obj = eval(".".join(assign_bits[:-2]), env, env)
-            setattr(assign_obj, assign_bits[-1], val)
-
-    @classmethod
-    def exec_code(cls, args, env):
+    def exec_code(self, args):
         # I should probably do something about context handling but I don't
         # really know what...
+        env = self.__env
         if isinstance(args, str):
             args = [ args ]
         for chunk in args:
-            chunk = cls.clean_symbol_names(chunk)
+            chunk = self.clean_symbol_names(chunk)
             exec(chunk, env, env)
+
+    def _context_and_name(self, ref):
+        if isinstance(ref, str):
+            name = ref
+        else:
+            name = ref.args[0]
+
+        env = self.__env
+        bits = name.split("`")
+        if len(bits)>1:
+            # set the head context if necessary
+            cont = self.Context.from_string(bits[0]+"`", env)
+            env[bits[0]+"__Context__"] = cont
+        name = self.clean_symbol_names(name)
+        assign_bits = name.split(".")
+        if len(assign_bits) == 1:
+            context = env
+        else:
+            context = eval(".".join(assign_bits[:-2]), env, env)
+
+        return context, name
+
+    def remove(self, ref):
+        ctx, name = self._context_and_name(ref)
+        if isinstance(ctx, dict):
+            try:
+                val = ctx[name]
+                del self.__ref_table[val]
+            except (KeyError, TypeError):
+                pass
+            del ctx[name]
+
+        else:
+            try:
+                val = getattr(ctx, name)
+                del self.__ref_table[val]
+            except (AttributeError, KeyError, TypeError):
+                pass
+            delattr(ctx, name)
+
+    def get(self, ref):
+        ctx, name = self._context_and_name(ref)
+        if isinstance(ctx, dict):
+            return ctx[name]
+        else:
+            return getattr(ctx, name)
+
+    def set(self, ref, val):
+        ctx, name = self._context_and_name(ref)
+        if isinstance(ctx, dict):
+            ctx[name] = val
+        else:
+            setattr(ctx, name, val)
+
+    def ref(self, val):
+        try:
+            ref = self.__ref_table[val]
+        except (KeyError, TypeError):
+            if isinstance(val, type):
+                name = val.__module__ + "." + val.__qualname__
+            else:
+                tt = type(val)
+                name = tt.__module__ + "." + tt.__qualname__ + "${}".format(self.__obj_counter)
+                self.__obj_counter += 1
+
+            name = name.replace(".", "`")
+
+            ref = MLExpr(MPackage.PackageContext+"PythonObject", (name,))
+
+            try:
+                self.__ref_table[val] = ref
+            except TypeError:
+                pass
+
+        return ref
+
+###############################################################################################
+#                                              PythonObject                                   #
+class PythonObject(namedtuple("PythonObject",   ["ref", "handler"])):
+    """A lightweight reference to a variable which only exists to make Mathematica code a little cleaner"""
+    __slots__ = ()
+
+    def __new__(cls, ref, handler=None):
+        if handler is None:
+            handler = Kernel.ObjectHandler # this is assuming we're inside an _EXEC_ENV
+        return super().__new__(cls, ref, handler)
+
+    def get(self):
+        return self.handler.get(self.ref)
+    def set(self, val):
+        return self.handler.set(self.ref, val)
+    def remove(self):
+        return self.handler.remove(self.ref)
+
+    def __add__(self, amt):
+        from operator import add
+        return self.handler._op(add, self.ref, amt)
+    def __sub__(self, amt):
+        from operator import sub
+        return self.handler._op(sub, self.ref, amt)
+    def __mul__(self, amt):
+        from operator import mul
+        return self.handler._op(mul, self.ref, amt)
+    def __call__(self, *args, **kwargs):
+        return self.get()(*args, **kwargs)
+    def __iadd__(self, amt):
+        return self.handler.iadd(self.ref, amt)
+    def __imul__(self, amt):
+        return self.handler.imul(self.ref, amt)
 
 ###############################################################################################
 #                                                                                             #
