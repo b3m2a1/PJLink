@@ -214,13 +214,13 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         if self._reader is not None:
             return self._reader.evaluate(expr, wait = wait)
         else:
-            return self._evaluate(self.M._add_type_hints(expr), wait = wait)
+            return self._evaluate(expr, wait = wait)
 
-    def evaluateString(self, expr, wait=True):
+    def evaluateString(self, expr, wait=True, **opts):
         if self._reader is not None:
             return self._reader.evaluateString(expr, wait = wait)
         else:
-            self._evaluateString(self.M._add_type_hints(expr), wait = wait)
+            self._evaluate(self.M.ToExpression(expr, **opts))
             if wait:
                 self.waitForAnswer()
                 return self.get()

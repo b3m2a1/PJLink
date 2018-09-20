@@ -1231,7 +1231,7 @@ class MPackageClass(MExprUtils):
         return self.initialize_from_file(self.__sym_list)
 
     def _add_type_hints(self, to_eval):
-        self.CompoundExpression(
+        return self.CompoundExpression(
             self._load_PJLink(),
             self.F(self.PackagePackage+"AddTypeHints", to_eval)
         )
