@@ -41,7 +41,7 @@ ClearAll/@Values@$PyStructures//Quiet;
 Clear@"@Py*";
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Structures*)
 
 
@@ -56,7 +56,7 @@ ToPython/:
         If[Context[sym]==$cont,
           Context[sym]=Context@ToPython
           ];
-        $PyStructures[StringTrim[SymbolName[sym],"Py"]]=
+        $PyStructures[StringTrim[SymbolName[sym], "Py"]]=
           sym;
         sym::usage=("Symbolic python form of a "<>StringTrim[SymbolName[sym],"Py"])
         ];
@@ -140,7 +140,7 @@ SymbolicPythonQ[s_]:=
         {2,\[Infinity]},
         Heads->True]
       },
-    MemberQ[Join@@Values/@{$PyStructures,$PyAliases},sym]
+    MemberQ[Join@@Values/@{$PyStructures, $PyAliases}, sym]
     ]&&
     Replace[Unevaluated@ToPython[s],
       Append[
@@ -149,7 +149,6 @@ SymbolicPythonQ[s_]:=
         ]
       ];
 SymbolicPythonQ~SetAttributes~HoldFirst
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -297,7 +296,7 @@ PyAlias[PyFalse]:=
 ToPython[PyList[l_List]]:=
   IfPS[
     StringJoin@{"[ ",Riffle[ToPython/@l,", "]," ]"};,
-    Replace[PJLink`Package`AddTypeHints[l],
+    Replace[AddTypeHints[l],
       {
         e_List:>ToPython/@e
         }
@@ -2215,7 +2214,7 @@ PyAlias@PyReadString[l_,x_]:=
     ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Throw*)
 
 
@@ -2224,7 +2223,7 @@ PyAlias@
     PyRaise[PyCall[tag][val]]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Fallbacks*)
 
 
@@ -2266,13 +2265,13 @@ $PyLangTranslations//Clear
 (*$PyLangPreEvaluate*)
 
 
-If[!ValueQ@$PyLangPreEvaluate,
-  $PyLangPreEvaluate=
+If[!MatchQ[OwnValues[$PyLangPreEvaluate], {_:>_List}],
+  $PyLangPreEvaluate:=
     {
-      l_List?(Apply[Times, Dimensions[#]]>50&):>
-        With[{d=System`Private`SetNoEntry@AddTypeHints[l]},
-          d/;Head[d]=!=List
-          ]
+      Replace[Values@$TypeHints,
+        (k_:>v_):>(k:>PyVerbatim[System`Private`SetNoEntry@v]),
+        1
+        ]
       }
 ]
 
@@ -2281,17 +2280,18 @@ If[!ValueQ@$PyLangPreEvaluate,
 (*$PyLangTranslations*)
 
 
-If[!ValueQ@$PyLangTranslations,
+If[!MatchQ[OwnValues[$PyLangTranslations], {_:>_List}],
 
-$PyLangTranslations=
+$PyLangTranslations:=
   { 
     p:_PyVerbatim:>p,
-    inf:_ImageArrayInfo|_PackedArrayInfo|_SparseArrayInfo:>
-      PyVerbatim[inf],
-    i:_Image?ImageQ:>
-      RuleCondition[System`Private`SetNoEntry@AddTypeHints[i], True],
-    s:_SparseArray:>
-      RuleCondition[System`Private`SetNoEntry@AddTypeHints[s], True],
+    (*inf:_ImageArrayInfo|_PackedArrayInfo|_SparseArrayInfo:>
+      PyVerbatim[inf],*)
+    Sequence@@
+      Replace[Values@$TypeHints,
+        (k_:>v_):>(k:>PyVerbatim[v]),
+        1
+        ],
     
     Equal->PyEqual,
     Rule->Rule (* Just protecting it from later replacement *),
@@ -2466,7 +2466,8 @@ $PyLangTranslations=
   ];
 
 
-$PyLangTranslationSymbols=
+If[!MatchQ[OwnValues[$PyLangTranslationSymbols], {_:>_List}],
+$PyLangTranslationSymbols:=
   Replace[Keys[Normal@$PyLangTranslations],
     {
       Verbatim[HoldPattern][s_[___]]:>s,
@@ -2474,6 +2475,7 @@ $PyLangTranslationSymbols=
       _->Nothing
       },
     1]
+]
 
 
 (* ::Subsubsection:: *)
@@ -2534,66 +2536,8 @@ ToSymbolicPython[symbols:{___Symbol}:{},expr_]:=
 ToSymbolicPython~SetAttributes~HoldAll;
 
 
-(* ::Subsubsection::Closed:: *)
-(*Run*)
-
-
-(*Needs["MyTools`"];*)
-
-
-(*$PyProc=None;
-$PyBin="python3";
-$PyDir="/usr/local/bin";
-PythonRun::err=ProcessRun::err;
-PythonRun[s_String?(Not@*FileExistsQ)]:=
-	If[ProcessStatus@$PyProc=!="Running",
-		With[{f=CreateFile@FileNameJoin@{$TemporaryDirectory,"pylink_in.py"}},
-			OpenWrite@f;
-			WriteString[f,s];
-			Close@f;
-			(DeleteFile@f;#)&@PythonRun[f]
-			],
-		WriteString[$PyProc,s];
-		WriteString[$PyProc,"\n"];
-		Pause[.1];
-		<|
-			"StandardOutput"->
-				ReadString[ProcessConnection[$PyProc,"StandardOutput"],EndOfBuffer],
-			"StandardError"->
-				ReadString[ProcessConnection[$PyProc,"StandardError"],EndOfBuffer]
-			|>
-		];
-PythonRun[f_String?FileExistsQ]:=
-	ProcessRun[{$PyBin,f},PythonRun::err,
-		ProcessEnvironment\[Rule]<|
-			"PATH"->
-				StringJoin@{$PyDir,":",Environment["PATH"]}
-			|>];
-PythonRun[e:Except[_String]]:=
-	Replace[ToPython@ToSymbolicPython@e,{
-		s_String\[RuleDelayed]PythonRun[s],
-		_\[RuleDelayed]$Failed
-		}];
-PythonRun~SetAttributes~HoldFirst*)
-
-
-(*PythonStart[]:=(
-	$PyProc=
-		StartProcess[{$PyBin(*,"-i"*)},ProcessEnvironment\[Rule]<|
-			"PATH"->
-				StringJoin@{$PyDir,":",Environment["PATH"]}
-			|>];
-	ReadString[ProcessConnection[$PyProc,"StandardError"],EndOfBuffer];
-	ReadString[$PyProc,EndOfBuffer];
-	$PyProc
-	);
-PythonKill[]:=(
-	KillProcess@$PyProc;
-	$PyProc=None
-	);*)
+(* ::Subsubsection:: *)
+(*End*)
 
 
 End[];
-
-
-

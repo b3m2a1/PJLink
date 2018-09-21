@@ -58,188 +58,6 @@ MsgHandlerRecord   = namedtuple("MsgHandlerRecord",   ["method", "target"])
 
 ###############################################################################################
 #                                                                                             #
-#                                       SparseArrayData                                       #
-#                                                                                             #
-###############################################################################################
-class SparseArrayData:
-    """Holder class for SparseArray data
-
-    """
-
-    SPARSE_ARRAY_VERSION = 1
-
-    def __init__(self, dims, nzvs, rps, cis, bg):
-        self.shape = dims
-        self.non_zero_values = nzvs
-        self.row_pointers = rps
-        self.column_indices = cis
-        self.background = bg
-
-    @staticmethod
-    def _tonumpy(dims, nzvs, rps, cis, bg):
-        import scipy.sparse as sp
-        return sp.csr_matrix((nzvs, cis, rps), dims)
-
-    def tonumpy(self):
-        return self._tonumpy(self.shape, self.non_zero_values, self.row_pointers, self.column_indices, self.background)
-
-    @property
-    def expr(self):
-        return MPackage.SparseArray(
-            MPackage.Automatic,
-            self.shape,
-            self.background,
-            [ self.SPARSE_ARRAY_VERSION,
-              [
-                  [ self.row_pointers, [ MPackage.Transpose(self.column_indices) ] ],
-                  self.non_zero_values
-              ]
-            ]
-        )
-
-###############################################################################################
-#                                                                                             #
-#                                           ImageData                                         #
-#                                                                                             #
-###############################################################################################
-class ImageData:
-    """Holder class for Image data
-
-    """
-    def __init__(self, dims, cs, itype, data):
-        self.dimensions = dims[:2]
-        self.data = data
-        self.color_space = cs
-        self.image_type = itype
-        self.channels = dims[2] if len(dims) > 2 else 1
-
-    @staticmethod
-    def _detmode(cs, itype, channels):
-
-        mode = cs
-        dtype = None
-        if itype == "Bit":
-            mode = "1"
-            dtype = "uint8"
-        elif itype == "Byte":
-            dtype = "uint8"
-            if cs == "Grayscale":
-                mode = "L"
-            elif cs == "RGB":
-                mode = "RGB"
-                if channels == 4:
-                    mode = "RGBA"
-            if cs == "HSB":
-                mode = "HSV"
-        elif itype == "Bit16":
-            dtype = "int32"
-            mode = "I"
-        elif itype == "Real" or itype == "Real32":
-            mode = "F"
-            dtype = "float32"
-
-        return mode, dtype
-
-    _mode_cs_map = {
-        "1" : "Grayscale",
-        "L" : "Grayscale",
-        "RGB" : "RGB",
-        "RGBA" : "RGB",
-        "HSV"  : "HSB",
-        "CMYK" : "CMYK",
-        "LAB"  : "LAB",
-        "F"    : "RGB",
-        "I"    : "RGB"
-    }
-
-    _mode_it_map = {
-        "1" : "Bit",
-        "L" : "Byte",
-        "RGB" : "Byte",
-        "RGBA" : "Byte",
-        "HSV"  : "Byte",
-        "CMYK" : "Byte",
-        "LAB"  : "Byte",
-        "F"    : "Real32",
-        "I"    : "Bit16"
-    }
-
-    @classmethod
-    def _invmode(cls, mode):
-        cs = cls._mode_cs_map[mode]
-        itype = cls._mode_it_map[mode]
-
-        return cs, itype
-
-    @classmethod
-    def _topil(cls, dims, cs, itype, data, channels):
-        from PIL import Image
-        mode, dtype = cls._detmode(cs, itype, channels)
-
-        try:
-            cast = data.astype(dtype)
-        except AttributeError:
-            cast = data
-
-        try:
-            dbuf = cast.data.tobytes()
-        except AttributeError:
-            try:
-                dbuf = cast.tobytes()
-            except AttributeError:
-                dbuf = cast.data
-
-        return Image.frombuffer(mode, dims, dbuf, "raw", mode, 0, 1)
-
-    @property
-    def pil_mode(self):
-        return self._detmode(self.color_space, self.image_type, self.channels)
-
-    @classmethod
-    def frompil(cls, img):
-        """frompil constructs a ImageData object from a PIL image
-
-        :param img:
-        :return:
-        """
-
-        cs, itype = cls._invmode(img.mode)
-
-        if Env.HAS_NUMPY:
-            import numpy as np
-            dats = np.asarray(img)
-        else:
-            import array
-
-            array_data = img.__array_interface__
-            # to_type_code = array_data["typestr"]
-            # bom = to_type_code[0]
-            # form = to_type_code[1]
-            # num_bits = to_type_code[2]
-            if itype == "Bit" or itype == "Byte":
-                tc = "B"
-            elif itype == "Bit16":
-                tc = "h"
-            elif itype == "Real32":
-                tc = "f"
-            dbuf = array.array(tc, array_data["data"])
-            dats = BufferedNDArray(dbuf, array_data["shape"])
-
-        return cls(dats.shape, cs, itype, dats)
-
-    def topil(self):
-        return self._topil(self.dimensions, self.color_space, self.image_type, self.data, self.channels)
-
-    @property
-    def expr(self):
-        return MPackage.Image(
-                self.data,
-                self.image_type,
-                ColorSpace_ = self.color_space
-            )
-
-###############################################################################################
-#                                                                                             #
 #                                       BufferedNDArray                                       #
 #                                                                                             #
 ###############################################################################################
@@ -658,15 +476,18 @@ class LinkMark:
     """A wrapper to allow with ...: syntax to set a mark on a link
 
     """
-    def __init__(self, parent):
+    def __init__(self, parent, seek = False):
         self.parent = parent
         self.mark = None
+        self.seek = seek
 
     def __enter__(self):
         self.mark = self.parent._createMark()
         return self.mark
 
     def __exit__(self, type, value, traceback):
+        if self.seek:
+            self.parent._seekMark(self.mark)
         self.parent._destroyMark(self.mark)
 
 ###############################################################################################
@@ -1171,6 +992,7 @@ class MPackageClass(MExprUtils):
 
     JLinkContext           = "JLink`"
     JLinkEvaluateToContext = JLinkContext + "EvaluateTo`"
+    PackageTypeHints = MExprUtils.PackageContext + "TypeHints`"
     __The_One_True_Package = None
 
     import os
@@ -1233,7 +1055,7 @@ class MPackageClass(MExprUtils):
     def _add_type_hints(self, to_eval):
         return self.CompoundExpression(
             self._load_PJLink(),
-            self.F(self.PackagePackage+"AddTypeHints", to_eval)
+            self.F(self.PackageTypeHints+"AddTypeHints", to_eval)
         )
 
     def _eval(self, expr, add_type_hints = True):
@@ -1538,6 +1360,227 @@ class MathematicaBlock:
             self.detach_local(frames_back=1)
         elif self.__ug:
             self.detach_global(frames_back=1)
+
+###############################################################################################
+#                                                                                             #
+#                                       TypeDecoder                                           #
+#                                                                                             #
+###############################################################################################
+
+# MStruct = namedtuple("MStruct", ["head", "type", "dimensions", "data"])
+class MDecoder(namedtuple("MDecoder", ["head", "type", "dimensions"])):
+    """This is an experimental system to make it easy to decode Mathematica structures as
+    python types by leveraging the power of namedtuple to get easy representations of this data
+
+    """
+    __slots__ = ()
+    def get_data(self, link, head, stack):
+
+        otype = self.type
+        if callable(otype):
+            otype = otype(head, link, stack)
+
+        dims = self.dimensions
+        if callable(dims):
+            dims = dims(head, link, stack)
+
+        if otype is None or otype=="Function":
+            dats = link.get()
+        elif dims == [] or dims is None:
+            dats = link._getSingleObject(otype)
+        elif dims == [0]:
+            dats = []
+        else:
+            dats = link._getArray(otype, len(dims))
+
+        return dats #MStruct(dims, otype, head, dats) #I'd return this but I can't foresee it being useful...
+
+    def decode(self, link, stack):
+
+        head = self.head
+        if callable(head):
+            head = head(link, stack)
+        data = None
+        try:
+            if head is not None:
+                sym = link._getSymbol()
+                symname = sym.name
+                if (isinstance(head, str) and symname.split("`")[-1] == head) or symname in head:
+                    data = self.get_data(link, sym, stack)
+            else:
+                data = self.get_data(link, None, stack)
+
+        except MathLinkException as e:
+            data = None
+
+        return data
+
+class StructBase: #This is separate from ObjectDecoder because I might want a DecodedObject type
+    __slots__ = ("_name", "_fields", "_vals", "__odict")
+    def __init__(self, name, *fields):
+        from collections import OrderedDict
+        self.__odict = OrderedDict(fields)
+        self._fields = tuple( x[0] for x in fields )
+        self._vals   = tuple( x[1] for x in fields )
+        self._name = name
+    def asodict(self):
+        return self.__odict.copy()
+    def __iter__(self):
+        return zip(self._fields, self._vals)
+    def __len__(self):
+        return len(self._fields)
+    def __getattr__(self, attr):
+        try:
+            return self.__odict[attr]
+        except KeyError:
+            pass
+    def __repr__(self):
+        return "{}({})".format(self._name, ", ".join([ "{}= {}".format(name, val) for name, val in self]))
+
+class ObjectDecoder(StructBase):
+    __slots__ = StructBase.__slots__ + ("_head", "_target")
+    def __init__(self, name, head, *fields, target = namedtuple):
+
+        self._head = head
+        pars = [ None ] * len(fields)
+        for i, dec in enumerate(fields):
+            name, dec = dec
+            if hasattr(dec, "decode"):
+                pars[i] = (name, dec)
+            else:
+                name, head, type, dims = dec
+                pars[i] = (name, MDecoder(head, type, dims))
+        super().__init__(name, *pars)
+        self._target = target
+
+    def serialize(self):
+        imports = {
+            "from {} import {}".format(".".join( [ type(x).__module__ ] + type(x).__qualname__.split(".")[:-1] ), type(x).__name__) for x in self._vals
+        }
+        dec_str = "_decoder = {}('{}', {}, target = {})".format(type(self).__name__, self._name, ", ".join([ "{}= {}".format(name, val) for name, val in self]), self._target)
+        return "\n".join(imports) + "\n\n" + dec_str
+
+    def check_function(self, link):
+        head = self._head
+        try:
+            if head is not None:
+                fn = link._getFunction()
+                sym = fn.head
+                argc = fn.argCount
+                head_right = (isinstance(head, str) and sym.split("`")[-1] == head) or sym in head
+                field_count = len(self) >= argc
+                valid = head_right and field_count
+            else:
+                valid = False
+
+        except MathLinkException as e:
+            valid = False
+
+        return valid
+
+    def decode(self, link):
+        """This is still somewhat up in the air... the long-term goal is that a decoder will be a set
+       of MDecoder or ObjectDecoder objects which unwraps intelligently. Note that all an object
+       needs to be a decoder is a 'decode' method so we can subclass the ObjectDecoder for special
+       types easily.
+
+       :param link:
+       :param decoder:
+       :return:
+       """
+        from collections import OrderedDict
+
+        if self.check_function(link):
+            stack = OrderedDict()
+            for name, decoder in self:
+                tres = decoder.decode(link, stack)
+                stack[name] = tres
+            res = self._target(self._name, stack.items())
+        else:
+            res = None
+        return res
+
+from collections import OrderedDict
+class TypeDecoder(OrderedDict):
+    import os
+    _decoder_path = os.path.join(os.path.dirname(__file__), "Resources", "Decoders")
+    del os
+
+    def __init__(self, *decoders):
+        super().__init__()
+        self.load_decoders()
+        for name, decoder in decoders:
+            if not isinstance(decoder, ObjectDecoder):
+                decoder = ObjectDecoder(decoder)
+            self[name] = decoder
+
+    def decode(self, link):
+        """Attempts to decode the objects on link with all the decoders built in
+
+        """
+        with LinkMark(link) as mark:
+            for decoder in self.values():
+                try:
+                    res = decoder.decode(link)
+                except Exception as e:
+                    link._seekMark(mark)
+                    raise
+
+                if res is None:
+                    link._seekMark(mark)
+                else:
+                    break
+            else:
+                res = None
+        return res
+
+    def load_decoders(self, path = None):
+        import os
+
+        if path is None:
+            path = self._decoder_path
+
+        for f in os.listdir(path):
+            if f.endswith(".py"):
+                self[f] = self.load_decoder(os.path.basename(f), path = path)
+
+    def load_decoder(self, name, path = None):
+        import os
+
+        if os.path.isfile(name):
+            path = os.path.dirname(name)
+            name = os.path.basename(path)
+        elif path is None:
+            path = self._decoder_path
+
+        decoder_file = os.path.join(path, name+".py")
+        with open(decoder_file) as dec_f:
+            dec_code = compile(dec_f.read(), decoder_file, "exec")
+            exec(dec_code)
+            if not hasattr(_decoder, "decode"): # must be defined in the file
+                target = _decoder[-1]
+                if isinstance(target, (type, function)):
+                    _decoder = _decoder[:-1]
+                else:
+                    target = namedtuple
+                _decoder = ObjectDecoder(*_decoder, target=target)
+            return _decoder
+
+    def register_decoder(self, name, decoder, path = None):
+        import os
+
+        if not isinstance(decoder, ObjectDecoder):
+            decoder = ObjectDecoder(decoder)
+
+        if not isinstance(decoder, ObjectDecoder):
+            raise TypeError("{}.register_decoder: got object '{}' but an 'ObjectDecoder' object is required".format(type(self).__name__, type(decoder).__name__))
+        else:
+            if path is None:
+                path = self._decoder_path
+            decoder_file = os.path.join(path, name.py)
+            with open(decoder_file) as dec_f:
+                dec_f.write(decoder.serialize())
+
 
 ###############################################################################################
 #                                                                                             #

@@ -233,7 +233,9 @@ class MathLinkEnvironment:
         "bigint" : "BigInteger",
         "bigdec" : "Decimal",
         "complex": "Complex",
-        "expr"   : "Expr"
+        "expr"   : "Expr",
+        "Real"   : "Double",
+        "Integer": "Int"
     }
 
     CALL_TYPES = {

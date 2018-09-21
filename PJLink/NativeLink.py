@@ -30,7 +30,8 @@ class NativeLink(MathLink):
 
         self.__USE_NUMPY = None
 
-        import os, re
+        import os, re, threading
+        from collections import deque
 
         if init is None:
             bin = self.Env.get_Kernel_binary()
@@ -41,12 +42,12 @@ class NativeLink(MathLink):
             bin = self.Env.get_Kernel_binary(init)
             init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink'".format(bin)]#, "-mathlink", "-wstp"]
 
-
-        import threading
         self.__lock = threading.RLock()
         self._init = init
         self.__errMsgOut = [ "" ]
         self._loadNativeLibrary(debug_level=debug_level)
+
+        self.__markStack = deque()
 
         import time
         with self.__lock:
@@ -473,6 +474,22 @@ class NativeLink(MathLink):
     def _messageReady(self):
         with self._wrap(checkError=False, lock=False):
             return self._call("MessageReady")
+
+    @property
+    def checkpoint(self):
+        try:
+            m = self.__markStack[-1]
+        except IndexError:
+            m = None
+        return m
+
+    def make_checkpoint(self):
+        """This has no need to return the checkpoint, but it does
+
+        """
+        mark = self._createMark()
+        self.__markStack.append(mark)
+        return mark
 
     def _createMark(self):
         with self._wrap(checkError=False):

@@ -3,15 +3,15 @@ from PJLink.KernelLink import *
 
 #########################################################################################################
 
-from PJLink.HelperClasses import *
-
-# dims = [5, 3, 2, 5]
-# size = 1
-# for d in dims:
-#     size *= d
-# barr = BufferedNDArray.from_iterable(range(size), dims)
-
-M = MPackage
+# from PJLink.HelperClasses import *
+#
+# # dims = [5, 3, 2, 5]
+# # size = 1
+# # for d in dims:
+# #     size *= d
+# # barr = BufferedNDArray.from_iterable(range(size), dims)
+#
+# M = MPackage
 
 #########################################################################################################
 
@@ -66,5 +66,8 @@ M = MPackage
 # banda = BufferedNDArray.from_iterable(range(27), [3, 3, 3])
 # print(banda.data)
 
-import code
-code.interact(banner = "", local=locals())
+from PJLink import *
+create_kernel_link()
+
+# import code
+# code.interact(banner = "", local=locals())

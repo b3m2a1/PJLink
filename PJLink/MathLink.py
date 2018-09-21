@@ -282,6 +282,35 @@ Follow this with calls to put the argument
         raise NotImplemented
 
     @abstractmethod
+    def checkpoint(self):
+        raise NotImplemented
+
+    @abstractmethod
+    def make_checkpoint(self):
+        """This is all based off of _createMark but it should be stored and accessible via link.checkpoint
+        link.seek_checkpoint should go to the most recently made checkpoint and link.revert_checkpoint should
+        go and destroy it.
+
+        :return:
+        """
+
+    def seek_checkpoint(self):
+        mark = self.checkpoint
+        if mark is not None:
+            self._seekMark(mark)
+
+    def revert_checkpoint(self):
+        mark = self.checkpoint
+        if mark is not None:
+            self._seekMark(mark)
+            self._destroyMark(mark)
+
+    def clear_checkpoint(self):
+        mark = self.checkpoint
+        if mark is not None:
+            self._destroyMark(mark)
+
+    @abstractmethod
     def _createMark(self):
         """Creates a mark at the current point in the incoming MathLink data stream.
 Marks can returned to later, to re-read data. A common use is to create a mark, call some method for reading data, and if a MathLinkException is thrown, seek back to the mark and try a different method of reading the data.

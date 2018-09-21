@@ -31,13 +31,15 @@ module1 = Extension(
     'PJLinkNativeLibrary',
     sources = ['PJLinkNativeLibrary.cpp'],
     library_dirs = [ mathlink_dir ],
-    libraries = [ "MLi4" ]
+    libraries = [ "MLi4" ],
+    include_dirs= [ mathlink_dir ]
 )
 
 setup (name = 'PJLinkNativeLibrary',
        version = '1.0',
        description = 'Implementation of JLinkNativeLibrary for python',
-       ext_modules = [module1]
+       ext_modules = [module1],
+       compiler = "g++"
        )
 
 ext = ""

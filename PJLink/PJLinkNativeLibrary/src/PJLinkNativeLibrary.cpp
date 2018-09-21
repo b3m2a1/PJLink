@@ -532,7 +532,7 @@ char _MLTypeChar(int type) {
     return typeChar;
 }
 
-Py_buffer *_MLGetDataBuffer(PyObject *data) {
+Py_buffer _MLGetDataBuffer(PyObject *data) {
 
     Py_buffer view;
     _MLDebugMessage(4, "Extracting data buffer");
@@ -546,7 +546,7 @@ Py_buffer *_MLGetDataBuffer(PyObject *data) {
 //      PyErr_SetString(PyExc_TypeError, "Object {} has no buffer");
 //    };
 
-    return &view;
+    return view;
 
 }
 
@@ -567,7 +567,8 @@ int _MLPutDataBuffer
     ( MLINK mlink, PyObject *data, char type, int size,
       const int *dims, const char **heads, int depth ) {
 
-    Py_buffer *view = _MLGetDataBuffer(data);
+    Py_buffer view_obj = _MLGetDataBuffer(data);
+    Py_buffer *view = &view_obj;
     if ( view == NULL ) return 0;
 
     int flag = 1;
@@ -688,14 +689,16 @@ int _MLPutDataBuffer
 template<typename T>
 void _MLSetDataBuffer(PyObject *data, void *buff) {
 
-    Py_buffer *view = _MLGetDataBuffer(data);
+    Py_buffer view_obj = _MLGetDataBuffer(data);
+    Py_buffer *view = &view_obj;
     view->buf = (T *) buff;
 
 }
 
 void _MLCopyDataBuffer(PyObject *data, void *buff, long len, int dsize) {
 
-    Py_buffer *view = _MLGetDataBuffer(data);
+    Py_buffer view_obj = _MLGetDataBuffer(data);
+    Py_buffer *view = &view_obj;
     if (len) memcpy(view->buf, buff, len*dsize);
 
 }
@@ -1426,6 +1429,7 @@ MLFUNCWITHARGS(MLConnect) {
 
     }
 
+// PyObject *MLActiveate(PyObject *self, PyObject *args)
 MLFUNCWITHARGS(MLActivate) {
 
     _MLDebugMessage(2, ":MLActivate:");

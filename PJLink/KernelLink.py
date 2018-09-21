@@ -35,6 +35,8 @@ from Mathematica), will want to start with the handleCallPacket() method here.
     __LAST_MESSAGE = None
     __FEServerLink = None
 
+    Decoder = TypeDecoder()
+
     def __init__(self):
         self.M = MPackage
         self._reader = None
@@ -52,60 +54,35 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         tk = self._getType()
         t1 = self.Env.fromTypeToken(tk)
 
-        with LinkMark(self) as mark:
+        # self.Env.logf("Getting {} off link", t1)
 
-            # self.Env.logf("Getting {} off link", t1)
+        if t1 == "Function":
+            try:
+                res =self.Decoder.decode(self)
+            except MathLinkException as e:
+                # import traceback as tb
+                # self.Env.log(tb.format_exc())
+                self._clearError()
 
-            if t1 == "Function":
+        if res is None:
+
+            if t1 == "Object":
+                res = self._getObject()
+            elif t1 == "Function":
+                res = self.getPacket()
+            else:
                 try:
-
-                    for head, parser in (("PackedArrayInfo", self._getPackedArray), ("ImageArrayInfo", self._getImage), ("SparseArrayInfo", self._getSparseArray)):
-
-                        parse_special = False
-                        try:
-                            parse_special = self._checkFunction(self.M.PackagePackage+head) # this can get messy with context?
-                        except MathLinkException as e:
-                            self._seekMark(mark)
-                            try:
-                                parse_special =self._checkFunction(head)
-                            except MathLinkException as e:
-                                self._seekMark(mark)
-
-
-                        if parse_special:
-                            res = parser()
-                            break
-
-                    else:
-                        raise MathLinkException(2018, "No typehints")
-
-                except MathLinkException as e:
-
-                    # import traceback as tb
-                    # self.Env.log(tb.format_exc())
+                    res = self._getSingleObject(t1)
+                    # print(res)
+                except (MathLinkException, ValueError, TypeError) as e:
+                    import traceback as tb
 
                     self._clearError()
-                    self._seekMark(mark)
-
-            if res is None:
-
-                if t1 == "Object":
-                    res = self._getObject()
-                elif t1 == "Function":
-                    res = self.getPacket()
+                    self.Env.log(tb.format_exc())
+                    pass # Maybe I should handle these?
                 else:
-                    try:
-                        res = self._getSingleObject(t1)
-                        # print(res)
-                    except (MathLinkException, ValueError, TypeError) as e:
-                        import traceback as tb
-
-                        self._clearError()
-                        self.Env.log(tb.format_exc())
-                        pass # Maybe I should handle these?
-                    else:
-                        if t1 == "Symbol":
-                            res = MLSym(res)
+                    if t1 == "Symbol":
+                        res = MLSym(res)
 
         # self.Env.logf("Got {} off link", res)
 
@@ -113,85 +90,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
 
     def _putReference(self, o):
 
-        return self.put(self.ObjectHandler.PyObject(o))
-
-    def _getPackedArray(self):
-
-        dtype = self._getSymbol()
-        self.Env.logf("Got array type {}", dtype)
-
-        true_type = None
-        if isinstance(dtype, MLSym):
-            dtype = dtype.name
-        if dtype == "Integer":
-            true_type = self.Env.toTypeInt("Integer")
-        elif dtype == "Real":
-            true_type = self.Env.toTypeInt("Double")
-        elif dtype == "Complex":
-            true_type = self.Env.toTypeInt("Complex")
-
-        self.Env.log("Getting array dimensions")
-        dims = list(self._getArray(self.Env.toTypeInt("Integer"), 1))
-        self.Env.logf("Got array dimensions {}", dims)
-
-        tok = self.Env.fromTypeToken(self._getNext())
-        self.Env.logf("Got next token {}", tok)
-
-        if tok in ("Object", "Symbol"):
-            res = self._getObject()
-        else:
-            res = self._getArray(true_type, len(dims))
-
-        return res
-
-    def _getSparseArray(self):
-
-        dims = list(self._getArray(self.Env.toTypeInt("Integer"), 1))
-        dtype = self._getSymbol()
-        # self.Env.logf("Got array type {}", dtype)
-
-        true_type = None
-        if isinstance(dtype, MLSym):
-            dtype = dtype.name
-        if dtype == "Integer":
-            true_type = self.Env.toTypeInt("Integer")
-        elif dtype == "Real":
-            true_type = self.Env.toTypeInt("Double")
-        elif dtype == "Complex":
-            true_type = self.Env.toTypeInt("Complex")
-
-        nzvals = self._getArray(true_type, 1)
-
-        # self.Env.log("Getting column indices")
-        ci_dims = list(self._getArray(self.Env.toTypeInt("Integer"), 1))
-        cis = self._getArray(self.Env.toTypeInt("Integer"), len(ci_dims))
-
-        # self.Env.log("Getting row pointers")
-        rp_dims = list(self._getArray(self.Env.toTypeInt("Integer"), 1))
-        rps = self._getArray(self.Env.toTypeInt("Integer"), len(rp_dims))
-
-        bg = self.get()
-
-        res = SparseArrayData(dims, nzvals, rps, cis, bg)
-
-        if self.use_numpy:
-            res=res.tonumpy()
-
-        return res
-
-    def _getImage(self):
-
-        dims = list(self._getArray(self.Env.toTypeInt("Integer"), 1))
-        cs = self._getString()
-        ty = self._getString()
-        dtype = self._getString()
-        true_type = self.Env.toTypeInt(dtype)
-
-        data = self._getArray(true_type, len(dims))
-
-        res = ImageData(dims, cs, ty, data)
-
-        return res
+        return self.put(self.ObjectHandler.ref(o))
 
     def getPacket(self):
         tok = self._getTypeName()
@@ -1444,6 +1343,13 @@ class WrappedKernelLink(KernelLink):
 
     def _messageReady(self): #huh?
         return self.__impl._messageReady()
+
+    @property
+    def checkpoint(self):
+        return self.__impl.checkpoint()
+
+    def make_checkpoint(self):
+        return self.__impl.make_checkpoint()
 
     def _createMark(self):
         self.__ensure_connection()

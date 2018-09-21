@@ -40,13 +40,29 @@ PythonObject::usage="A little head for holding references to python objects";
 
 BeginPackage["`Package`"];
 
+$PackageDirectory::usage="The directory for the project";
+
 $DefaultPythonKernel::usage="The default kernel for evaluations";
 $PythonKernels::usage="A listing of the configured python kernels";
+
+CallPythonPacket::usage="A packet of info for python on what to call";
+
+EndPackage[];
+
+
+(* ::Subsubsection:: *)
+(*Typehints*)
+
+
+BeginPackage["`TypeHints`"];
+
+$TypeHints::usage="The replacement rules used by AddTypeHints";
 AddTypeHints::usage="AddTypeHints[expr] Adds type hints to expr that python can use";
 PackedArrayInfo::usage="A typehint added by AddTypeHints";
 ImageArrayInfo::usage="A typehint added by AddTypeHints";
 SparseArrayInfo::usage="A typehint added by AddTypeHints";
-CallPythonPacket::usage="A packet of info for python on what to call";
+RegisterTypeHint::usage="Registers a new typehint for the typehint framework";
+LoadTypeHint::usage="Loads a typehint into the typehint framework";
 
 EndPackage[];
 
@@ -55,24 +71,33 @@ EndPackage[];
 (*SymbolicPython*)
 
 
-BeginPackage["`SymbolicPython`"];
-
-AppendTo[$ContextPath, $Context//StringReplace["SymbolicPython"->"Package"]];
-AppendTo[$ContextPath, $Context//StringDelete["SymbolicPython`"]];
-Get@FileNameJoin@{DirectoryName@$InputFileName, "SymbolicPython.wl"};
-
-EndPackage[];
+Internal`WithLocalSettings[
+  BeginPackage["`SymbolicPython`"],
+  Internal`WithLocalSettings[
+    System`Private`NewContextPath@
+      Join[
+        $ContextPath,
+        {
+          $Context//StringReplace["SymbolicPython"->"TypeHints"],
+          $Context//StringDelete["SymbolicPython`"]
+          }
+        ],
+    Get@FileNameJoin@{DirectoryName@$InputFileName, "SymbolicPython.wl"},
+    System`Private`RestoreContextPath[]
+    ],
+  EndPackage[];
+  ];
 
 
 (* ::Subsubsection:: *)
 (*Exceptions*)
 
 
-BeginPackage["`Exceptions`"];
-
-Get@FileNameJoin@{DirectoryName@$InputFileName, "Exceptions.wl"};
-
-EndPackage[];
+Internal`WithLocalSettings[
+  BeginPackage["`Exceptions`"],
+  Get@FileNameJoin@{DirectoryName@$InputFileName, "Exceptions.wl"},
+  EndPackage[]
+  ]
 
 
 (* ::Subsection:: *)
@@ -95,7 +120,9 @@ If[Not@AssociationQ@$PythonKernels,
 (*Bin Stuff*)
 
 
-pjlinkDir = FileNameJoin@{Nest[DirectoryName, $InputFileName, 2], "PJLink"};
+$PackageDirectory = Nest[DirectoryName, $InputFileName, 2];
+pjlinkDir = FileNameJoin@{$PackageDirectory, "PJLink"};
+mathematicaDir = FileNameJoin@{$PackageDirectory, "Mathematica"};
 
 startKernelPy = "start_kernel.py";
 
@@ -126,7 +153,7 @@ $pySessionPathExtension = (* I need this because Mathematica's $PATH isn't quit 
     ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*InstallPython*)
 
 
@@ -161,6 +188,7 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
         proc = OptionValue[ProcessObject],
         failed = False
       },
+      Print@"...";
       If[!AssociationQ@pyKer,
         pyKer=<||>;
         If[!KeyExistsQ[$PythonKernels, version],
@@ -324,7 +352,7 @@ cleanUpEnv[pker_, version_, $Aborted]:=
 cleanUpEnv[_, _, p_]:=p
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Evaluate*)
 
 
@@ -496,76 +524,25 @@ PackageExceptionBlock["Kernel"]@
 
 
 (* ::Subsubsection:: *)
+(*$TypeHints*)
+
+
+If[!AssociationQ@$TypeHints,
+  encoderDir=FileNameJoin@{mathematicaDir, "Encoders"};
+  $TypeHints = 
+    AssociationMap[
+      Get@FileNameJoin@{encoderDir, #<>".wl"}&, 
+      FileBaseName/@FileNames["*.wl", encoderDir]
+      ]
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
 (*AddTypeHints*)
 
 
 AddTypeHints[eval_] :=
-    Block[{expr = eval},
-      expr = 
-        Replace[expr,
-          {
-            _RawArray:>Normal[expr]
-            (* I'll need more of these in the future *)
-           }
-          ];
-      expr = Developer`ToPackedArray[expr];
-      Which[
-        Developer`PackedArrayQ[expr],
-          PackedArrayInfo[Head@Extract[expr, Table[1, {ArrayDepth@expr}]], Dimensions@expr, expr],
-        ImageQ@expr,
-          With[
-            {
-              id=Replace[Image`InternalImageData[expr], 
-                {
-                  _Image`InternalImageData:>ImageData@expr
-                  }
-                ],
-              it=ImageType@expr
-              },
-            ImageArrayInfo[
-              Dimensions@id,
-              ImageColorSpace@expr, 
-              it,
-              If[it == "Real" || it == "Real32",
-                "Double",
-                "Integer"
-                ],
-              If[Head@id===RawArray,
-                Normal@id,
-                Which[
-                  it=="Byte", 
-                    255*id,
-                  it=="Bit16",
-                    65535*id,
-                  True,
-                    id
-                  ]
-                ]
-              ]
-            ],
-        Head[expr]===SparseArray,
-          With[
-            {
-              nzvs = expr["NonzeroValues"],
-              cis = First@Transpose@expr["ColumnIndices"],
-              rps = expr["RowPointers"],
-              bg = expr["Background"]
-              },
-            SparseArrayInfo[
-              Dimensions@expr,
-              Head@nzvs[[1]],
-              nzvs,
-              Dimensions[cis],
-              cis,
-              Dimensions[rps],
-              rps,
-              bg
-              ]
-            ],
-        True,
-          expr
-        ]
-      ]
+  Replace[eval, Values@$TypeHints];
 
 
 (* ::Subsubsection::Closed:: *)
