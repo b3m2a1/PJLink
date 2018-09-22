@@ -38,8 +38,7 @@ module1 = Extension(
 setup (name = 'PJLinkNativeLibrary',
        version = '1.0',
        description = 'Implementation of JLinkNativeLibrary for python',
-       ext_modules = [module1],
-       compiler = "g++"
+       ext_modules = [module1]
        )
 
 ext = ""

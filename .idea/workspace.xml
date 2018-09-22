@@ -5,16 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Mathematica/Encoders/PackedArray.wl" beforeDir="false" afterPath="$PROJECT_DIR$/Mathematica/Encoders/PackedArray.wl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Mathematica/PJLink.wl" beforeDir="false" afterPath="$PROJECT_DIR$/Mathematica/PJLink.wl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Mathematica/SymbolicPython.wl" beforeDir="false" afterPath="$PROJECT_DIR$/Mathematica/SymbolicPython.wl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/HelperClasses.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/HelperClasses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/KernelLink.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/KernelLink.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/Resources/Decoders/ImageArrayInfo.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/Resources/Decoders/ImageArrayInfo.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/Resources/Decoders/PackedArrayInfo.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/Resources/Decoders/PackedArrayInfo.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/Resources/Decoders/RawArrayInfo.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/Resources/Decoders/RawArrayInfo.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/Resources/Decoders/SparseArrayInfo.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/Resources/Decoders/SparseArrayInfo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -47,7 +38,7 @@
           <entry key="json" value="1" />
           <entry key="m" value="8" />
           <entry key="pro" value="1" />
-          <entry key="py" value="167" />
+          <entry key="py" value="168" />
           <entry key="txt" value="5" />
           <entry key="user" value="1" />
         </counts>
@@ -60,7 +51,7 @@
           <entry key="JSON" value="1" />
           <entry key="Mathematica" value="8" />
           <entry key="PLAIN_TEXT" value="9" />
-          <entry key="Python" value="167" />
+          <entry key="Python" value="168" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
@@ -202,11 +193,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/PJLink/Resources/Decoders/SparseArrayInfo.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="195">
-              <caret line="47" column="67" selection-start-line="47" selection-start-column="67" selection-end-line="47" selection-end-column="67" />
+            <state relative-caret-position="165">
+              <caret line="45" column="36" lean-forward="true" selection-start-line="45" selection-start-column="36" selection-end-line="45" selection-end-column="36" />
               <folding>
                 <element signature="e#63#1015#0" />
               </folding>
@@ -214,14 +205,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/SubprocessKernel/SubprocessKernel.py">
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="183">
-              <caret line="17" column="34" lean-forward="true" selection-start-line="17" selection-start-column="34" selection-end-line="17" selection-end-column="34" />
-              <folding>
-                <element signature="e#0#47#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="372">
+              <caret line="33" column="27" lean-forward="true" selection-start-line="33" selection-start-column="27" selection-end-line="33" selection-end-column="27" />
             </state>
           </provider>
         </entry>
@@ -357,7 +345,6 @@
         <option value="$PROJECT_DIR$/PJLink/NativeLink.py" />
         <option value="$PROJECT_DIR$/PJLink/MathLink.py" />
         <option value="$PROJECT_DIR$/test.py" />
-        <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" />
         <option value="$PROJECT_DIR$/../../../C++/PJLinkNativeLibrary/setup.py" />
         <option value="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" />
         <option value="$PROJECT_DIR$/PJLink/Resources/Decoders/RawArrayInfo.py" />
@@ -367,6 +354,7 @@
         <option value="$PROJECT_DIR$/PJLink/HelperClasses.py" />
         <option value="$PROJECT_DIR$/PJLink/Resources/Decoders/ImageArrayInfo.py" />
         <option value="$PROJECT_DIR$/PJLink/Resources/Decoders/SparseArrayInfo.py" />
+        <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" />
       </list>
     </option>
   </component>
@@ -913,13 +901,6 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="316">
-          <caret line="25" column="49" selection-start-line="25" selection-start-column="49" selection-end-line="25" selection-end-column="49" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/MathLinkEnvironment.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="341">
@@ -1063,11 +1044,18 @@ print(link._error())</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/Resources/Decoders/SparseArrayInfo.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="195">
-          <caret line="47" column="67" selection-start-line="47" selection-start-column="67" selection-end-line="47" selection-end-column="67" />
+        <state relative-caret-position="165">
+          <caret line="45" column="36" lean-forward="true" selection-start-line="45" selection-start-column="36" selection-end-line="45" selection-end-column="36" />
           <folding>
             <element signature="e#63#1015#0" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="372">
+          <caret line="33" column="27" lean-forward="true" selection-start-line="33" selection-start-column="27" selection-end-line="33" selection-end-column="27" />
         </state>
       </provider>
     </entry>
