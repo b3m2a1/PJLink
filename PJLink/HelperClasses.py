@@ -1384,13 +1384,17 @@ class MDecoder(namedtuple("MDecoder", ["head", "type", "dimensions"])):
         if callable(dims):
             dims = dims(head, link, stack)
 
+        if dims is not None:
+            dims = tuple(dims)
+
         if otype is None or otype=="Function":
             dats = link.get()
-        elif dims == [] or dims is None:
+        elif dims == () or dims is None:
             dats = link._getSingleObject(otype)
-        elif dims == [0]:
+        elif dims == (0,):
             dats = []
         else:
+            link.Env.log(otype, dims)
             dats = link._getArray(otype, len(dims))
 
         return dats #MStruct(dims, otype, head, dats) #I'd return this but I can't foresee it being useful...
@@ -1437,9 +1441,13 @@ class StructBase: #This is separate from ObjectDecoder because I might want a De
     def __repr__(self):
         return "{}({})".format(self._name, ", ".join([ "{}= {}".format(name, val) for name, val in self]))
 
+def namedstruct(name, *items):
+    items = list(items)
+    return namedtuple(name, [ x[0] for x in items] )(*(x[1] for x in items))
+
 class ObjectDecoder(StructBase):
     __slots__ = StructBase.__slots__ + ("_head", "_target")
-    def __init__(self, name, head, *fields, target = namedtuple):
+    def __init__(self, name, head, *fields, target = namedstruct):
 
         self._head = head
         pars = [ None ] * len(fields)
@@ -1448,7 +1456,7 @@ class ObjectDecoder(StructBase):
             if hasattr(dec, "decode"):
                 pars[i] = (name, dec)
             else:
-                name, head, type, dims = dec
+                head, type, dims = dec
                 pars[i] = (name, MDecoder(head, type, dims))
         super().__init__(name, *pars)
         self._target = target
@@ -1465,11 +1473,14 @@ class ObjectDecoder(StructBase):
         try:
             if head is not None:
                 fn = link._getFunction()
+                # link.Env.logf("Decoding function {}", fn)
                 sym = fn.head
                 argc = fn.argCount
+                # link.Env.log(sym.split("`")[-1], head, argc, len(self))
                 head_right = (isinstance(head, str) and sym.split("`")[-1] == head) or sym in head
-                field_count = len(self) >= argc
+                field_count = argc >= len(self)
                 valid = head_right and field_count
+                # link.Env.log(valid)
             else:
                 valid = False
 
@@ -1493,9 +1504,11 @@ class ObjectDecoder(StructBase):
         if self.check_function(link):
             stack = OrderedDict()
             for name, decoder in self:
+                # link.Env.log(decoder)
                 tres = decoder.decode(link, stack)
+                link.Env.log(tres)
                 stack[name] = tres
-            res = self._target(self._name, stack.items())
+            res = self._target(self._name, *stack.items())
         else:
             res = None
         return res
@@ -1542,7 +1555,8 @@ class TypeDecoder(OrderedDict):
 
         for f in os.listdir(path):
             if f.endswith(".py"):
-                self[f] = self.load_decoder(os.path.basename(f), path = path)
+                f, ext = os.path.splitext(os.path.basename(f))
+                self[f] = self.load_decoder(f, path = path)
 
     def load_decoder(self, name, path = None):
         import os
@@ -1556,15 +1570,17 @@ class TypeDecoder(OrderedDict):
         decoder_file = os.path.join(path, name+".py")
         with open(decoder_file) as dec_f:
             dec_code = compile(dec_f.read(), decoder_file, "exec")
-            exec(dec_code)
-            if not hasattr(_decoder, "decode"): # must be defined in the file
-                target = _decoder[-1]
-                if isinstance(target, (type, function)):
-                    _decoder = _decoder[:-1]
+            fake_locals = {}
+            exec(dec_code, globals(), fake_locals)
+            decoder = fake_locals["_decoder"]
+            if not hasattr(decoder, "decode"): # must be defined in the file
+                target = decoder[-1]
+                if callable(target):
+                    decoder = decoder[:-1]
                 else:
                     target = namedtuple
-                _decoder = ObjectDecoder(*_decoder, target=target)
-            return _decoder
+                decoder = ObjectDecoder(*decoder, target=target)
+            return decoder
 
     def register_decoder(self, name, decoder, path = None):
         import os

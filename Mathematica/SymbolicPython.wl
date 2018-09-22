@@ -355,7 +355,7 @@ ToPython[PyDict[a_Association]]:=
   ToPython[PyDict[Normal@a]];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Sequence*)
 
 
@@ -2214,7 +2214,7 @@ PyAlias@PyReadString[l_,x_]:=
     ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Throw*)
 
 
@@ -2223,7 +2223,7 @@ PyAlias@
     PyRaise[PyCall[tag][val]]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Fallbacks*)
 
 
@@ -2257,26 +2257,47 @@ PyAlias@(struct_?SymbolicPythonQ)[a___][b___][c___][d___]:=
 $PySymbolsContext=$Context;
 
 
-$PyLangPreEvaluate//Clear
-$PyLangTranslations//Clear
+(*$PyLangPreEvaluate//Clear
+$PyLangTranslations//Clear*)
 
 
-(* ::Subsubsubsection:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*$PyLangPreEvaluate*)
 
 
 If[!MatchQ[OwnValues[$PyLangPreEvaluate], {_:>_List}],
   $PyLangPreEvaluate:=
-    {
-      Replace[Values@$TypeHints,
-        (k_:>v_):>(k:>PyVerbatim[System`Private`SetNoEntry@v]),
-        1
-        ]
+    { 
+      (*This is pretty ugly...*)
+      Sequence@@
+        Replace[Values@$TypeHints,
+          {  
+            (k_:>(h:Module|With|Block)[d_,CompoundExpression[b___, Verbatim[Condition][v_, c_]]]):>
+              (
+                k:>
+                  With[{boolRes=h[d, b;If[c, PyVerbatim[System`Private`SetNoEntry@v], $$$$FAILED]]}, 
+                    boolRes/;boolRes=!=$$$$FAILED
+                    ]
+                  ),
+            (k_:>(h:Module|With|Block)[d_, Verbatim[Condition][v_, c_]]):>
+              (
+                k:>
+                  With[{boolRes=h[d, If[c, PyVerbatim[System`Private`SetNoEntry@v], $$$$FAILED]]}, 
+                    boolRes/;boolRes=!=$$$$FAILED
+                    ]
+                  ),
+            (k_:>Verbatim[Condition][v_, c_]):>
+              (k:>Condition[PyVerbatim[System`Private`SetNoEntry@v], c]),
+            (k_:>v_):>
+              (k:>RuleCondition[PyVerbatim[System`Private`SetNoEntry@v], True])
+            },
+          1
+          ]
       }
 ]
 
 
-(* ::Subsubsubsection:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*$PyLangTranslations*)
 
 
@@ -2285,13 +2306,19 @@ If[!MatchQ[OwnValues[$PyLangTranslations], {_:>_List}],
 $PyLangTranslations:=
   { 
     p:_PyVerbatim:>p,
-    (*inf:_ImageArrayInfo|_PackedArrayInfo|_SparseArrayInfo:>
-      PyVerbatim[inf],*)
-    Sequence@@
+    
+   (*Sequence@@
       Replace[Values@$TypeHints,
-        (k_:>v_):>(k:>PyVerbatim[v]),
+        {  
+          (k_\[RuleDelayed](h:Module|With|Block)[d_, Verbatim[Condition][v_, c_]]):>
+            (k:>h[d, Condition[PyVerbatim[System`Private`SetNoEntry@v], c]]),
+          (k_\[RuleDelayed]Verbatim[Condition][v_, c_]):>
+            (k\[RuleDelayed]Condition[PyVerbatim[System`Private`SetNoEntry@v], c]),
+          (k_:>v_):>
+            (k\[RuleDelayed]RuleCondition[PyVerbatim[System`Private`SetNoEntry@v], True])
+          },
         1
-        ],
+        ],*)
     
     Equal->PyEqual,
     Rule->Rule (* Just protecting it from later replacement *),
@@ -2466,23 +2493,23 @@ $PyLangTranslations:=
   ];
 
 
-If[!MatchQ[OwnValues[$PyLangTranslationSymbols], {_:>_List}],
-$PyLangTranslationSymbols:=
-  Replace[Keys[Normal@$PyLangTranslations],
-    {
-      Verbatim[HoldPattern][s_[___]]:>s,
-      s_Symbol:>s,
-      _->Nothing
-      },
-    1]
-]
+If[Length@OwnValues[$PyLangTranslationSymbols]==0,
+  $PyLangTranslationSymbols:=
+    Replace[Keys[Normal@$PyLangTranslations],
+      {
+        Verbatim[HoldPattern][s_[___]]:>s,
+        s_Symbol:>s,
+        _->Nothing
+        },
+      1]
+  ]
 
 
 (* ::Subsubsection:: *)
 (*Symbolic Python*)
 
 
-$PackageName = "PJLink`"; (* Gotta hard code this, unfortunately *)
+$PackageName = "PJLink"; (* Gotta hard code this I think, unfortunately *)
 
 
 ToSymbolicPython[symbols:{___Symbol}:{},expr_]:=
@@ -2496,42 +2523,40 @@ ToSymbolicPython[symbols:{___Symbol}:{},expr_]:=
     ptCont=
       $PackageName<>"`*"
     },
-    (*Block[
-      { $$blockDataBits=<||> },*)
-      ReleaseHold[
-        ReplaceRepeated[
-          (*ReplaceRepeated*)ReplaceRepeated[Hold[expr], $PyLangPreEvaluate]/.
-            Join[syms,
-              {
-                p_PyString:>p (* Protects the inner string from further replacement *),
-                HoldPattern[String[s_]]:>PyString[s],
-                s_String(*?(Not@StringMatchQ[#,(WordCharacter|"_"|".")..]&)*):>
-                  RuleCondition[
-                    PyString[s,
-                      If[Length@StringSplit[s,EndOfLine]>1,
-                        "'''",
-                        "'"
-                        ]
-                      ],
-                    True
-                    ]
-                }
-              ]/.
-            s_Symbol?(
-              Function[Null, 
-                !StringMatchQ[Context[#],ptCont]&&
-                !trfPat[#]&&(
-                System`Private`HasDownCodeQ[#]||
-                System`Private`HasUpCodeQ[#]||
-                !StringMatchQ[Context[#],"System`*"]
-                ),
-                HoldAllComplete
-                ]):>
-              PySymbol[s],
-          Dispatch@$PyLangTranslations
-          ]
-        ](*/.PySymbol[$$$blockDataBit][PyString[k_, _]]:>$$blockDataBits[k]
-      ]*)
+    ReleaseHold[
+      ReplaceRepeated[
+        ReplaceRepeated[Hold[expr], $PyLangPreEvaluate]/.
+          Join[syms,
+            {
+              p_PyString:>p (* Protects the inner string from further replacement *),
+              p_PyVerbatim:>p,
+              HoldPattern[String[s_]]:>PyString[s],
+              s_String:>
+                RuleCondition[
+                  PyString[s,
+                    If[Length@StringSplit[s,EndOfLine]>1,
+                      "'''",
+                      "'"
+                      ]
+                    ],
+                  True
+                  ]
+              }
+            ]/.
+          s_Symbol?(
+            Function[Null, 
+              !StringMatchQ[Context[#],ptCont]&&
+              !trfPat[#]&&(
+              System`Private`HasDownCodeQ[#]||
+              System`Private`HasUpCodeQ[#]||
+              !StringMatchQ[Context[#],"System`*"]
+              ),
+              HoldAllComplete
+              ]):>
+            PySymbol[s],
+        Dispatch@$PyLangTranslations
+        ]
+      ]
     ];
 ToSymbolicPython~SetAttributes~HoldAll;
 

@@ -137,38 +137,24 @@ class ImageData:
             ColorSpace_ = self.color_space
         )
 
-def _getImage(self):
-
-    dims = list(self._getArray(self.Env.toTypeInt("Integer"), 1))
-    cs = self._getString()
-    ty = self._getString()
-    dtype = self._getString()
-    true_type = self.Env.toTypeInt(dtype)
-
-    data = self._getArray(true_type, len(dims))
-
-    res = ImageData(dims, cs, ty, data)
-
-    return res
-
 def _get_type(head, link, stack):
     return stack["dtype"]
 def _get_dims(head, link, stack):
     return stack["dims"]
-def _get_image(name, items):
+def _get_image(name, *items, ImageData=ImageData):
     odict = dict(items)
-    return ImageData(odict["dims"], odict["color_space"], odict["odict"], odict["data"])
+    return ImageData(odict["dims"], odict["color_space"], odict["bit_size"], odict["data"])
 
 ImageArrayInfoDecoder = (
     "image",             #object name
     "ImageArrayInfo",  #object head
     # decoder tuples
     # they come as (key_name, head, typename, dim_list )
-    ("dims", None, "Integer", [ 1 ]), #_getArray works by depth, not true dimension, if the list isn't [ 0 ]
-    ("color_space", None, "String", None),
-    ("bit_size", None, "String", None),
-    ("dtype", None, "String", None),
-    ("data", None, _get_type, _get_dims),
+    ("dims",        (None, "Integer", [ 1 ])), #_getArray works by depth, not true dimension, if the list isn't [ 0 ]
+    ("color_space", (None, "String", None)),
+    ("bit_size",    (None, "String", None)),
+    ("dtype",       (None, "String", None)),
+    ("data",        (None, _get_type, _get_dims)),
     _get_image
 )
 

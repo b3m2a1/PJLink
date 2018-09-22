@@ -1,4 +1,4 @@
-from PJLink.HelperClasses import * #not really necessary, but w/e
+from PJLink.HelperClasses import *
 
 class SparseArrayData:
     """Holder class for SparseArray data
@@ -45,23 +45,23 @@ def _get_ci_dims(head, link, stack):
     return stack["ci_dims"]
 def _get_rp_dims(head, link, stack):
     return stack["rp_dims"]
-def _get_sparse_array(name, items):
+def _get_sparse_array(name, *items, SparseArrayData=SparseArrayData):
     d = dict(items)
-    return SparseArrayData(d["dims"], )
+    return SparseArrayData(d["dims"], d["nzvs"], d["rps"], d["cis"], d["bg"])
 
 SparseArrayDecoder = (
-    "data",             #object name
+    "SparseArray",      #object name
     "SparseArrayInfo",  #object head
     # decoder tuples
     # they come as (key_name, head, typename, dim_list )
-    ("dims", None, "Integer", [ 1 ]), #_getArray works by depth, not true dimension, if the list isn't [ 0 ]
-    ("dtype", None, "Symbol", None),
-    ("nzvs", None, _get_type, [ 1 ]),
-    ("ci_dims",  None, "Integer", [ 1 ]),
-    ("cis",  None, "Integer", _get_ci_dims),
-    ("rp_dims",  None, "Integer", [ 1 ]),
-    ("rps",  None, "Integer", _get_rp_dims),
-    ("bg", None, None, None), #this means get literally anything
+    ("dims",    (None, "Integer", [ 1 ])), #_getArray works by depth, not true dimension, if the list isn't [ 0 ]
+    ("dtype",   (None, "Symbol", None)),
+    ("nzvs",    (None, _get_type, [ 1 ])),
+    ("ci_dims", (None, "Integer", [ 1 ])),
+    ("cis",     (None, "Integer", _get_ci_dims)),
+    ("rp_dims", (None, "Integer", [ 1 ])),
+    ("rps",     (None, "Integer", _get_rp_dims)),
+    ("bg",      (None, None, None)), #this means get literally anything
     _get_sparse_array
 )
 

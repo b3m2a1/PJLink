@@ -72,19 +72,17 @@ EndPackage[];
 
 
 Internal`WithLocalSettings[
-  BeginPackage["`SymbolicPython`"],
-  Internal`WithLocalSettings[
-    System`Private`NewContextPath@
-      Join[
-        $ContextPath,
-        {
-          $Context//StringReplace["SymbolicPython"->"TypeHints"],
-          $Context//StringDelete["SymbolicPython`"]
-          }
-        ],
-    Get@FileNameJoin@{DirectoryName@$InputFileName, "SymbolicPython.wl"},
-    System`Private`RestoreContextPath[]
-    ],
+  BeginPackage["`SymbolicPython`"];
+  System`Private`NewContextPath@
+    Join[
+      $ContextPath,
+      {
+        $Context//StringReplace["SymbolicPython"->"TypeHints"],
+        $Context//StringDelete["SymbolicPython`"]
+        }
+      ],
+  Get@FileNameJoin@{DirectoryName@$InputFileName, "SymbolicPython.wl"},
+  System`Private`RestoreContextPath[];
   EndPackage[];
   ];
 
@@ -94,8 +92,16 @@ Internal`WithLocalSettings[
 
 
 Internal`WithLocalSettings[
-  BeginPackage["`Exceptions`"],
+  BeginPackage["`Exceptions`"];
+  System`Private`NewContextPath@
+    Join[
+      $ContextPath,
+      {
+        $Context//StringDelete["Exceptions`"]
+        }
+      ],
   Get@FileNameJoin@{DirectoryName@$InputFileName, "Exceptions.wl"},
+  System`Private`RestoreContextPath[];
   EndPackage[]
   ]
 
@@ -186,85 +192,110 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
         link = OptionValue[LinkObject],
         lname = Replace[OptionValue["LinkName"], Except[String]:>Sequence@@{}],
         proc = OptionValue[ProcessObject],
-        failed = False
+        failed = False,
+        failed2 = True,
+        errorMsg
       },
-      Print@"...";
-      If[!AssociationQ@pyKer,
-        pyKer=<||>;
-        If[!KeyExistsQ[$PythonKernels, version],
-          $PythonKernels[version] = {}
-          ];
-        If[linkDead[link],
-          link = 
-            LinkCreate[
-              lname,
-              FilterRules[{ops}, {LinkProtocol}]
-              ]
-          ];
-        pyExe =
-          Which[
-            NumberQ@version,
-              "python"<>ToString[version],
-            StringQ@version && FileExistsQ@version,
-              version,
-            StringQ@version && !StringStartsQ[version, "python"],
-              "python"<>version,
-            Not@StringQ@version,
-              $defaultPython,
-            True,
-              version
+      CheckAbort[
+        If[!AssociationQ@pyKer,
+          pyKer=<||>;
+          If[!KeyExistsQ[$PythonKernels, version],
+            $PythonKernels[version] = {}
             ];
-        pyKer["Python"]  = pyExe;
-        pyKer["Link"]    = link;
-        pyKer["Name"]    = link[[1]];
-        If[!MatchQ[proc, None|_ProcessObject?(ProcessStatus[#]==="Running"&)],
-          proc = StartProcess[
-            {
-              pyExe, 
-              startKernelPy, 
-              "--blocking="<>ToString@TrueQ@OptionValue["Blocking"],
-              "--debug="<>ToString@OptionValue["DebugLevel"],
-              "-linkmode", "connect",
-              "-linkname", pyKer["Name"] 
-              },
-            FilterRules[
+          If[linkDead[link],
+            link = 
+              LinkCreate[
+                lname,
+                FilterRules[{ops}, {LinkProtocol}]
+                ]
+            ];
+          pyExe =
+            Which[
+              NumberQ@version,
+                "python"<>ToString[version],
+              StringQ@version && FileExistsQ@version,
+                version,
+              StringQ@version && !StringStartsQ[version, "python"],
+                "python"<>version,
+              Not@StringQ@version,
+                $defaultPython,
+              True,
+                version
+              ];
+          pyKer["Python"]  = pyExe;
+          pyKer["Link"]    = link;
+          pyKer["Name"]    = link[[1]];
+          If[!MatchQ[proc, None|_ProcessObject?(ProcessStatus[#]==="Running"&)],
+            proc = StartProcess[
               {
-                ops,
-                If[$OperatingSystem =!= "Windows",
-                  ProcessEnvironment ->
-                      <|
-                        "PATH" -> $pySessionPathExtension <> Environment["PATH"]
-                        |>,
-                  Nothing
-                ],
-                ProcessDirectory -> pjlinkDir
+                pyExe, 
+                startKernelPy, 
+                "--blocking="<>ToString@TrueQ@OptionValue["Blocking"],
+                "--debug="<>ToString@OptionValue["DebugLevel"],
+                "-linkmode", "connect",
+                "-linkname", pyKer["Name"] 
                 },
-              Options@StartProcess
+              FilterRules[
+                {
+                  ops,
+                  If[$OperatingSystem =!= "Windows",
+                    ProcessEnvironment ->
+                        <|
+                          "PATH" -> $pySessionPathExtension <> Environment["PATH"]
+                          |>,
+                    Nothing
+                  ],
+                  ProcessDirectory -> pjlinkDir
+                  },
+                Options@StartProcess
+                ]
+              ]
+            ];
+          If[procDead[proc] || linkDead[link],
+            failed=True,
+            pyKer["Process"] = proc;
+            AppendTo[$PythonKernels[version], pyKer];
+            If[!AssociationQ@$DefaultPythonKernel, $DefaultPythonKernel=pyKer];
+            LinkWrite[pyKer["Link"],  InputNamePacket["In[1]:="]]
+            ]
+          ];
+        failed2 = failed || pyEvalPacket[link, CallPacket[1, "'Initializing'"], 3]=!="Initializing";
+        If[failed2,
+          errorMsg = 
+            Quiet[ReadString[ProcessConnection[proc, "StandardError"], EndOfBuffer]];
+          ClosePython[version];
+          If[StringQ@errorMsg && StringLength@errorMsg > 0,
+            PackageRaiseException[Automatic,
+              "Failed to start python process for python executable ``. Got message:\n\n``",
+              pyExe,
+              PythonTraceback[errorMsg]
+              ],
+            PackageRaiseException[Automatic,
+              "Failed to start kernel for python executable ``",
+              pyExe
               ]
             ]
           ];
-        If[procDead[proc] || linkDead[link],
-          (*Echo@ReadString[ProcessConnection[proc, "StandardError"], EndOfBuffer];*)
-          failed=True,
-          pyKer["Process"] = proc;
-          AppendTo[$PythonKernels[version], pyKer];
-          If[!AssociationQ@$DefaultPythonKernel, $DefaultPythonKernel=pyKer];
-          LinkWrite[pyKer["Link"],  InputNamePacket["In[1]:="]]
-          ]
-        ];
-      If[failed || 
-          CheckAbort[
-            pyEvalPacket[link, CallPacket[1, "'Initializing'"], 3]=!="Initializing",
-            True
-            ],
-        ClosePython[version];
-        PackageRaiseException[Automatic,
-          "Failed to start kernel for python executable ``",
-          pyExe
-          ],
+        pyKer,
+        If[failed2,
+          errorMsg = 
+            Quiet[ReadString[ProcessConnection[proc, "StandardError"], EndOfBuffer]];
+          ClosePython[version];
+          If[StringQ@errorMsg && StringLength@errorMsg > 0,
+            PackageRaiseException[Automatic,
+              "Failed to start python process for python executable ``. Got message:\n\n``",
+              pyExe,
+              PythonTraceback[errorMsg]
+              ],
+            PackageRaiseException[Automatic,
+              "Failed to start kernel for python executable ``",
+              pyExe
+              ]
+            ]
+          ];
         pyKer
-        ]
       ]
+     ]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -296,7 +327,7 @@ ClosePython[version:_?NumberQ|_String|Automatic:Automatic]:=
       
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*pyEvalPacket*)
 
 
@@ -333,7 +364,7 @@ procDead[proc_]:=
   proc =!= None && Quiet[ProcessStatus@proc] =!= "Running"
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*cleanUpEnv*)
 
 
@@ -342,10 +373,28 @@ cleanUpEnv//Clear
 
 cleanUpEnv[pker_, version_, $Aborted]:=
   If[(linkDead[pker["Link"]]||procDead[pker["Process"]]),
-    ClosePython[version];
-    PackageRaiseException[Automatic,
-      "Kernel `` for version `` has died",
-      pker, version
+    With[
+      {
+        es = 
+          Quiet@ReadString[
+            ProcessConnection[pker["Process"], "StandardError"], 
+            EndOfBuffer
+            ]
+       },
+      ClosePython[version];
+      If[StringQ@es && StringLength@es>0,
+        PackageRaiseException[Automatic,
+          "Kernel `` for version `` has died with traceback:\n\n``",
+          HoldForm@pker, (*HoldForm here is a hack because PackageRaiseException is buggy*)
+          version,
+          PythonTraceback[es]
+          ],
+        PackageRaiseException[Automatic,
+          "Kernel `` for version `` has died",
+          HoldForm@pker,
+          version
+          ]
+        ]
       ],
     $Aborted
     ];
@@ -525,6 +574,9 @@ PackageExceptionBlock["Kernel"]@
 
 (* ::Subsubsection:: *)
 (*$TypeHints*)
+
+
+(*$TypeHints//Clear*)
 
 
 If[!AssociationQ@$TypeHints,

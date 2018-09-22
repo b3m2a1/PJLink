@@ -1441,6 +1441,10 @@ class WrappedKernelLink(KernelLink):
 
         # The only types we must handle ourselves are TYPE_COMPLEX (since we must be sure to use _our_ notion of the                                                                                                         // complex class, not the impl's, which will not even have been set), and TYPE_OBJECT (because only a
         # KernelLink can do that).
+
+        if not isinstance(otype, int):
+            otype = self.Env.toTypeInt(otype)
+
         typename = self.Env.fromTypeInt(otype, "typename")
         if typename == "Object":
             return super()._getArray(otype, depth, headList)
