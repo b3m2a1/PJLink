@@ -8,12 +8,13 @@
 		".git",
 		"project",
 		"README.nb",
-		"Java"
+		"Java",
+		"PJLink/PJLinkNativeLibrary/src/build",
+		"PJLink/PJLinkNativeLibrary/PJLinkNativeLibrary.pyd",
+		"PJLink/PJLinkNativeLibrary/PJLinkNativeLibrary.so"
 		},
 	"RemovePatterns" -> {
-		"Packages/*.nb",
 		".DS_Store",
-		"*.so",
 		"*.pyc",
 		"__pycache__"
 		}
