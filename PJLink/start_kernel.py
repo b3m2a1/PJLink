@@ -19,6 +19,10 @@ parser.add_argument('--blocking', dest='block', type=bool, nargs='?', default=Fa
                     help='whether the kernel should block or not')
 parser.add_argument('--debug', dest='debug', type=int, nargs='?', default=0,
                     help='debug level for underlying PJLink lib')
+parser.add_argument('--log', dest='log', type=str, nargs='?', default="",
+                    help='log file for underlying PJLink lib')
+parser.add_argument('--class', dest='cls', type=str, nargs='?', default="reader",
+                    help='log file for underlying PJLink lib')
 parser.add_argument('-linkname', dest='name', type=str, nargs='?',
                     help='name for the link')
 parser.add_argument('-linkmode', dest='mode', type=str, nargs='?',
@@ -33,6 +37,8 @@ debug = parser.debug
 name = parser.name
 mode = parser.mode
 protocol = parser.protocol
+cls = parser.cls
+log = parser.log.strip("'").strip('"')
 
 opts = { 'linkname' : parser.name, 'linkmode' : parser.mode, 'linkprotocol' : parser.protocol }
 opts = [ ('-'+k, v) for k, v in opts.items() if v is not None]
@@ -41,16 +47,18 @@ for i, t in enumerate(opts):
     init[2*i] = t[0]
     init[2*i+1] = t[1]
 
-reader = create_reader_link(init=init, debug_level=debug)
-# print(reader.link.drain())
-
-# stdout = open(os.path.expanduser("~/Desktop/stdout.txt"), "w+")
-# stderr = open(os.path.expanduser("~/Desktop/stderr.txt"), "w+")
-# sys.stdout = stdout
-# sys.stderr = stderr
+if cls == "reader":
+    reader = create_reader_link(init=init, debug_level=debug, log = log)
+    local = {"Kernel":reader.link, "KernelReader":reader}
+elif cls == "kernel":
+    kernel = create_kernel_link(init=init, debug_level=debug, log = log)
+    local = {"Kernel":kernel}
+elif cls == "native":
+    link = create_math_link(init=init, debug_level=debug, log = log)
+    local = {"Link":link}
+else:
+    raise ValueError("Can't parse link class {}".format(cls))
 
 if blocking:
-#     reader.run()
-# else:
     import code
-    code.interact(banner = "", local={"Kernel":reader.link, "KernelReader":reader})
+    code.interact(banner = "", local= local)

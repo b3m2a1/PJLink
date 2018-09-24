@@ -34,7 +34,7 @@ PythonTraceback::usage="A wrapper head for traceback formatting";
 PythonObject::usage="A little head for holding references to python objects";
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (* Package*)
 
 
@@ -51,7 +51,7 @@ EndPackage[];
 
 
 (* ::Subsubsection:: *)
-(*Typehints*)
+(*TypeHints*)
 
 
 BeginPackage["`TypeHints`"];
@@ -62,12 +62,21 @@ PackedArrayInfo::usage="A typehint added by AddTypeHints";
 ImageArrayInfo::usage="A typehint added by AddTypeHints";
 SparseArrayInfo::usage="A typehint added by AddTypeHints";
 RegisterTypeHint::usage="Registers a new typehint for the typehint framework";
-LoadTypeHint::usage="Loads a typehint into the typehint framework";
+LoadTypeHints::usage="Loads typehints into the typehint framework";
 
 EndPackage[];
 
 
 (* ::Subsubsection:: *)
+(*Objects*)
+
+
+$ObjectTable::usage="The object table for python objects";
+PythonNew::usage="Makes a new python object";
+PythonObjectMutate::usage="MutationHandler for python objects";
+
+
+(* ::Subsubsection::Closed:: *)
 (*SymbolicPython*)
 
 
@@ -87,7 +96,7 @@ Internal`WithLocalSettings[
   ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Exceptions*)
 
 
@@ -179,7 +188,8 @@ Options[InstallPython] =
       LinkProtocol->Automatic,
       "LinkName"->Automatic,
       "Blocking"->True,
-      "DebugLevel"->0
+      "DebugLevel"->0,
+      "LogFile"->None
       },
     Options[StartProcess]
     ];
@@ -232,8 +242,15 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
                 startKernelPy, 
                 "--blocking="<>ToString@TrueQ@OptionValue["Blocking"],
                 "--debug="<>ToString@OptionValue["DebugLevel"],
+                "--log=\"``\""~TemplateApply~
+                  Replace[OptionValue["LogFile"],
+                    {
+                      File[f_]|f_String?(StringLength[#]>0&):>ExpandFileName@f,
+                      _:>""
+                      }
+                    ],
                 "-linkmode", "connect",
-                "-linkname", pyKer["Name"] 
+                "-linkname", pyKer["Name"]
                 },
               FilterRules[
                 {
@@ -336,24 +353,24 @@ ClosePython[version:_?NumberQ|_String|Automatic:Automatic]:=
 
 
 pyEvalPacket[link_, packet_, timeout_:10]:=
-    Module[{pkt = packet, to = Quantity[timeout, "Seconds"], res},
-      If[SameQ[LinkWrite[link, pkt], $Failed], Return[$Failed]];
-      res = TimeConstrained[LinkRead[link, HoldComplete], timeout];
-      Switch[res,
-        HoldComplete @ EvaluatePacket @ _,
-          pkt = ReturnPacket[CheckAbort[res[[1, 1]], $Aborted]],
-        HoldComplete @ ReturnPacket @ _,
-          Return[res[[1, 1]]],
-        HoldComplete @ _Sequence,
-          sequenceResult = res[[1]];
-          Break[],
-        HoldComplete @ _,
-          Return[res[[1]]],
-        _,
-          Return[res]
-        ];
-      sequenceResult
+  Module[{pkt = packet, to = Quantity[timeout, "Seconds"], res},
+    If[SameQ[LinkWrite[link, pkt], $Failed], Return[$Failed]];
+    res = TimeConstrained[LinkRead[link, HoldComplete], timeout];
+    Switch[res,
+      HoldComplete @ EvaluatePacket @ _,
+        pkt = ReturnPacket[CheckAbort[res[[1, 1]], $Aborted]],
+      HoldComplete @ ReturnPacket @ _,
+        Return[res[[1, 1]]],
+      HoldComplete @ _Sequence,
+        sequenceResult = res[[1]];
+        Break[],
+      HoldComplete @ _,
+        Return[res[[1]]],
+      _,
+        Return[res]
       ];
+    sequenceResult
+    ];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -579,6 +596,35 @@ PackageExceptionBlock["Kernel"]@
 
 
 (* ::Subsubsection::Closed:: *)
+(*LoadTypeHints*)
+
+
+encoderDir=FileNameJoin@{mathematicaDir, "Encoders"};
+
+
+LoadTypeHints[]:=
+  Module[{cachedContext=$Context},
+    Internal`WithLocalSettings[
+      System`Private`NewContextPath@{"System`", "PJLink`", "PJLink`TypeHints`"};
+      $Context="PJLink`TypeHints`Private`",
+      $TypeHints=
+        Merge[
+          {
+            $TypeHints,
+            AssociationMap[
+              Get@FileNameJoin@{encoderDir, #<>".wl"}&, 
+              FileBaseName/@FileNames["*.wl", encoderDir]
+              ]
+            },
+          Last
+          ],
+      System`Private`RestoreContextPath[];
+      $Context=cachedContext;
+      ]
+    ]
+
+
+(* ::Subsubsection::Closed:: *)
 (*$TypeHints*)
 
 
@@ -586,12 +632,8 @@ PackageExceptionBlock["Kernel"]@
 
 
 If[!AssociationQ@$TypeHints,
-  encoderDir=FileNameJoin@{mathematicaDir, "Encoders"};
-  $TypeHints = 
-    AssociationMap[
-      Get@FileNameJoin@{encoderDir, #<>".wl"}&, 
-      FileBaseName/@FileNames["*.wl", encoderDir]
-      ]
+  $TypeHints = <||>;
+  LoadTypeHints[]
   ]
 
 
@@ -604,6 +646,27 @@ AddTypeHints[eval_] :=
 
 
 (* ::Subsubsection::Closed:: *)
+(*RegisterTypeHint*)
+
+
+Options[RegisterTypeHint]=
+  {
+    "Save"->True
+    };
+RegisterTypeHint[name_, hint:_Rule|_RuleDelayed, ops:OptionsPattern[]]:=
+  Module[{contextMarks=Internal`$ContextMarks},
+    Internal`WithLocalSettings[
+      Internal`$ContextMarks=False,
+      $TypeHints[name]=hint;
+      If[OptionValue["Save"],
+        Export[FileNameJoin@{encoderDir, name<>".wl"}, hint]
+        ],
+      Internal`$ContextMarks = contextMarks
+      ]
+    ];
+
+
+(* ::Subsubsection::Closed:: *)
 (*PythonTraceback*)
 
 
@@ -612,6 +675,60 @@ Format[pt:PythonTraceback[ts_], StandardForm]:=
     Style[ts, Red],
     pt
     ]
+
+
+(* ::Subsubsection:: *)
+(*pythonAttachSymbol*)
+
+
+(* ::Text:: *)
+(*Currently this doesn't handle multiple runtimes so I'll need to make it do so.*)
+
+
+pythonAttachSymbol[obj:PythonObject[id_Integer, class_String, addr_Integer]]:=
+  With[{sym=ToExpression["PJLink`Objects`$PythonObject$"<>ToString[id]]},
+    $ObjectTable[id]=Prepend[obj, sym];
+    sym["$ID"]=id;
+    sym
+    ]
+
+
+(* ::Subsubsection:: *)
+(*pythonWrapSymbol*)
+
+
+pythonWrapSymbol[sym_]:=
+  (
+    SetAttributes[sym, HoldAllComplete];
+    sym[(meth:_[___])[args___]]:=
+      sym[meth][args];
+    sym[(meth_[args___])]:=
+      Null
+    )
+
+
+(* ::Subsubsection:: *)
+(*PythonNew*)
+
+
+PythonNew[expr_, args:___]:=
+  With[{obj = PyEvaluate[ObjectHandler.new[expr[args]]]},
+    pythonAttachSymbol[obj]
+    ]
+
+
+(* ::Subsubsection:: *)
+(*PythonObject*)
+
+
+(* ::Text:: *)
+(*Need to think a bit about how I want to handle this...*)
+
+
+PythonObject~SetAttributes~HoldAllComplete
+
+
+Language`SetMutationHandler[PythonObject, PythonObjectMutationHandler]
 
 
 (* ::Subsubsection::Closed:: *)

@@ -240,35 +240,11 @@ class MathLinkEnvironment:
 
     CALL_TYPES = {
         "CallPython"       : 1,
-        "LoadClass"        : 2, # Java legacy
-        "Throw"            : 3,
-        "ReleaseObject"    : 4,
-        "Val"              : 5,
-        "OnLoadClass"      : 6,
-        "OnUnloadClass"    : 7,
-        "SetComplex"       : 8,
-        "Reflect"          : 9,
-        "Show"             : 10,
-        "SameQ"            : 11,
-        "InstanceOf"       : 12,
-        "AllowRagged"      : 13,
-        "GetException"     : 14,
-        "ConnectToFE"      : 15,
-        "DisconnectToFE"   : 16,
-        "PeekClasses"      : 17,
-        "PeekObjects"      : 18,
-        "ClassPath"        : 19,
-        "AddToClassPath"   : 20,
-        "SetUserID"        : 21,
-        "AllowUIComputations" : 22,
-        "UIThreadWaiting"  : 23,
-        "YieldTime"        : 24,
-        "GetConsole"       : 25,
-        "ExtraLinks"       : 26,
-        "GetWindowID"      : 27,
-        "AddTitleChangeListener" : 28,
-        "SetVMName"        : 29,
-        "SetException"     : 30
+        "Throw"            : 2,
+        "Clear"            : 3,
+        "Get"              : 4,
+        "Set"              : 5,
+        "New"              : 6
     }
     CALL_TYPE_NAMES = {}
     CALL_TYPE_NAMES.update(tuple((item, key) for key, item in CALL_TYPES.items()))
@@ -336,7 +312,7 @@ class MathLinkEnvironment:
     # Not currently used -- will force copies of data buffers to protect against corruption
     COPY_DATA_BUFFERS = False # I'm not sure I can actually disable this?
 
-    CURRENT_MATHEMATICA = "11.3"
+    CURRENT_MATHEMATICA = None
 
     if HAS_NUMPY:
         del np
@@ -631,6 +607,47 @@ class MathLinkEnvironment:
         return packet_name
 
     @classmethod
+    def get_Applications_root(cls):
+        import platform, os
+
+        plat = platform.system()
+        if plat == "Darwin":
+            root = os.sep + "Applications"
+        elif plat == "Linux": #too much stuff going on to really know if I'm handling this right
+            root = os.sep + os.path.join("usr", "local", "Wolfram")
+            if not os.path.exists(root):
+                root = os.sep + os.path.join("opt", "Wolfram")
+        elif plat == "Windows":
+            root = os.path.expandvars(os.path.join("%ProgramFiles%", "Wolfram Research"))
+        else:
+            raise ValueError("Couldn't determine Current Mathematica for platform {}".format(plat, bin))
+
+
+    @classmethod
+    def get_Installed_Mathematica(cls):
+        import os
+
+        root = cls.get_Applications_root()
+
+        mathematicas = []
+        for app in os.listdir(root):
+            if app.startswith("Mathematica") or app.startswith("Wolfram Desktop"):
+                mathematica = os.path.join(root, app)
+                app, ext = os.path.splitext(app)
+                vers = app.strip("Mathematica").strip("Wolfram Desktop").strip()
+                if len(vers)>0:
+                    vers = vers
+                    verNum = float(vers)
+                else:
+                    vers = ""
+                    verNum = 10000 # hopefully WRI never gets here...
+                mathematicas.append((mathematica, verNum, vers))
+
+        mathematicas = sorted(mathematicas, key = lambda tup: tup[1], reverse = True)
+        cls.CURRENT_MATHEMATICA = mathematicas[0][2]
+        return mathematicas[0][0]
+
+    @classmethod
     def get_Mathematica_name(cls, version = None):
         import platform, os, re
 
@@ -643,11 +660,15 @@ class MathLinkEnvironment:
                 mname = "Mathematica {}.app".format(mname)
         elif plat == "Linux":
             if mname is None:
+                if cls.CURRENT_MATHEMATICA is None:
+                    cls.get_Installed_Mathematica()
                 mname = os.path.join("Mathematica", cls.CURRENT_MATHEMATICA)
             elif isinstance(mname, float) or (isinstance(mname, str) and re.match(r"\d\d.\d", mname)):
                 mname = os.path.join("Mathematica", str(mname))
         elif plat == "Windows":
             if mname is None:
+                if cls.CURRENT_MATHEMATICA is None:
+                    cls.get_Installed_Mathematica()
                 mname = os.path.join("Mathematica", cls.CURRENT_MATHEMATICA)
             elif isinstance(mname, float) or (isinstance(mname, str) and re.match(r"\d\d.\d", mname)):
                 mname = os.path.join("Mathematica", str(mname))
@@ -659,15 +680,21 @@ class MathLinkEnvironment:
         import platform, os
 
         plat = platform.system()
-        mname = cls.get_Mathematica_name(mname)
-        if plat == "Darwin":
-            root = os.sep + os.path.join("Applications", mname, "Contents")
-        elif plat == "Linux":
-            root = os.sep + os.path.join("usr", "local", "Wolfram", mname)
-        elif plat == "Windows":
-            root = os.path.expandvars(os.path.join("%ProgramFiles%", "Wolfram Research", mname))
+        if mname is None:
+            root = cls.get_Installed_Mathematica()
+            if plat == "Darwin":
+                root = os.path.join(root, "Contents")
         else:
-            raise ValueError("Couldn't find Mathematica for platform {}".format(plat, bin))
+            app_root = cls.get_Applications_root()
+            mname = cls.get_Mathematica_name(mname)
+            if plat == "Darwin":
+                root = os.path.join(app_root, mname, "Contents")
+            elif plat == "Linux":
+                root = os.path.join(app_root, mname)
+            elif plat == "Windows":
+                root = os.path.join(app_root, mname)
+            else:
+                raise ValueError("Couldn't find Mathematica for platform {}".format(plat, bin))
 
         return root
 
@@ -682,6 +709,8 @@ class MathLinkEnvironment:
         except ValueError:
             if not (isinstance(version, str) and os.path.isfile(version)):
                 raise ValueError("Don't know how to find the WolframKernel executable on system {}".format(plat))
+            else:
+                bin = version
 
         if plat == "Darwin":
             bin = os.path.join(root, "MacOS", "WolframKernel")

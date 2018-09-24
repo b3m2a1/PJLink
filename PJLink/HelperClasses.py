@@ -948,6 +948,27 @@ def template_classmethod(clas{}):
             template_classmethod.__name__ = fname
             setattr(cls, fname, template_classmethod)
 
+    def from_dict(self, expr):
+        head = expr["_head"]
+        args = expr["_args"]
+        try:
+            kwargs = expr["_opts"]
+        except KeyError:
+            kwargs = {}
+
+        argnew = [ None ] * len(args)
+        for i, a in enumerate(args):
+            if isinstance(a, dict):
+                if "_head" in dict and "_args" in dict:
+                    argnew[i] = self.from_dict(a)
+                elif "_symbol" in dict:
+                    argnew[i] = self.S(a["_symbol"])
+                else:
+                    argnew[i] = a
+
+        return self.F(head, *args, **kwargs)
+
+
 ###############################################################################################
 #                                                                                             #
 #                                     MExprUtilsConfig                                        #
@@ -1051,6 +1072,18 @@ class MPackageClass(MExprUtils):
             return False
     def initialize_default(self):
         return self.initialize_from_file(self.__sym_list)
+
+    def to_Association(self, expr):
+        return self.Association(*(self.Rule(*rule) for rule in expr.items()))
+    def to_HashTable(self, expr):
+        try:
+            _version = expr[ "_HashTable_version_" ]
+        except KeyError:
+            _version = 1
+
+        return self.System_Utilities_HashTable(_version, *(list(rule) for rule in expr.items()))
+    def to_Rules(self, expr):
+        return self.List(*(self.Rule(*rule) for rule in expr.items()))
 
     def _add_type_hints(self, to_eval):
         return self.CompoundExpression(
@@ -1582,7 +1615,7 @@ class TypeDecoder(OrderedDict):
                 decoder = ObjectDecoder(*decoder, target=target)
             return decoder
 
-    def register_decoder(self, name, decoder, path = None):
+    def register_decoder(self, name, decoder, path = None, save = True):
         import os
 
         if not isinstance(decoder, ObjectDecoder):
@@ -1591,12 +1624,13 @@ class TypeDecoder(OrderedDict):
         if not isinstance(decoder, ObjectDecoder):
             raise TypeError("{}.register_decoder: got object '{}' but an 'ObjectDecoder' object is required".format(type(self).__name__, type(decoder).__name__))
         else:
-            if path is None:
-                path = self._decoder_path
-            decoder_file = os.path.join(path, name.py)
-            with open(decoder_file) as dec_f:
-                dec_f.write(decoder.serialize())
-
+            if save:
+                if path is None:
+                    path = self._decoder_path
+                decoder_file = os.path.join(path, name.py)
+                with open(decoder_file) as dec_f:
+                    dec_f.write(decoder.serialize())
+            self[name] = decoder
 
 ###############################################################################################
 #                                                                                             #
@@ -1701,14 +1735,18 @@ class ObjectHandler:
 
     def __init__(self, env):
         self.__env = env
-        self.__context_cache = {}
+        self.__objects = {}
+        # self.__context_cache = {}
 
     @property
     def env(self):
         return self.__env
+    # @property
+    # def contexts(self):
+    #     return self.__context_cache
     @property
-    def contexts(self):
-        return self.__context_cache
+    def objects(self):
+        return self.__objects
 
     @staticmethod
     def clean_symbol_names(name):
@@ -1717,13 +1755,12 @@ class ObjectHandler:
         return name
 
     def exec_code(self, args):
-        # I should probably do something about context handling but I don't
-        # really know what...
         env = self.__env
+        env["_PythonObjects"] = self.__objects
         if isinstance(args, str):
             args = [ args ]
         for chunk in args:
-            chunk = self.clean_symbol_names(chunk)
+            # chunk = self.clean_symbol_names(chunk)
             exec(chunk, env, env)
 
     def _context_and_name(self, ref):
@@ -1747,57 +1784,81 @@ class ObjectHandler:
 
         return context, name
 
-    def remove(self, ref):
-        ctx, name = self._context_and_name(ref)
-        if isinstance(ctx, dict):
-            try:
-                val = ctx[name]
-                del self.__ref_table[val]
-            except (KeyError, TypeError):
-                pass
-            del ctx[name]
+    def _op(self, op, ref, *vals):
+        val = self.get(ref)
+        return val
+    def _iop(self, op, ref, *vals):
+        self.set(ref, self._op(op, ref, *vals))
 
+    def _get_ref_id(self, ref):
+        if isinstance(ref, int):
+            return ref
         else:
-            try:
-                val = getattr(ctx, name)
-                del self.__ref_table[val]
-            except (AttributeError, KeyError, TypeError):
-                pass
-            delattr(ctx, name)
+            return ref.ref
+
+    def remove(self, ref):
+        # ctx, name = self._context_and_name(ref)
+        rid = self._get_ref_id(ref)
+        del self.__objects[rid]
+        # if isinstance(ctx, dict):
+        #     try:
+        #         val = ctx[name]
+        #         del self.__ref_table[val]
+        #     except (KeyError, TypeError):
+        #         pass
+        #     del ctx[name]
+        #
+        # else:
+        #     try:
+        #         val = getattr(ctx, name)
+        #         del self.__ref_table[val]
+        #     except (AttributeError, KeyError, TypeError):
+        #         pass
+        #     delattr(ctx, name)
 
     def get(self, ref):
-        ctx, name = self._context_and_name(ref)
-        if isinstance(ctx, dict):
-            return ctx[name]
-        else:
-            return getattr(ctx, name)
+        rid = self._get_ref_id(ref)
+        return self.__objects[rid]
+        # ctx, name = self._context_and_name(ref)
+        # if isinstance(ctx, dict):
+        #     return ctx[name]
+        # else:
+        #     return getattr(ctx, name)
 
     def set(self, ref, val):
-        ctx, name = self._context_and_name(ref)
-        if isinstance(ctx, dict):
-            ctx[name] = val
-        else:
-            setattr(ctx, name, val)
+        rid = self._get_ref_id(ref)
+        self.__objects[rid] = val
+        # ctx, name = self._context_and_name(ref)
+        # if isinstance(ctx, dict):
+        #     ctx[name] = val
+        # else:
+        #     setattr(ctx, name, val)
 
-    def ref(self, val):
-        try:
-            ref = self.__ref_table[val]
-        except (KeyError, TypeError):
-            if isinstance(val, type):
-                name = val.__module__ + "." + val.__qualname__
-            else:
-                tt = type(val)
-                name = tt.__module__ + "." + tt.__qualname__ + "${}".format(self.__obj_counter)
-                self.__obj_counter += 1
+    def new(self, val):
+        ref_id = self.__obj_counter
+        self.__obj_counter += 1
+        self.set(ref_id, val)
+        ref = PythonObject(ref_id, handler = self)
+        # if isinstance(val, type):
+        #
+        #     name = val.__module__ + "." + val.__qualname__
+        # else:
+        #     tt = type(val)
+        #     name = tt.__module__ + "." + tt.__qualname__ + "_{}".format(self.__obj_counter)
+        #     self.__obj_counter += 1
+        #
+        # name = name.replace(".", "`")
+        #
+        # ref = MPackage.F(MPackage.PackageContext+"PythonObject", name)
+        #
+        # self.set(name, val)
 
-            name = name.replace(".", "`")
-
-            ref = MLExpr(MPackage.PackageContext+"PythonObject", (name,))
-
-            try:
-                self.__ref_table[val] = ref
-            except TypeError:
-                pass
+            # self.__ref_table[id(val)] = ref
+            # self.__ref_table[ref] = id(val)
+            # # try:
+            # #     self.__ref_table[id(val)] = ref
+            # # except TypeError:
+            # #     pass
 
         return ref
 
@@ -1807,10 +1868,13 @@ class PythonObject(namedtuple("PythonObject",   ["ref", "handler"])):
     """A lightweight reference to a variable which only exists to make Mathematica code a little cleaner"""
     __slots__ = ()
 
-    def __new__(cls, ref, handler=None):
+    def __new__(cls, ref, link = None, handler = None):
         if handler is None:
-            handler = Kernel.ObjectHandler # this is assuming we're inside an _EXEC_ENV
-        return super().__new__(cls, ref, handler)
+            handler = link.ObjectHandler
+        return super().__new__(cls, (ref, handler))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
 
     def get(self):
         return self.handler.get(self.ref)
@@ -1819,21 +1883,36 @@ class PythonObject(namedtuple("PythonObject",   ["ref", "handler"])):
     def remove(self):
         return self.handler.remove(self.ref)
 
+    @property
+    def expr(self):
+        val = self.get()
+        if isinstance(val, type):
+            cls = val.__module__+"."+val.__qualname__
+            add = val.__name__
+        else:
+            t = type(val)
+            cls = t.__module__+"."+t.__qualname__
+            add = id(val)
+        return MPackage.F(MPackage.PackageContext+"PyObject", self.ref, cls, add)
+
+
     def __add__(self, amt):
         from operator import add
-        return self.handler._op(add, self.ref, amt)
+        return self.handler.ref(self.handler._op(add, self.ref, amt))
     def __sub__(self, amt):
         from operator import sub
-        return self.handler._op(sub, self.ref, amt)
+        return self.handler.ref(self.handler._op(sub, self.ref, amt))
     def __mul__(self, amt):
         from operator import mul
-        return self.handler._op(mul, self.ref, amt)
+        return self.handler.ref(self.handler._op(mul, self.ref, amt))
     def __call__(self, *args, **kwargs):
         return self.get()(*args, **kwargs)
     def __iadd__(self, amt):
-        return self.handler.iadd(self.ref, amt)
+        return self.handler._iop(self.ref, amt)
     def __imul__(self, amt):
         return self.handler.imul(self.ref, amt)
+    def __getattr__(self, item):
+        return self.handler.get()
 
 ###############################################################################################
 #                                                                                             #

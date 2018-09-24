@@ -237,7 +237,7 @@ PySymbol~SetAttributes~HoldAllComplete*)
 
 
 ToPython[ps:PySymbol[s_String]]:=
-  StringReplace["$"->"_"]@
+  StringReplace[{"$"->"_", "\[LetterSpace]"->"_"}]@
   With[{splits=StringSplit[s,"`"]},
     If[MemberQ[splits,"Private"|"PackageScope"|"PackagePrivate"]||
       MatchQ[splits[[1]],"System`"|"Global`"],
@@ -2297,7 +2297,7 @@ If[!MatchQ[OwnValues[$PyLangPreEvaluate], {_:>_List}],
 ]
 
 
-(* ::Subsubsubsection::Closed:: *)
+(* ::Subsubsubsection:: *)
 (*$PyLangTranslations*)
 
 

@@ -1,6 +1,6 @@
 Paclet[
   Name->"PJLink",
-  Version->"1.0.2",
+  Version->"1.0.3",
   Description->"A JLink-like interface for python",
   Creator->"b3m2a1@gmail.com",
   Extensions->{

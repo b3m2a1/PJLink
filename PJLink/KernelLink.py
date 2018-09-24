@@ -648,59 +648,15 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             elif name == "Throw":
                 raise NotImplemented
             elif name == "Clear":
-                raise NotImplemented
+                self.__clearPythonObject()
             elif name == "Get":
-                raise NotImplemented
-            elif name == "OnLoadCLass":
-                raise NotImplemented
-            elif name == "OnUnloadClass":
-                raise NotImplemented
-            elif name == "SetComplex":
-                raise NotImplemented
-            elif name == "Reflect":
-                raise NotImplemented
-            elif name == "Show":
-                raise NotImplemented
-            elif name == "SameQ":
-                raise NotImplemented
-            elif name == "InstanceOf":
-                raise NotImplemented
-            elif name == "AllowRagged":
-                raise NotImplemented
-            elif name == "GetException":
-                raise NotImplemented
+                self.__getPythonObject()
+            elif name == "Set":
+                self.__setPythonObject()
             elif name == "ConnectToFE":
                 self.__connectToFEServer()
             elif name == "DisconnectToFE":
                 self.__disconnectToFEServer()
-            elif name == "PeekClasses":
-                raise NotImplemented
-            elif name == "PeekObjects":
-                raise NotImplemented
-            elif name == "SetUserDir":
-                raise NotImplemented
-            elif name == "ClassPath":
-                raise NotImplemented
-            elif name == "AddToClassPath":
-                raise NotImplemented
-            elif name == "UIThreadWaiting":
-                raise NotImplemented
-            elif name == "AllowUIComputations": # allowUIComputations
-                raise NotImplemented
-            elif name == "YieldTime": # yieldTime
-                raise NotImplemented
-            elif name == "GetConsole": # getConsole
-                raise NotImplemented
-            elif name == "ExtraLinks": # extraLinks
-                raise NotImplemented
-            elif name == "GetWindowID": # getWindowID
-                raise NotImplemented
-            elif name == "AddTitleChangeListener": #addTitleChangeListener
-                raise NotImplemented
-            elif name == "SetVMName": #setVMName()
-                raise NotImplemented
-            elif name == "SetException": #setException()
-                raise NotImplemented
         except Exception as e:
             self.__handleCleanException(e)
             self.__LAST_EXCEPTION_DURING_CALL_HANDLING = e
@@ -995,7 +951,6 @@ from Mathematica), will want to start with the handleCallPacket() method here.
 
         self.Env.logf("Calling python on packet {}", pkt)
 
-        # try:
         res = self.__do_call_recursive(pkt)
         self.Env.logf("Returning data {}", res)
         if res is None:
@@ -1003,14 +958,16 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         else:
             self.put(res)
 
-        # except Exception as e:
-        #     import traceback as tb
-        #     self.__LAST_EXCEPTION_DURING_CALL_HANDLING = e
-        #     self.put(self.M.F(self.M.PackageContext+"PythonTraceback", tb.format_exc()))
-        #     self._clearError()
-        # finally: # is this wise?
-        #     self._endPacket()
-
+    def __clearPythonObject(self):
+        obj = self.get()
+        obj.remove()
+    def __setPythonObject(self):
+        obj = self.get()
+        val = self.get()
+        obj.set(val)
+    def __getPythonObject(self):
+        obj = self.get()
+        self.put(obj.get())
 
     def __connectToFEServer(self, timeout = 100):
         import time
@@ -1259,7 +1216,34 @@ class WrappedKernelLink(KernelLink):
         return self.__impl._check_error(allowed)
 
     def put(self, o):
+        """Puts an object on the link, attempting some type coercion first
+        Not clear whether this should all be *here* but it's a fine place at first, at least
+
+        :param o:
+        :return:
+        """
+        from collections import OrderedDict
+
         self.__ensure_connection()
+
+        if hasattr(o, "expr"):
+            expr = o.expr
+            if callable(expr):
+                expr = expr(self)
+            o = expr
+
+        if isinstance(o, dict):
+            try:
+                expr = self.M.from_dict(o)
+            except KeyError:
+                expr = None
+            if isinstance(expr, MLExpr):
+                o = expr
+
+        if isinstance(o, OrderedDict):
+            o = self.M.to_Association(o)
+        elif isinstance(o, dict):
+            o = self.M.to_HashTable(o)
 
         if isinstance(o, type):
             # self.Env.logf("Putting repr of type {} on link", o.__name__)

@@ -1,5 +1,3 @@
-from PJLink.HelperClasses import *
-
 class SparseArrayData:
     """Holder class for SparseArray data
 
@@ -24,17 +22,20 @@ class SparseArrayData:
 
     @property
     def expr(self):
-        return MPackage.SparseArray(
-            MPackage.Automatic,
-            self.shape,
-            self.background,
-            [ self.SPARSE_ARRAY_VERSION,
-              [
-                [ self.row_pointers, [ MPackage.Transpose(self.column_indices) ] ],
-                self.non_zero_values
-              ]
-            ]
-        )
+        return {
+            "_head" : "SparseArray",
+            "_args" : (
+                {"_symbol" : "Automatic"},
+                self.shape,
+                self.background,
+                [ self.SPARSE_ARRAY_VERSION,
+                    [
+                        [ self.row_pointers, { "_head" : "Transpose", "_args": (self.column_indices, )} ],
+                        self.non_zero_values
+                    ]
+                ]
+            )
+        }
 
 def _get_type(head, link, stack):
     otype = stack["dtype"]

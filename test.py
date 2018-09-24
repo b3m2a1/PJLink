@@ -66,8 +66,37 @@ from PJLink.KernelLink import *
 # banda = BufferedNDArray.from_iterable(range(27), [3, 3, 3])
 # print(banda.data)
 
-from PJLink import *
-create_kernel_link()
+# from PJLink import *
+# create_kernel_link()
 
-# import code
-# code.interact(banner = "", local=locals())
+#########################################################################################################
+
+# from PJLink.MathLinkEnvironment import MathLinkEnvironment as Env
+#
+# print(Env.get_Installed_Mathematica())
+# print(Env.get_Mathematica_name())
+# print(Env.get_Mathematica_root())
+# print(Env.get_MathLink_library())
+
+#########################################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#########################################################################################################
+
+
+import code
+code.interact(banner = "", local=locals())

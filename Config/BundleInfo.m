@@ -9,6 +9,7 @@
 		"project",
 		"README.nb",
 		"Java",
+		".idea",
 		"PJLink/PJLinkNativeLibrary/src/build",
 		"PJLink/PJLinkNativeLibrary/PJLinkNativeLibrary.pyd",
 		"PJLink/PJLinkNativeLibrary/PJLinkNativeLibrary.so"
@@ -16,6 +17,7 @@
 	"RemovePatterns" -> {
 		".DS_Store",
 		"*.pyc",
-		"__pycache__"
+		"__pycache__",
+    "log.txt"
 		}
  	}
