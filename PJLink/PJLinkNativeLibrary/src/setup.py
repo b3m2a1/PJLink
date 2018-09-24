@@ -23,9 +23,24 @@ elif plat == "Windows":
 else:
     raise ValueError("Don't know how to find the MathLink library on system {}".format(plat))
 
-mathlink_dir = os.path.join(mathlink_base, sys_name + "-x86-64", "CompilerAdditions")
-if not os.path.exists(mathlink_dir):
+ext_list = [ "-x86-64", "-x86" ]
+for ext in ext_list:
+    mathlink_dir = os.path.join(mathlink_base, sys_name + ext, "CompilerAdditions")
+    if os.path.exists(mathlink_dir):
+        break
+else:
     mathlink_dir = os.path.join(mathlink_base, sys_name, "CompilerAdditions")
+
+
+### HACKS! ;___;
+if plat == "Darwin":
+    # print(os.environ["MACOSX_DEPLOYMENT_TARGET"])
+    try:
+        cur_targ = os.environ["MACOSX_DEPLOYMENT_TARGET"]
+    except KeyError:
+        cur_targ = None
+    if cur_targ is None or float(cur_targ[:4])<10.9:
+        os.environ["MACOSX_DEPLOYMENT_TARGET"]="10.9" #minimum target with cstdint
 
 module1 = Extension(
     'PJLinkNativeLibrary',

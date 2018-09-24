@@ -92,25 +92,46 @@ class NativeLink(MathLink):
         return self.__LIBRARY_LOAD_EXCEPTION
 
     def _loadNativeLibrary(self, *args, initialize = True, debug_level = None, setup = True):
-        import os, sys
+        import os, sys, platform
         ## args is just a sneaky hack to force using keywords
         if not self.__NATIVE_LIBRARY_LOADED:
-            if setup:
-                targ_dir = os.path.join(os.path.dirname(__file__), "PJLinkNativeLibrary")
-                for f in os.listdir(targ_dir):
+            targ_dir_base = os.path.join(os.path.dirname(__file__), "PJLinkNativeLibrary")
+            plat = platform.system()
+            if plat == "Darwin":
+                sys_name = "MacOSX"
+            elif plat == "Linux":
+                sys_name = "Linux"
+            elif plat == "Windows":
+                sys_name = "Windows"
+            else:
+                raise ValueError("Don't know how to find the MathLink library on system {}".format(plat))
+
+            ext_list = [ "-"+platform.machine().replace("_", "-"), "" ]
+            for ext in ext_list:
+                targ_dir = os.path.join(targ_dir_base, sys_name + ext)
+                bin_test_so = os.path.join(targ_dir, "PJLinkNativeLibrary.so")
+                bin_test_pyd = os.path.join(targ_dir, "PJLinkNativeLibrary.pyd")
+                if os.path.isfile(bin_test_so) or os.path.isfile(bin_test_pyd):
+                    sys.path.insert(0, targ_dir)
+                    self.__NATIVE_LIBRARY_EXISTS = True
+                    break
+            else:
+                for f in os.listdir(targ_dir_base):
                     if f.endswith(".so") or f.endswith(".pyd"):
+                        sys.path.insert(0, targ_dir_base)
                         self.__NATIVE_LIBRARY_EXISTS = True
                         break
                 else:
-                    sys.path.insert(0, os.path.join(targ_dir, "src"))
-                    argv1 = sys.argv
-                    sys.argv = [ "-q", "build", "build_ext", "--inplace" ]
-                    import setup as setup
-                    sys.path.pop(0)
-                    sys.argv = argv1
+                    if setup:
+                        sys.path.insert(0, os.path.join(targ_dir_base, "src"))
+                        argv1 = sys.argv
+                        sys.argv = [ "-q", "build", "build_ext", "--inplace" ]
+                        import setup as setup
+                        sys.path.pop(0)
+                        sys.argv = argv1
 
-                    if setup.failed:
-                        raise ImportError("No library file found")
+                        if setup.failed:
+                            raise ImportError("No library file found")
 
             try:
                 import PJLink.PJLinkNativeLibrary as pj
