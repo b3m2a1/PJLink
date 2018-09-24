@@ -159,7 +159,7 @@ $pySessionPathExtension = (* I need this because Mathematica's $PATH isn't quit 
     ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*InstallPython*)
 
 
@@ -265,10 +265,12 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
             Quiet[ReadString[ProcessConnection[proc, "StandardError"], EndOfBuffer]];
           ClosePython[version];
           If[StringQ@errorMsg && StringLength@errorMsg > 0,
-            PackageRaiseException[Automatic,
-              "Failed to start python process for python executable ``. Got message:\n\n``",
-              pyExe,
-              PythonTraceback[errorMsg]
+            Block[{$MessagePrePrint=Identity},
+              PackageRaiseException[Automatic,
+                "Failed to start python process for python executable ``. Got message:\n\n``",
+                pyExe,
+                PythonTraceback[errorMsg]
+                ]
               ],
             PackageRaiseException[Automatic,
               "Failed to start kernel for python executable ``",
@@ -282,10 +284,12 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
             Quiet[ReadString[ProcessConnection[proc, "StandardError"], EndOfBuffer]];
           ClosePython[version];
           If[StringQ@errorMsg && StringLength@errorMsg > 0,
-            PackageRaiseException[Automatic,
-              "Failed to start python process for python executable ``. Got message:\n\n``",
-              pyExe,
-              PythonTraceback[errorMsg]
+            Block[{$MessagePrePrint=Identity},
+              PackageRaiseException[Automatic,
+                "Failed to start python process for python executable ``. Got message:\n\n``",
+                pyExe,
+                PythonTraceback[errorMsg]
+                ]
               ],
             PackageRaiseException[Automatic,
               "Failed to start kernel for python executable ``",
@@ -327,7 +331,7 @@ ClosePython[version:_?NumberQ|_String|Automatic:Automatic]:=
       
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*pyEvalPacket*)
 
 
@@ -364,7 +368,7 @@ procDead[proc_]:=
   proc =!= None && Quiet[ProcessStatus@proc] =!= "Running"
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*cleanUpEnv*)
 
 
@@ -383,11 +387,13 @@ cleanUpEnv[pker_, version_, $Aborted]:=
        },
       ClosePython[version];
       If[StringQ@es && StringLength@es>0,
-        PackageRaiseException[Automatic,
-          "Kernel `` for version `` has died with traceback:\n\n``",
-          HoldForm@pker, (*HoldForm here is a hack because PackageRaiseException is buggy*)
-          version,
-          PythonTraceback[es]
+        Block[{$MessagePrePrint=Identity},
+          PackageRaiseException[Automatic,
+            "Kernel `` for version `` has died with traceback:\n\n``",
+            HoldForm@pker, (*HoldForm here is a hack because PackageRaiseException is buggy*)
+            version,
+            PythonTraceback[es]
+            ]
           ],
         PackageRaiseException[Automatic,
           "Kernel `` for version `` has died",
@@ -401,7 +407,7 @@ cleanUpEnv[pker_, version_, $Aborted]:=
 cleanUpEnv[_, _, p_]:=p
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Evaluate*)
 
 
@@ -572,7 +578,7 @@ PackageExceptionBlock["Kernel"]@
       ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*$TypeHints*)
 
 
