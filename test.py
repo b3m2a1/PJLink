@@ -66,8 +66,8 @@ from PJLink.KernelLink import *
 # banda = BufferedNDArray.from_iterable(range(27), [3, 3, 3])
 # print(banda.data)
 
-# from PJLink import *
-# create_kernel_link()
+from PJLink import *
+create_kernel_link()
 
 #########################################################################################################
 

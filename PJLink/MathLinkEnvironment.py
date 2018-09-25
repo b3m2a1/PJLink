@@ -622,6 +622,7 @@ class MathLinkEnvironment:
         else:
             raise ValueError("Couldn't determine Current Mathematica for platform {}".format(plat, bin))
 
+        return root
 
     @classmethod
     def get_Installed_Mathematica(cls):
@@ -644,6 +645,8 @@ class MathLinkEnvironment:
                 mathematicas.append((mathematica, verNum, vers))
 
         mathematicas = sorted(mathematicas, key = lambda tup: tup[1], reverse = True)
+        if len(mathematicas) == 0:
+            raise ValueError("couldn't find any Mathematica installations")
         cls.CURRENT_MATHEMATICA = mathematicas[0][2]
         return mathematicas[0][0]
 
