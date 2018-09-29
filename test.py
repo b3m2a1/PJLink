@@ -80,6 +80,9 @@ Env.INSTALLATION_DIRECTORY = "/Applications/Mathematica 11.0.app/Contents"
 print(Env.get_Mathematica_name())
 print(Env.get_Mathematica_root())
 print(Env.get_MathLink_library())
+print(Env.get_MathLink_library_name())
+print(Env.get_Kernel_binary())
+create_kernel_link()
 
 #########################################################################################################
 
@@ -99,5 +102,5 @@ print(Env.get_MathLink_library())
 #########################################################################################################
 
 
-# import code
-# code.interact(banner = "", local=locals())
+import code
+code.interact(banner = "", local=locals())

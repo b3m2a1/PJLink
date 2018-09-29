@@ -8,31 +8,10 @@ setup_orig_dir = os.getcwd()
 lib_dir = os.path.dirname(__file__)
 os.chdir(lib_dir)
 
-# argv1 = sys.argv
-# argv2 = [ "build_ext", "--inplace" ]
-
-mathlink_base = Env.get_MathLink_library()
-
-plat = platform.system()
-if plat == "Darwin":
-    sys_name = "MacOSX"
-elif plat == "Linux":
-    sys_name = "Linux"
-elif plat == "Windows":
-    sys_name = "Windows"
-else:
-    raise ValueError("Don't know how to find the MathLink library on system {}".format(plat))
-
-ext_list = [ "-x86-64", "-x86" ]
-for ext in ext_list:
-    mathlink_dir = os.path.join(mathlink_base, sys_name + ext, "CompilerAdditions")
-    if os.path.exists(mathlink_dir):
-        break
-else:
-    mathlink_dir = os.path.join(mathlink_base, sys_name, "CompilerAdditions")
-
-
 ### HACKS! ;___;
+plat = Env.PLATFORM
+mathlink_dir = Env.get_MathLink_library()
+mathlink_name = Env.get_MathLink_library_name()
 if plat == "Darwin":
     # print(os.environ["MACOSX_DEPLOYMENT_TARGET"])
     try:
@@ -46,7 +25,7 @@ module1 = Extension(
     'PJLinkNativeLibrary',
     sources = ['PJLinkNativeLibrary.cpp'],
     library_dirs = [ mathlink_dir ],
-    libraries = [ Env.MATHLINK_LIBRARY_NAME ],
+    libraries = [ mathlink_name ],
     include_dirs= [ mathlink_dir ]
 )
 

@@ -315,7 +315,7 @@ class MathLinkEnvironment:
     import platform
     PLATFORM = platform.system()
     del platform
-    MATHLINK_LIBRARY_NAME = "MLi4"
+    MATHLINK_LIBRARY_NAME = None
     CURRENT_MATHEMATICA = None
     APPLICATIONS_ROOT = None
     INSTALLATION_DIRECTORY = None
@@ -765,7 +765,7 @@ class MathLinkEnvironment:
         if not os.path.isfile(mbin):
             raise ValueError("Couldn't find WolframKernel executable for platform {} ({} is not a file)".format(plat, mbin))
 
-        return bin
+        return mbin
 
     @classmethod
     def get_Mathematica_binary(cls, version = None, use_default=True):
@@ -808,8 +808,9 @@ class MathLinkEnvironment:
         else:
             lib = None
 
+        plat = cls.PLATFORM
+
         if lib is None:
-            plat = cls.PLATFORM
             try:
                 root = cls.get_Mathematica_root(version, use_default=use_default)
             except ValueError:
@@ -820,10 +821,50 @@ class MathLinkEnvironment:
             else:
                 lib = os.path.join(root, "SystemFiles", "Links", "MathLink", "DeveloperKit")
 
+                if plat == "Darwin":
+                    sys_name = "MacOSX"
+                else:
+                    sys_name = plat
+
+                ext_list = [ "-x86-64", "-x86" ]
+                for ext in ext_list:
+                    lib = os.path.join(lib, sys_name + ext, "CompilerAdditions")
+                    if os.path.exists(lib):
+                        break
+                else:
+                    lib = os.path.join(lib, sys_name, "CompilerAdditions")
+
         if not os.path.exists(lib):
-            raise ValueError("Couldn't find binary for platform {} (path {} does not exist)".format(plat, lib))
+            raise ValueError("Couldn't find MathLink library for platform {} (path {} does not exist)".format(plat, lib))
 
         return lib
+
+    @classmethod
+    def get_MathLink_library_name(cls, version = None, use_default = True):
+        import os
+
+        if use_default:
+            lib_name = cls.MATHLINK_LIBRARY_NAME
+        else:
+            lib_name = None
+
+        if lib_name is None:
+            lib_dir = cls.get_MathLink_library(version, use_default=use_default)
+            plat = cls.PLATFORM
+            math_link_names = []
+            for lib_file in os.listdir(lib_dir):
+                name, ext = os.path.splitext(lib_file)
+                if ext == ".a" or ext == ".lib":
+                    name_bits = name.split("MLi")
+                    if len(name_bits)>1:
+                        sort_bits = [int(v) for v in name_bits[1].split(".")]
+                        math_link_names.append((name.strip("lib"), sort_bits))
+            if len(math_link_names) == 0:
+                raise ValueError("Couldn't find any MathLink library files in {}".format(lib_dir))
+            math_link_names = sorted(math_link_names, key=lambda b:b[1], reverse=True)
+            lib_name = math_link_names[0][0]
+
+        return lib_name
 
     @classmethod
     def log(cls, *expr):
