@@ -315,9 +315,13 @@ class MathLinkEnvironment:
     import platform
     PLATFORM = platform.system()
     del platform
-    APPLICATIONS_ROOT = None
-    MATHLINK_LIBRARY = "MLi4"
+    MATHLINK_LIBRARY_NAME = "MLi4"
     CURRENT_MATHEMATICA = None
+    APPLICATIONS_ROOT = None
+    INSTALLATION_DIRECTORY = None
+    MATHEMATICA_BINARY = None
+    WOLFRAMKERNEL_BINARY = None
+    MATHLINK_LIBRARY_DIR = None
 
     if HAS_NUMPY:
         del np
@@ -633,10 +637,10 @@ class MathLinkEnvironment:
         return root
 
     @classmethod
-    def get_Installed_Mathematica(cls, use_default_root = True):
+    def get_Installed_Mathematica(cls, use_default = True):
         import os, re
 
-        root = cls.get_Applications_root(use_default=use_default_root)
+        root = cls.get_Applications_root(use_default=use_default)
 
         mathematicas = []
         for app in os.listdir(root):
@@ -646,25 +650,28 @@ class MathLinkEnvironment:
                 vers = app.strip("Mathematica").strip("Wolfram Desktop").strip()
                 if len(vers)>0:
                     vers = vers
-                    verNum = float(vers)
+                    verNum = re.findall(r"\d+.\d", vers)[0]
+                    verNum = float(verNum)
                 else:
                     vers = ""
                     verNum = 10000 # hopefully WRI never gets here...
                 mathematicas.append((mathematica, verNum, vers))
-            elif re.match(r"\d\d.\d", app):
+            elif re.match(r"\d+.\d.*", app):
                 mathematica = os.path.join(root, app)
                 vers = app
-                verNum = float(app)
+                verNum = re.findall(r"\d+.\d", vers)[0]
+                verNum = float(verNum)
                 mathematicas.append((mathematica, verNum, vers))
 
         mathematicas = sorted(mathematicas, key = lambda tup: tup[1], reverse = True)
         if len(mathematicas) == 0:
             raise ValueError("couldn't find any Mathematica installations")
+
         cls.CURRENT_MATHEMATICA = mathematicas[0][2]
         return mathematicas[0][0]
 
     @classmethod
-    def get_Mathematica_name(cls, version = None, use_default_root = True):
+    def get_Mathematica_name(cls, version = None, use_default = True):
         import os, re
 
         mname = version
@@ -677,14 +684,14 @@ class MathLinkEnvironment:
         elif plat == "Linux":
             if mname is None:
                 if cls.CURRENT_MATHEMATICA is None:
-                    cls.get_Installed_Mathematica(use_default_root=use_default_root)
+                    cls.get_Installed_Mathematica(use_default=use_default)
                 mname = str(cls.CURRENT_MATHEMATICA)
             elif isinstance(mname, float) or (isinstance(mname, str) and re.match(r"\d\d.\d", mname)):
                 mname = str(mname)
         elif plat == "Windows":
             if mname is None:
                 if cls.CURRENT_MATHEMATICA is None:
-                    cls.get_Installed_Mathematica(use_default_root=use_default_root)
+                    cls.get_Installed_Mathematica(use_default=use_default)
                 mname = str(cls.CURRENT_MATHEMATICA)
             elif isinstance(mname, float) or (isinstance(mname, str) and re.match(r"\d\d.\d", mname)):
                 mname = str(mname)
@@ -692,57 +699,68 @@ class MathLinkEnvironment:
         return mname
 
     @classmethod
-    def get_Mathematica_root(cls, mname = None, use_default_root = True):
+    def get_Mathematica_root(cls, mname = None, use_default = True):
         import os
 
-        plat = cls.PLATFORM
-        if mname is None and cls.CURRENT_MATHEMATICA is None:
-            root = cls.get_Installed_Mathematica(use_default_root=use_default_root)
-            if plat == "Darwin":
-                root = os.path.join(root, "Contents")
+        if use_default:
+            root = cls.INSTALLATION_DIRECTORY
         else:
-            app_root = cls.get_Applications_root(use_default=use_default_root)
-            mname = cls.get_Mathematica_name(mname)
-            if plat == "Darwin":
-                root = os.path.join(app_root, mname, "Contents")
-            elif plat == "Linux":
-                root = os.path.join(app_root, mname)
-            elif plat == "Windows":
-                root = os.path.join(app_root, mname)
+            root = None
+
+        if root is None:
+            plat = cls.PLATFORM
+            if mname is None and cls.CURRENT_MATHEMATICA is None:
+                root = cls.get_Installed_Mathematica(use_default=use_default)
+                if plat == "Darwin":
+                    root = os.path.join(root, "Contents")
             else:
-                raise ValueError("Couldn't find Mathematica for platform {}".format(plat, bin))
+                app_root = cls.get_Applications_root(use_default=use_default)
+                mname = cls.get_Mathematica_name(mname)
+                if plat == "Darwin":
+                    root = os.path.join(app_root, mname, "Contents")
+                elif plat == "Linux":
+                    root = os.path.join(app_root, mname)
+                elif plat == "Windows":
+                    root = os.path.join(app_root, mname)
+                else:
+                    raise ValueError("Couldn't find Mathematica for platform {}".format(plat, bin))
 
         return root
 
     @classmethod
-    def get_Kernel_binary(cls, version = None, use_default_root = True):
+    def get_Kernel_binary(cls, version = None, use_default = True):
         import platform, os
 
-        plat = cls.PLATFORM
-
-        try:
-            root = cls.get_Mathematica_root(version, use_default_root=use_default_root)
-        except ValueError:
-            if not (isinstance(version, str) and os.path.isfile(version)):
-                raise ValueError("Don't know how to find the WolframKernel executable on system {}".format(plat))
-            else:
-                mbin = version
+        if use_default:
+            mbin = cls.WOLFRAMKERNEL_BINARY
         else:
-            if plat == "Darwin":
-                mbin = os.path.join(root, "MacOS", "WolframKernel")
-                if not os.path.isfile(mbin):
-                    mbin = os.path.join(root, "MacOS", "MathKernel")
-            elif plat == "Linux":
-                linux_base = os.path.join(root, "SystemFiles", "Kernel", "Binaries", "Linux-x86-64")
-                mbin = os.path.join(linux_base, "WolframKernel")
-                if not os.path.isfile(mbin):
-                    mbin = os.path.join(linux_base, "MathKernel")
-                if not os.path.isfile(mbin):
-                    mbin = os.path.join(linux_base, "math")
-            elif plat == "Windows":
-                mbin = os.path.join(root, "wolfram.exe")
-                if not os.path.isfile(mbin):
-                    mbin = os.path.join(root, "math.exe")
+            mbin = None
+
+        if mbin is None:
+            plat = cls.PLATFORM
+            try:
+                root = cls.get_Mathematica_root(version, use_default=use_default)
+            except ValueError:
+                if not (isinstance(version, str) and os.path.isfile(version)):
+                    raise ValueError("Don't know how to find the WolframKernel executable on system {}".format(plat))
+                else:
+                    mbin = version
+            else:
+                if plat == "Darwin":
+                    mbin = os.path.join(root, "MacOS", "WolframKernel")
+                    if not os.path.isfile(mbin):
+                        mbin = os.path.join(root, "MacOS", "MathKernel")
+                elif plat == "Linux":
+                    linux_base = os.path.join(root, "SystemFiles", "Kernel", "Binaries", "Linux-x86-64")
+                    mbin = os.path.join(linux_base, "WolframKernel")
+                    if not os.path.isfile(mbin):
+                        mbin = os.path.join(linux_base, "MathKernel")
+                    if not os.path.isfile(mbin):
+                        mbin = os.path.join(linux_base, "math")
+                elif plat == "Windows":
+                    mbin = os.path.join(root, "wolfram.exe")
+                    if not os.path.isfile(mbin):
+                        mbin = os.path.join(root, "math.exe")
 
         if not os.path.isfile(mbin):
             raise ValueError("Couldn't find binary for platform {} ({} is not a file)".format(plat, mbin))
@@ -750,25 +768,31 @@ class MathLinkEnvironment:
         return bin
 
     @classmethod
-    def get_Mathematica_binary(cls, version = None, use_default_root=True):
+    def get_Mathematica_binary(cls, version = None, use_default=True):
         import platform, os
 
-        plat = cls.PLATFORM
-
-        try:
-            root = cls.get_Mathematica_root(version, use_default_root=use_default_root)
-        except ValueError:
-            if not (isinstance(version, str) and os.path.isfile(version)):
-                raise ValueError("Don't know how to find the Mathematica executable on system {}".format(plat))
-            else:
-                mbin = version
+        if use_default:
+            mbin = cls.MATHEMATICA_BINARY
         else:
-            if plat == "Darwin":
-                mbin = os.path.join(root, "MacOS", "Mathematica")
-            elif plat == "Linux":
-                mbin = os.path.join(root, "SystemFiles", "Kernel", "Binaries", "Linux-x86-64", "Mathematica")
-            elif plat == "Windows":
-                mbin = os.path.join(root, "Mathematica")
+            mbin = None
+
+        if mbin is None:
+            plat = cls.PLATFORM
+
+            try:
+                root = cls.get_Mathematica_root(version, use_default=use_default)
+            except ValueError:
+                if not (isinstance(version, str) and os.path.isfile(version)):
+                    raise ValueError("Don't know how to find the Mathematica executable on system {}".format(plat))
+                else:
+                    mbin = version
+            else:
+                if plat == "Darwin":
+                    mbin = os.path.join(root, "MacOS", "Mathematica")
+                elif plat == "Linux":
+                    mbin = os.path.join(root, "SystemFiles", "Kernel", "Binaries", "Linux-x86-64", "Mathematica")
+                elif plat == "Windows":
+                    mbin = os.path.join(root, "Mathematica")
 
         if not os.path.isfile(mbin):
             raise ValueError("Couldn't find binary for platform {} ({} is not a file)".format(plat, mbin))
@@ -776,19 +800,25 @@ class MathLinkEnvironment:
         return mbin
 
     @classmethod
-    def get_MathLink_library(cls, version = None):
+    def get_MathLink_library(cls, version = None, use_default = True):
         import os
 
-        plat = cls.PLATFORM
-        try:
-            root = cls.get_Mathematica_root(version)
-        except ValueError:
-            # if not (isinstance(version, str) and os.path.isfile(version)):
-            raise ValueError("Don't know how to find MathLink library on system {}".format(plat))
-            # else:
-            #     mbin = version
+        if use_default:
+            lib = cls.MATHLINK_LIBRARY_DIR
+        else:
+            lib = None
 
-        lib = os.path.join(root, "SystemFiles", "Links", "MathLink", "DeveloperKit")
+        if lib is None:
+            plat = cls.PLATFORM
+            try:
+                root = cls.get_Mathematica_root(version, use_default=use_default)
+            except ValueError:
+                # if not (isinstance(version, str) and os.path.isfile(version)):
+                raise ValueError("Don't know how to find MathLink library on system {}".format(plat))
+                # else:
+                #     mbin = version
+            else:
+                lib = os.path.join(root, "SystemFiles", "Links", "MathLink", "DeveloperKit")
 
         if not os.path.exists(lib):
             raise ValueError("Couldn't find binary for platform {} (path {} does not exist)".format(plat, lib))
