@@ -11,7 +11,7 @@ os.chdir(lib_dir)
 # argv1 = sys.argv
 # argv2 = [ "build_ext", "--inplace" ]
 
-mathlink_base = os.path.join(Env.get_Mathematica_root(), "SystemFiles", "Links", "MathLink", "DeveloperKit")
+mathlink_base = Env.get_MathLink_library()
 
 plat = platform.system()
 if plat == "Darwin":
@@ -46,7 +46,7 @@ module1 = Extension(
     'PJLinkNativeLibrary',
     sources = ['PJLinkNativeLibrary.cpp'],
     library_dirs = [ mathlink_dir ],
-    libraries = [ "MLi4" ],
+    libraries = [ Env.MATHLINK_LIBRARY ],
     include_dirs= [ mathlink_dir ]
 )
 
