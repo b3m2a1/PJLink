@@ -723,7 +723,7 @@ class MathLinkEnvironment:
                 elif plat == "Windows":
                     root = os.path.join(app_root, mname)
                 else:
-                    raise ValueError("Couldn't find Mathematica for platform {}".format(plat, bin))
+                    raise ValueError("Couldn't find Mathematica for platform {}".format(plat))
 
         return root
 
@@ -742,7 +742,7 @@ class MathLinkEnvironment:
                 root = cls.get_Mathematica_root(version, use_default=use_default)
             except ValueError:
                 if not (isinstance(version, str) and os.path.isfile(version)):
-                    raise ValueError("Don't know how to find the WolframKernel executable on system {}".format(plat))
+                    raise ValueError("Couldn't find WolframKernel executable for platform {}".format(plat))
                 else:
                     mbin = version
             else:
@@ -763,7 +763,7 @@ class MathLinkEnvironment:
                         mbin = os.path.join(root, "math.exe")
 
         if not os.path.isfile(mbin):
-            raise ValueError("Couldn't find binary for platform {} ({} is not a file)".format(plat, mbin))
+            raise ValueError("Couldn't find WolframKernel executable for platform {} ({} is not a file)".format(plat, mbin))
 
         return bin
 
@@ -783,7 +783,7 @@ class MathLinkEnvironment:
                 root = cls.get_Mathematica_root(version, use_default=use_default)
             except ValueError:
                 if not (isinstance(version, str) and os.path.isfile(version)):
-                    raise ValueError("Don't know how to find the Mathematica executable on system {}".format(plat))
+                    raise ValueError("Couldn't find Mathematica executable for platform {}".format(plat))
                 else:
                     mbin = version
             else:
@@ -795,7 +795,7 @@ class MathLinkEnvironment:
                     mbin = os.path.join(root, "Mathematica")
 
         if not os.path.isfile(mbin):
-            raise ValueError("Couldn't find binary for platform {} ({} is not a file)".format(plat, mbin))
+            raise ValueError("Couldn't find Mathematica executable for platform {} ({} is not a file)".format(plat, mbin))
 
         return mbin
 
