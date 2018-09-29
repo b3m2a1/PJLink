@@ -76,6 +76,7 @@ from PJLink.MathLinkEnvironment import MathLinkEnvironment as Env
 # Env.PLATFORM = "Linux"
 # Env.CURRENT_MATHEMATICA = 11.3
 # print(Env.get_Installed_Mathematica())
+Env.INSTALLATION_DIRECTORY = "/Applications/Mathematica 11.0.app/Contents"
 print(Env.get_Mathematica_name())
 print(Env.get_Mathematica_root())
 print(Env.get_MathLink_library())
@@ -98,5 +99,5 @@ print(Env.get_MathLink_library())
 #########################################################################################################
 
 
-import code
-code.interact(banner = "", local=locals())
+# import code
+# code.interact(banner = "", local=locals())

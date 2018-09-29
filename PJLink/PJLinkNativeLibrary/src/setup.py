@@ -46,7 +46,7 @@ module1 = Extension(
     'PJLinkNativeLibrary',
     sources = ['PJLinkNativeLibrary.cpp'],
     library_dirs = [ mathlink_dir ],
-    libraries = [ Env.MATHLINK_LIBRARY ],
+    libraries = [ Env.MATHLINK_LIBRARY_NAME ],
     include_dirs= [ mathlink_dir ]
 )
 
