@@ -6,6 +6,8 @@ from PJLink.MathLinkEnvironment import MathLinkEnvironment as Env
 
 setup_orig_dir = os.getcwd()
 lib_dir = os.path.dirname(__file__)
+build_dir = os.path.join(lib_dir, "build")
+cur_dir = os.getcwd()
 os.chdir(lib_dir)
 
 ### HACKS! ;___;
@@ -21,39 +23,57 @@ if plat == "Darwin":
     if cur_targ is None or float(cur_targ[:4])<10.9:
         os.environ["MACOSX_DEPLOYMENT_TARGET"]="10.9" #minimum target with cstdint
 
-module1 = Extension(
-    'PJLinkNativeLibrary',
-    sources = ['PJLinkNativeLibrary.cpp'],
-    library_dirs = [ mathlink_dir ],
-    libraries = [ mathlink_name ],
-    include_dirs= [ mathlink_dir ]
-)
+if not os.path.exists(build_dir):
+    os.mkdir(build_dir)
 
-setup (name = 'PJLinkNativeLibrary',
-       version = '1.0',
-       description = 'Implementation of JLinkNativeLibrary for python',
-       ext_modules = [module1]
-       )
+mathlink_lib_file = None
+for lib in os.listdir(mathlink_dir):
+    lname, ext = os.path.splitext(lib)
+    if lname.endswith(mathlink_name) and (ext == ".a" or ext == ".lib"):
+        mathlink_lib_file=os.path.join(build_dir, lib)
+        shutil.copyfile(os.path.join(mathlink_dir, lib), mathlink_lib_file)
 
-ext = ""
-target = os.path.join(os.path.dirname(lib_dir), "PJLinkNativeLibrary")
-src = None
+if mathlink_lib_file is not None:
+    module1 = Extension(
+        'PJLinkNativeLibrary',
+        sources = ['PJLinkNativeLibrary.cpp'],
+        library_dirs = [ build_dir ],
+        libraries = [ mathlink_name ],
+        include_dirs= [ mathlink_dir ]
+    )
 
-for f in os.listdir(lib_dir):
-    if f.endswith(".so"):
-        ext = ".so"
-        src = os.path.join(lib_dir, f)
-        target += ext
-    elif f.endswith(".pyd"):
-        ext = ".pyd"
-        src = os.path.join(lib_dir, f)
-        target += ext
+    setup (name = 'PJLinkNativeLibrary',
+           version = '1.0',
+           description = 'Implementation of JLinkNativeLibrary for python',
+           ext_modules = [module1]
+           )
 
-if src is not None:
-    try:
-        os.remove(target)
-    except:
-        pass
-    os.rename(src, target)
+    ext = ""
+    target = os.path.join(os.path.dirname(lib_dir), "PJLinkNativeLibrary")
+    src = None
 
-failed = not os.path.isfile(target)
+    for f in os.listdir(lib_dir):
+        if f.endswith(".so"):
+            ext = ".so"
+            src = os.path.join(lib_dir, f)
+            target += ext
+        elif f.endswith(".pyd"):
+            ext = ".pyd"
+            src = os.path.join(lib_dir, f)
+            target += ext
+
+    if src is not None:
+        try:
+            os.remove(target)
+        except:
+            pass
+        os.rename(src, target)
+
+    failed = not os.path.isfile(target)
+    # if not failed:
+    #     shutil.rmtree(build_dir)
+
+else:
+    os.chdir(cur_dir)
+    failed = True
+    raise IOError("MathLink library version {} in directory {} not found".format(mathlink_name, mathlink_dir))

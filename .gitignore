@@ -7,3 +7,6 @@ PJLink/PJLinkNativeLibrary/PJLinkNativeLibrary.so
 PJLink/PJLinkNativeLibrary/PJLinkNativeLibrary.pyd
 PJLink/PJLinkNativeLibrary/src/build
 .idea
+*.o
+*.a
+*.lib
