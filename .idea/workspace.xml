@@ -5,12 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/MacOSX-x86-64/PJLinkNativeLibrary.so" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/MacOSX-x86-64/PJLinkNativeLibrary.so" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/build/temp.macosx-10.9-x86_64-3.7/PJLinkNativeLibrary.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PacletInfo.m" beforeDir="false" afterPath="$PROJECT_DIR$/PacletInfo.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Config/BundleInfo.m" beforeDir="false" afterPath="$PROJECT_DIR$/Config/BundleInfo.m" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -41,7 +36,7 @@
           <entry key="iml" value="2" />
           <entry key="java" value="116" />
           <entry key="json" value="1" />
-          <entry key="m" value="13" />
+          <entry key="m" value="14" />
           <entry key="pro" value="1" />
           <entry key="py" value="203" />
           <entry key="txt" value="7" />
@@ -54,7 +49,7 @@
           <entry key="IDEA_MODULE" value="2" />
           <entry key="JAVA" value="116" />
           <entry key="JSON" value="1" />
-          <entry key="Mathematica" value="13" />
+          <entry key="Mathematica" value="14" />
           <entry key="PLAIN_TEXT" value="14" />
           <entry key="Python" value="203" />
         </counts>
@@ -64,7 +59,7 @@
           <entry key="dummy" value="84" />
           <entry key="gitignore" value="126" />
           <entry key="java" value="14" />
-          <entry key="m" value="3471" />
+          <entry key="m" value="3483" />
           <entry key="py" value="159835" />
           <entry key="txt" value="3" />
         </counts>
@@ -73,7 +68,7 @@
         <counts>
           <entry key="HTML" value="2" />
           <entry key="JAVA" value="14" />
-          <entry key="Mathematica" value="3471" />
+          <entry key="Mathematica" value="3483" />
           <entry key="PLAIN_TEXT" value="213" />
           <entry key="Python" value="159833" />
         </counts>
@@ -194,15 +189,6 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/PJLink/Resources/Decoders/PythonObject.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="75">
-              <caret line="5" column="22" selection-start-line="5" selection-start-column="22" selection-end-line="5" selection-end-column="22" />
-            </state>
-          </provider>
-        </entry>
-      </file>
     </leaf>
   </component>
   <component name="FileTemplateManagerImpl">
@@ -314,7 +300,6 @@
         <option value="$PROJECT_DIR$/PJLink/Resources/Decoders/ImageArrayInfo.py" />
         <option value="$PROJECT_DIR$/PJLink/Resources/Decoders/SparseArrayInfo.py" />
         <option value="$PROJECT_DIR$/PJLink/Resources/Decoders/Association.py" />
-        <option value="$PROJECT_DIR$/Config/BundleInfo.m" />
         <option value="$PROJECT_DIR$/PJLink/factories.py" />
         <option value="$PROJECT_DIR$/PJLink/Resources/Decoders/PythonObject.py" />
         <option value="$PROJECT_DIR$/PJLink/HelperClasses.py" />
@@ -330,6 +315,7 @@
         <option value="$PROJECT_DIR$/PacletInfo.m" />
         <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" />
         <option value="$PROJECT_DIR$/.gitignore" />
+        <option value="$PROJECT_DIR$/Config/BundleInfo.m" />
       </list>
     </option>
   </component>
@@ -764,13 +750,6 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Config/BundleInfo.m">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="195">
-          <caret line="13" column="57" lean-forward="true" selection-start-line="13" selection-start-column="57" selection-end-line="13" selection-end-column="57" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/Resources/Decoders/PackedArrayInfo.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="60">
@@ -985,6 +964,13 @@ print(link._error())</expression-string>
           <folding>
             <element signature="e#25#68#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Config/BundleInfo.m">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="16" column="23" lean-forward="true" selection-start-line="16" selection-start-column="23" selection-end-line="16" selection-end-column="23" />
         </state>
       </provider>
     </entry>

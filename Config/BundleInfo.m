@@ -18,6 +18,8 @@
 		".DS_Store",
 		"*.pyc",
 		"__pycache__",
-    "log.txt"
+    "log.txt",
+		"*.o",
+		"*.a"
 		}
  	}

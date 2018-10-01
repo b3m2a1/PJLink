@@ -2,7 +2,7 @@
 
 # PJLink
 
-[![version](http://img.shields.io/badge/version-1.0.0-orange.svg)](https://github.com/b3m2a1/PJLink/master/PJLink/PacletInfo.m)  [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![version](http://img.shields.io/badge/version-1.0.2-orange.svg)](https://github.com/b3m2a1/PJLink/master/PJLink/PacletInfo.m)  [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 PJLink is a package developed to link python and Mathematica
 
@@ -39,6 +39,12 @@ Alternately you can download this repo as a ZIP file and put extract it in  ```$
 <a id="usage" style="width:0;height:0;margin:0;padding:0;">&zwnj;</a>
 
 # Usage
+
+Before anything else, we'll load the package:
+
+```mathematica
+<<PJLink`
+```
 
 To start you need to call  ```InstallPython``` to load a python runtime (the first time this is done it may be slow as it compiles the library PJLink uses for communication):
 
@@ -90,3 +96,5 @@ When done, call  ```ClosePython``` to clean up the runtime and close the link:
 ```mathematica
 ClosePython[]
 ```
+
+You can also use this package to communicate with Mathematica from Python as I detailed  [here](https://www.wolframcloud.com/objects/b3m2a1/home/pjlink-hooking-up-mathematica-and-python.html#main-content) .

@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     17043,        426]
-NotebookOptionsPosition[     12394,        336]
-NotebookOutlinePosition[     14138,        385]
-CellTagsIndexPosition[     14095,        382]
+NotebookDataLength[     18324,        457]
+NotebookOptionsPosition[     13377,        364]
+NotebookOutlinePosition[     15121,        413]
+CellTagsIndexPosition[     15078,        410]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -150,6 +150,17 @@ Cell["Usage", "Section",
   3.743981058930213*^9, 3.743981060848526*^9}, {3.746133625379718*^9, 
   3.746133625905821*^9}},ExpressionUUID->"53068824-a842-414d-a8c9-\
 8b6a9fbde958"],
+
+Cell["Before anything else, we\[CloseCurlyQuote]ll load the package:", "Text",
+ CellChangeTimes->{{3.747401956908279*^9, 
+  3.747401965436631*^9}},ExpressionUUID->"fb837eb9-85e8-449a-b011-\
+6410d9268a0a"],
+
+Cell[BoxData[
+ RowBox[{"<<", "PJLink`"}]], "MathematicaLanguageCode",
+ CellChangeTimes->{{3.747401947439033*^9, 
+  3.747401954549075*^9}},ExpressionUUID->"9c51c8c1-49d5-4d9d-ae18-\
+ecb3ecf4c991"],
 
 Cell[TextData[{
  "To start you need to call ",
@@ -331,7 +342,24 @@ Cell[BoxData[
  RowBox[{"ClosePython", "[", "]"}]], "MathematicaLanguageCode",
  CellChangeTimes->{
   3.746133707348815*^9},ExpressionUUID->"e2abdd73-dc80-4ad9-803c-\
-a3d0b845b285"]
+a3d0b845b285"],
+
+Cell[TextData[{
+ "You can also use this package to communicate with Mathematica from Python \
+as I detailed ",
+ ButtonBox["here",
+  BaseStyle->"Hyperlink",
+  ButtonData->{
+    URL["https://www.wolframcloud.com/objects/b3m2a1/home/pjlink-hooking-up-\
+mathematica-and-python.html#main-content"], None},
+  ButtonNote->
+   "https://www.wolframcloud.com/objects/b3m2a1/home/pjlink-hooking-up-\
+mathematica-and-python.html#main-content"],
+ "."
+}], "Text",
+ CellChangeTimes->{{3.747401971741249*^9, 
+  3.747402002511733*^9}},ExpressionUUID->"9978add4-8835-47ea-bcfc-\
+c6b00be41320"]
 }, Open  ]]
 },
 WindowSize->{808, 755},
@@ -404,29 +432,32 @@ Cell[5549, 142, 99, 1, 22, "PageBreak",ExpressionUUID->"a7376ab8-38b2-4f34-8c6f-
  PageBreakBelow->True],
 Cell[CellGroupData[{
 Cell[5673, 147, 247, 4, 51, "Section",ExpressionUUID->"53068824-a842-414d-a8c9-8b6a9fbde958"],
-Cell[5923, 153, 504, 11, 58, "Text",ExpressionUUID->"d0ef249d-2c71-424b-aceb-a4bd5f654d9d"],
-Cell[6430, 166, 272, 6, 36, "MathematicaLanguageCode",ExpressionUUID->"5029be34-5cbd-4b7c-a3a2-6ed66815b94b"],
-Cell[6705, 174, 193, 3, 35, "Text",ExpressionUUID->"af1e80c3-3bea-494f-9d15-f92ca38ad800"],
+Cell[5923, 153, 204, 3, 35, "Text",ExpressionUUID->"fb837eb9-85e8-449a-b011-6410d9268a0a"],
+Cell[6130, 158, 195, 4, 36, "MathematicaLanguageCode",ExpressionUUID->"9c51c8c1-49d5-4d9d-ae18-ecb3ecf4c991"],
+Cell[6328, 164, 504, 11, 58, "Text",ExpressionUUID->"d0ef249d-2c71-424b-aceb-a4bd5f654d9d"],
+Cell[6835, 177, 272, 6, 36, "MathematicaLanguageCode",ExpressionUUID->"5029be34-5cbd-4b7c-a3a2-6ed66815b94b"],
+Cell[7110, 185, 193, 3, 35, "Text",ExpressionUUID->"af1e80c3-3bea-494f-9d15-f92ca38ad800"],
 Cell[CellGroupData[{
-Cell[6923, 181, 456, 10, 56, "MathematicaLanguageCode",ExpressionUUID->"c6b090ff-3203-4e7b-8bbc-12d894d6cfd0"],
-Cell[7382, 193, 990, 23, 67, "Output",ExpressionUUID->"3c944450-8466-4323-a7ae-a552c4a8ad70"]
+Cell[7328, 192, 456, 10, 56, "MathematicaLanguageCode",ExpressionUUID->"c6b090ff-3203-4e7b-8bbc-12d894d6cfd0"],
+Cell[7787, 204, 990, 23, 67, "Output",ExpressionUUID->"3c944450-8466-4323-a7ae-a552c4a8ad70"]
 }, Open  ]],
-Cell[8387, 219, 315, 7, 58, "Text",ExpressionUUID->"343f0305-c779-41f5-90b6-644cc2d7e52a"],
+Cell[8792, 230, 315, 7, 58, "Text",ExpressionUUID->"343f0305-c779-41f5-90b6-644cc2d7e52a"],
 Cell[CellGroupData[{
-Cell[8727, 230, 842, 23, 75, "MathematicaLanguageCode",ExpressionUUID->"3edb21b4-601c-47a5-bd4d-6c5131b955c7"],
-Cell[9572, 255, 161, 3, 34, "Output",ExpressionUUID->"b9dbd2b5-1661-479b-82bc-ce526e2f3694"]
+Cell[9132, 241, 842, 23, 75, "MathematicaLanguageCode",ExpressionUUID->"3edb21b4-601c-47a5-bd4d-6c5131b955c7"],
+Cell[9977, 266, 161, 3, 34, "Output",ExpressionUUID->"b9dbd2b5-1661-479b-82bc-ce526e2f3694"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[9770, 263, 306, 7, 36, "MathematicaLanguageCode",ExpressionUUID->"8a18df7b-33bd-4d79-a033-262eceb88f51"],
-Cell[10079, 272, 299, 7, 34, "Output",ExpressionUUID->"a284f509-426a-41bc-8535-2c82ce69e7c5"]
+Cell[10175, 274, 306, 7, 36, "MathematicaLanguageCode",ExpressionUUID->"8a18df7b-33bd-4d79-a033-262eceb88f51"],
+Cell[10484, 283, 299, 7, 34, "Output",ExpressionUUID->"a284f509-426a-41bc-8535-2c82ce69e7c5"]
 }, Open  ]],
-Cell[10393, 282, 336, 9, 35, "Text",ExpressionUUID->"db68b27a-8ac2-4058-b4b7-53355d94e6d7"],
+Cell[10798, 293, 336, 9, 35, "Text",ExpressionUUID->"db68b27a-8ac2-4058-b4b7-53355d94e6d7"],
 Cell[CellGroupData[{
-Cell[10754, 295, 236, 4, 36, "MathematicaLanguageCode",ExpressionUUID->"133e7537-4be6-4305-bbfa-b1b0485f7993"],
-Cell[10993, 301, 781, 13, 287, "Output",ExpressionUUID->"a71b67c1-8432-447f-83a8-a3ea4a18c8b2"]
+Cell[11159, 306, 236, 4, 36, "MathematicaLanguageCode",ExpressionUUID->"133e7537-4be6-4305-bbfa-b1b0485f7993"],
+Cell[11398, 312, 781, 13, 287, "Output",ExpressionUUID->"a71b67c1-8432-447f-83a8-a3ea4a18c8b2"]
 }, Open  ]],
-Cell[11789, 317, 407, 10, 35, "Text",ExpressionUUID->"6dd18224-5907-47d1-9f11-df90e4e368c5"],
-Cell[12199, 329, 179, 4, 36, "MathematicaLanguageCode",ExpressionUUID->"e2abdd73-dc80-4ad9-803c-a3d0b845b285"]
+Cell[12194, 328, 407, 10, 35, "Text",ExpressionUUID->"6dd18224-5907-47d1-9f11-df90e4e368c5"],
+Cell[12604, 340, 179, 4, 36, "MathematicaLanguageCode",ExpressionUUID->"e2abdd73-dc80-4ad9-803c-a3d0b845b285"],
+Cell[12786, 346, 575, 15, 35, "Text",ExpressionUUID->"9978add4-8835-47ea-bcfc-c6b00be41320"]
 }, Open  ]]
 }
 ]
