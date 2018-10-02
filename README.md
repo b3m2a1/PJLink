@@ -2,9 +2,9 @@
 
 # PJLink
 
-[![version](http://img.shields.io/badge/version-1.0.2-orange.svg)](https://github.com/b3m2a1/PJLink/master/PJLink/PacletInfo.m)  [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![version](http://img.shields.io/badge/version-1.0.6-orange.svg)](https://github.com/b3m2a1/PJLink/master/PJLink/PacletInfo.m)  [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-PJLink is a package developed to link python and Mathematica
+PJLink is a package developed to link python and Mathematica.  *It is currently python 3.3+ only* as it turns out to be more challenging to support legacy python2.7 as well in the C-interface than I would currently like, although it will likely be less difficult to do so in the python codebase.
 
 ---
 
