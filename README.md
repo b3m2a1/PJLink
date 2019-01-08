@@ -1,4 +1,12 @@
-<a id="pjlink" style="width:0;height:0;margin:0;padding:0;">&zwnj;</a>
+<a id="pjlinkhasbeen" class="Section" style="width:0;height:0;margin:0;padding:0;">&zwnj;</a>
+
+# PJLink has been superseded by the  [Wolfram Client for Python](https://github.com/WolframResearch/WolframClientForPython)
+
+Please use that if you can. If that is insufficient for one reason or another raise an issue there and if they refuse to fix it let me know and I'll try to add it to PJLink when I have the time and energy to.
+
+---
+
+<a id="pjlink" class="Section" style="width:0;height:0;margin:0;padding:0;">&zwnj;</a>
 
 # PJLink
 
@@ -8,7 +16,7 @@ PJLink is a package developed to link python and Mathematica.  *It is currently 
 
 ---
 
-<a id="installation" style="width:0;height:0;margin:0;padding:0;">&zwnj;</a>
+<a id="installation" class="Section" style="width:0;height:0;margin:0;padding:0;">&zwnj;</a>
 
 # Installation
 
@@ -36,7 +44,7 @@ Alternately you can download this repo as a ZIP file and put extract it in  ```$
 
 ---
 
-<a id="usage" style="width:0;height:0;margin:0;padding:0;">&zwnj;</a>
+<a id="usage" class="Section" style="width:0;height:0;margin:0;padding:0;">&zwnj;</a>
 
 # Usage
 
@@ -89,7 +97,7 @@ PyEvaluate[nosym]
 
     (*Out:*)
     
-    PythonTraceback["Traceback (most recent call last):\n  File \"~/Documents/Python/IDEA/PJLink/PJLink/KernelLink.py\", line 654, in __handleCallPacket\n    self.__callPython()\n  File \"/Users/Mark/Documents/Python/IDEA/PJLink/PJLink/KernelLink.py\", line 1003, in __callPython\n    res = self.__do_call_recursive(pkt)\n  File \"~/Documents/Python/IDEA/PJLink/PJLink/KernelLink.py\", line 959, in __do_call_recursive\n    res = eval(arg, self.__EXEC_ENV, self.__EXEC_ENV)\n  File \"<string>\", line 1, in <module>\nNameError: name 'nosym' is not defined\n"]
+    PythonTraceback["Traceback (most recent call last):\n  File \"~/Documents/Python/IDEA/PJLink/PJLink/KernelLink.py\", line 654, in __handleCallPacket\n    self.__callPython()\n  File \"/Users/Mark/Documents/Python/IDEA/PJLink/PJLink/KernelLink.py\", line 1003, in __callPython\n    res = self.__do_call_recursive(pkt)\n File \"~/Documents/Python/IDEA/PJLink/PJLink/KernelLink.py\", line 959, in __do_call_recursive\n    res = eval(arg, self.__EXEC_ENV, self.__EXEC_ENV)\n  File \"<string>\", line 1, in <module>\nNameError: name 'nosym' is not defined\n"]
 
 When done, call  ```ClosePython``` to clean up the runtime and close the link:
 
