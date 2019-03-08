@@ -127,7 +127,7 @@ class ImageData:
         return cls(dats.shape, cs, itype, dats)
 
     def topil(self):
-        return self._topil(self.dimensions, self.color_space, self.image_type, self.data, self.channels)
+        return self._topil(tuple(self.dimensions), self.color_space, self.image_type, self.data, self.channels)
 
     @property
     def expr(self):

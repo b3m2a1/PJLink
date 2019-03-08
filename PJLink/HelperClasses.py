@@ -477,18 +477,33 @@ class LinkMark:
 
     """
     def __init__(self, parent, seek = False):
-        self.parent = parent
-        self.mark = None
-        self.seek = seek
+        self._parent = parent
+        self._mark = None
+        self._seek = seek
+        self._destroyed = False
+
+    def init(self):
+        self._mark = self._parent._createMark()
+        return self
+
+    def seek(self):
+        self._parent._seekMark(self._mark)
+
+    def destroy(self):
+        if not self._destroyed:
+            self._parent._destroyMark(self._mark)
+            self._destroyed = True
+
+    def revert(self):
+        if not self._destroyed and self._mark is not None:
+            if self._seek:
+                self.seek()
+            self.destroy()
 
     def __enter__(self):
-        self.mark = self.parent._createMark()
-        return self.mark
-
+        return self.init()
     def __exit__(self, type, value, traceback):
-        if self.seek:
-            self.parent._seekMark(self.mark)
-        self.parent._destroyMark(self.mark)
+        self.revert()
 
 ###############################################################################################
 #                                                                                             #
@@ -1088,6 +1103,10 @@ class MPackageClass(MExprUtils):
         return getattr(self, "PJLink_"+obj.__qualname__.replace(".", "_"))
 
     def prep_object(self, o, link, coerce = False):
+        enc = link.Converter.encode(o, link)
+        return self.get_puttable(enc, link, coerce=coerce)
+
+    def get_puttable(self, o, link, coerce = False):
 
         from collections import OrderedDict
         from types import ModuleType, CodeType, FunctionType
@@ -1100,7 +1119,7 @@ class MPackageClass(MExprUtils):
 
         if isinstance(o, dict):
             try:
-                expr = self.M.from_dict(o)
+                expr = self.from_dict(o)
             except KeyError:
                 expr = None
             if isinstance(expr, MLExpr):
@@ -1168,8 +1187,14 @@ class MPackageClass(MExprUtils):
         head = self.PJLink_FunctionObject
         name = expr.__code__.co_name
         var_names = expr.__code__.co_varnames
-        argc = expr.__code__.co_argcount
-        kwc = expr.__code__.co_kwonlycount
+        try:
+            argc = expr.__code__.co_argcount
+        except AttributeError:
+            argc = 0
+        try:
+            kwc = expr.__code__.co_kwonlycount
+        except AttributeError:
+            kwc = 0
         return head(
             self.to_Association(
                 OrderedDict([
@@ -1521,7 +1546,7 @@ class MathematicaBlock:
 
 ###############################################################################################
 #                                                                                             #
-#                                       TypeDecoder                                           #
+#                                       TypeConverter                                         #
 #                                                                                             #
 ###############################################################################################
 
@@ -1597,7 +1622,9 @@ class StructBase: #This is separate from ObjectDecoder because I might want a De
         except KeyError:
             pass
     def __repr__(self):
-        return "{}({})".format(self._name, ", ".join([ "{}= {}".format(name, val) for name, val in self]))
+        return "{}({})".format(self._name,
+                    ", ".join([ "{}= {}".format(name, val) for name, val in self])
+                    )
 
 def namedstruct(name, *items):
     items = list(items)
@@ -1671,34 +1698,57 @@ class ObjectDecoder(StructBase):
             res = None
         return res
 
+class ObjectEncoder(StructBase):
+    Failed = namedtuple("Failed", [])
+    __slots__ = StructBase.__slots__ + ("_type", "_encode")
+    def __init__(self, name, type, encode):
+        self._type = type
+        self._encode = encode
+        super().__init__(name)
+
+    def encode(self, o, link):
+        if not isinstance(self._type, type):
+            raise TypeError("{} is not a type".format(self._type))
+        if isinstance(o, self._type):
+            return self._encode(o, link)
+        return self.Failed
+
 from collections import OrderedDict
-class TypeDecoder(OrderedDict):
+class TypeConverter:
     import os
-    _decoder_path = os.path.join(os.path.dirname(__file__), "Resources", "Decoders")
+    _base_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "Resources"
+    )
     del os
 
     def __init__(self, *decoders):
-        super().__init__()
+
+        self.decoders = OrderedDict()
+        self.encoders = OrderedDict()
+
         self.load_decoders()
         for name, decoder in decoders:
             if not isinstance(decoder, ObjectDecoder):
                 decoder = ObjectDecoder(decoder)
-            self[name] = decoder
+            self.decoders[name] = decoder
+        self.load_encoders()
+        # Env.logf("Loaded decoders {} and encoders {}", self.decoders, self.encoders)
 
     def decode(self, link):
         """Attempts to decode the objects on link with all the decoders built in
 
         """
         with LinkMark(link) as mark:
-            for decoder in self.values():
+            for decoder in self.decoders.values():
                 try:
                     res = decoder.decode(link)
                 except Exception as e:
-                    link._seekMark(mark)
+                    mark.seek()
                     raise
 
                 if res is None:
-                    link._seekMark(mark)
+                    mark.seek()
                 else:
                     break
             else:
@@ -1709,28 +1759,34 @@ class TypeDecoder(OrderedDict):
         import os
 
         if path is None:
-            path = self._decoder_path
+            path = os.path.join(self._base_path, "Decoders")
 
         for f in os.listdir(path):
             if f.endswith(".py"):
                 f, ext = os.path.splitext(os.path.basename(f))
-                self[f] = self.load_decoder(f, path = path)
+                decoder = self.load_decoder(f, path = path)
+                if decoder is not None:
+                    self.decoders[f] = decoder
 
     def load_decoder(self, name, path = None):
         import os
 
         if os.path.isfile(name):
-            path = os.path.dirname(name)
-            name = os.path.basename(path)
+            decoder_file = name
         elif path is None:
-            path = self._decoder_path
+            path = self._base_path
+            decoder_file = os.path.join(path, "Decoders", name+".py")
+        else:
+            decoder_file = os.path.join(path, name+".py")
 
-        decoder_file = os.path.join(path, name+".py")
-        with open(decoder_file) as dec_f:
-            dec_code = compile(dec_f.read(), decoder_file, "exec")
-            fake_locals = {}
-            exec(dec_code, globals(), fake_locals)
-            decoder = fake_locals["_decoder"]
+        loader = ExtensionLoader(os.path.dirname(decoder_file), "PJLink.Resources.Decoders")
+        try:
+            decoder_module = loader.load(decoder_file)
+            decoder = decoder_module._decoder
+        except Exception as e:
+            import traceback as tb
+            Env.logf(tb.format_exc())
+        else:
             if not hasattr(decoder, "decode"): # must be defined in the file
                 target = decoder[-1]
                 if callable(target):
@@ -1740,22 +1796,136 @@ class TypeDecoder(OrderedDict):
                 decoder = ObjectDecoder(*decoder, target=target)
             return decoder
 
-    def register_decoder(self, name, decoder, path = None, save = True):
+    def encode(self, o, link):
+        for encoder in self.encoders.values():
+            enc = encoder.encode(o, link)
+            if enc is not ObjectEncoder.Failed:
+                return enc
+        return o # fallback
+
+    def load_encoders(self, path = None):
         import os
 
-        if not isinstance(decoder, ObjectDecoder):
-            decoder = ObjectDecoder(decoder)
+        if path is None:
+            path = os.path.join(self._base_path, "Encoders")
 
-        if not isinstance(decoder, ObjectDecoder):
-            raise TypeError("{}.register_decoder: got object '{}' but an 'ObjectDecoder' object is required".format(type(self).__name__, type(decoder).__name__))
+        for f in os.listdir(path):
+            if f.endswith(".py"):
+                f, ext = os.path.splitext(os.path.basename(f))
+                encoder = self.load_encoder(f, path = path)
+                if encoder is not None:
+                    self.encoders[f] = encoder
+
+    def load_encoder(self, name, path = None):
+        import os
+
+        if os.path.isfile(name):
+            encoder_file = name
+        elif path is None:
+            path = self._base_path
+            encoder_file = os.path.join(path, "Encoders", name+".py")
         else:
-            if save:
-                if path is None:
-                    path = self._decoder_path
-                decoder_file = os.path.join(path, name.py)
-                with open(decoder_file) as dec_f:
-                    dec_f.write(decoder.serialize())
-            self[name] = decoder
+            encoder_file = os.path.join(path, name+".py")
+
+        loader = ExtensionLoader(os.path.dirname(encoder_file), "PJLink.Resources.Encoders")
+        try:
+            encoder_module = loader.load(encoder_file)
+            encoder = encoder_module._encoder
+        except:
+            import traceback as tb
+            Env.log(tb.format_exc())
+            raise
+        else:
+            if not hasattr(encoder, "encode"): # must be defined in the file
+                encoder = ObjectEncoder(*encoder)
+            return encoder
+
+    # def register_decoder(self, name, decoder, path = None, save = True):
+    #     import os
+    #
+    #     if not isinstance(decoder, ObjectDecoder):
+    #         decoder = ObjectDecoder(decoder)
+    #
+    #     if not isinstance(decoder, ObjectDecoder):
+    #         raise TypeError("{}.register_decoder: got object '{}' but an 'ObjectDecoder' object is required".format(type(self).__name__, type(decoder).__name__))
+    #     else:
+    #         if save:
+    #             if path is None:
+    #                 path = self._decoder_path
+    #             decoder_file = os.path.join(path, name.py)
+    #             with open(decoder_file) as dec_f:
+    #                 dec_f.write(decoder.serialize())
+    #         self[name] = decoder
+
+###############################################################################################
+#                                                                                             #
+#                                      ExtensionLoader                                          #
+#                                                                                             #
+###############################################################################################
+# just a concrete implementation of a loader
+
+import importlib.abc, os, importlib.util
+
+class ExtensionLoader(importlib.abc.SourceLoader):
+    """An ExtensionLoader creates a Loader object that can load a python module from a file path
+
+    """
+
+    def __init__(self, rootdir='', rootpkg = None):
+        """
+        :param rootdir: root directory to look for files off of
+        :type rootdir: str
+        :param rootpkg: root package to look for files off of
+        :type rootpkg: str or None
+        """
+        self._dir=rootdir
+        self._pkg = rootpkg
+        super().__init__()
+
+    def get_data(self, file):
+        with open(file,'rb') as src:
+            return src.read()
+
+    def get_filename(self, fullname):
+        if not os.path.exists(fullname):
+            basename = os.path.splitext(fullname.split(".")[-1])[0]
+            fullname = os.path.join(self._dir, basename+".py")
+        if os.path.isdir(fullname):
+            fullname = os.path.join(fullname, "__init__.py")
+        return fullname
+
+    def get_spec(self, file, pkg = None):
+        base_name = os.path.splitext(os.path.basename(file))[0]
+        package_origin = file
+        if pkg is None:
+            pkg = self._pkg
+        if pkg is None:
+            raise ImportError("{}: package name required to load file".format(type(self)))
+        package_name = pkg + "." + base_name
+        spec = importlib.util.spec_from_loader(
+            package_name,
+            self,
+            origin=package_origin
+        )
+        return spec
+
+    def load(self, file, pkg = None):
+        """loads a file as a module with optional package name
+
+        :param file:
+        :type file: str
+        :param pkg:
+        :type pkg: str or None
+        :return:
+        :rtype: module
+        """
+        spec = self.get_spec(file, pkg)
+        module = importlib.util.module_from_spec(spec)
+        if module is None:
+            module = importlib.util.module_from_spec(None)
+        self.exec_module(module)
+        return module
+
 
 ###############################################################################################
 #                                                                                             #

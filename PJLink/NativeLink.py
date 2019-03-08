@@ -26,60 +26,66 @@ class NativeLink(MathLink):
     __LIBRARY_LOAD_EXCEPTION = None
     __NATIVE_LIBRARY_EXISTS = False
 
-    def __init__(self, init = None, debug_level = 0):
-
-        self.__USE_NUMPY = None
+    def __init__(self, init = None, debug_level = 0, errMsgOut = None):
 
         import os, re, threading
         from collections import deque
 
-        if init is None:
-            bin = self.Env.get_Kernel_binary()
-            init = ["-linkmode", "launch", "-linkname", "'{}' -mathlink".format(bin)]#, "-mathlink", "-wstp"]
-        elif isinstance(init, str) and os.path.isfile(init):
-            init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink'".format(init)]#, "-mathlink", "-wstp"]
-        elif isinstance(init, float) or (isinstance(init, str) and re.match(r"\d\d.\d", init)):
-            bin = self.Env.get_Kernel_binary(init)
-            init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink'".format(bin)]#, "-mathlink", "-wstp"]
-
-        self.__lock = threading.RLock()
-        self._init = init
-        self.__errMsgOut = [ "" ]
+        self._USE_NUMPY = None
+        self._lock = threading.RLock()
+        self._errMsgOut = [""] if errMsgOut is None else errMsgOut
         self._loadNativeLibrary(debug_level=debug_level)
+        self._markStack = deque()
+        self._closed = None
+        self._kernel = None
 
-        self.__markStack = deque()
+        if isinstance(init, tuple) and len(init) ==2 and isinstance(init[1], int):
+            self._MLINK, self._link= init
 
-        import time
-        with self.__lock:
-            if isinstance(init, str):
-                # MLForceYield forces yielding under Unix even in the presence of a yield function.
-                link, cap = self.__lib.OpenString(
-                    self,
-                    init + " -linkoptions MLForceYield",
-                    self.__errMsgOut
-                )
-                self.__link = link
-                self._MLINK = cap
-                # time.sleep(.5)
-            elif isinstance(init, tuple) and isinstance(init[0], int):
-                cap, link = init
-                self.__link = link
-                self._MLINK = cap._MLINK
-            else:
-                init.extend(("-linkoptions", "MLForceYield"))
-                cap, link = self.__lib.Open(
-                    self,
-                    len(init),
-                    init,
-                    self.__errMsgOut
-                )
-                self.__link = link
-                self._MLINK = cap
-                # time.sleep(.5)
+        else:
+            if init is None:
+                bin = self.Env.get_Kernel_binary()
+                init = ["-linkmode", "launch", "-linkname", "'{}' -mathlink".format(bin)]#, "-mathlink", "-wstp"]
+            elif isinstance(init, str) and os.path.isfile(init):
+                init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink'".format(init)]#, "-mathlink", "-wstp"]
+            elif isinstance(init, float) or (isinstance(init, str) and re.match(r"\d\d.\d", init)):
+                bin = self.Env.get_Kernel_binary(init)
+                init = ["-linkmode", "launch", "-linkname", "'\"{}\" -mathlink'".format(bin)]#, "-mathlink", "-wstp"]
 
-        if self.__link == 0:
-            if len(self.__errMsgOut) > 0:
-                err_msg = self.__errMsgOut[0]
+            self._init = init
+
+            import time
+            with self._lock:
+                if isinstance(init, str):
+                    # MLForceYield forces yielding under Unix even in the presence of a yield function.
+                    # link, cap
+                    cap, link = self.__lib.OpenString(
+                        self,
+                        init + " -linkoptions MLForceYield",
+                        self._errMsgOut
+                    )
+                    self._link = link
+                    self._MLINK = cap
+                    # time.sleep(.5)
+                elif isinstance(init, tuple) and isinstance(init[0], int):
+                    cap, link = init
+                    self._link = link
+                    self._MLINK = cap._MLINK
+                else:
+                    init.extend(("-linkoptions", "MLForceYield"))
+                    cap, link = self.__lib.Open(
+                        self,
+                        len(init),
+                        init,
+                        self._errMsgOut
+                    )
+                    self._link = link
+                    self._MLINK = cap
+                    # time.sleep(.5)
+
+        if self._link == 0:
+            if len(self._errMsgOut) > 0:
+                err_msg = self._errMsgOut[0]
             else:
                 err_msg = None
             raise MathLinkException("CreationFailed", err_msg=err_msg)
@@ -157,11 +163,11 @@ class NativeLink(MathLink):
 
     @property
     def link(self):
-        return self.__link
+        return self._link
 
     @property
     def thread_lock(self):
-        return self.__lock
+        return self._lock
 
     def _wrap(self, checkLink = True, checkError = True, check = None, lock = True, timeout = None, poll = 20):
         # self.Env.logf("acquiring LinkWrapper(checkLink = {}, checkError = {}, check = {}, lock = {}, timeout = {}, poll = {})", checkLink, checkError, check, lock, timeout, poll)
@@ -170,11 +176,19 @@ class NativeLink(MathLink):
     def activate(self):
         return self.__lib.Activate(self)
 
+    @property
+    def closed(self):
+        return self._closed
+
     def close(self):
-        if self.__link != 0:
-            with self.__lock:
+        closed = self._closed
+        valid_link = isinstance(self._link, int) and self._link is not 0 and self._MLINK is not None
+        if valid_link and not closed:
+            self._closed = True
+            with self._lock:
                 self.__lib.Close(self)
-            self.__link = 0
+            self._link = 0
+            self._MLINK = None
 
     @staticmethod
     def _isException(errCode, check=None):
@@ -194,7 +208,7 @@ class NativeLink(MathLink):
         return err
 
     def _check_link(self):
-        if self.__link == 0:
+        if self._link == 0:
             raise MathLinkException("LinkIsNull")
 
     def _check_error(self, allowed = None):
@@ -204,6 +218,8 @@ class NativeLink(MathLink):
 
     def _connect(self):
         with self._wrap():
+            if self._closed is None:
+                self._closed = False
             return self._call("Connect")
 
     def _name(self):
@@ -222,19 +238,19 @@ class NativeLink(MathLink):
             return self._call("EndPacket")
 
     def _error(self):
-        if self.__link == 0:
+        if self._link == 0:
             return self.Env.getErrorInt("LinkIsNull")
         else:
             return self._call("Error")
 
     def _clearError(self):
-        if self.__link == 0:
+        if self._link == 0:
             return False
         else:
             return self._call("ClearError")
 
     def _errorMessage(self):
-        if self.__link == 0:
+        if self._link == 0:
             return MathLinkException.lookupMessageText("LinkIsNull")
         else:
             err = self._error()
@@ -423,23 +439,26 @@ class NativeLink(MathLink):
             with self._wrap():
                 return self._call("CheckFunctionWithArgCount", f, argCount)
 
-    def transferExpression(self, source):
-        with self._wrap():
+    def transferExpression(self, source, checkError=True):
+        with self._wrap(checkError=checkError):
+            Env.logf("Transferring to {} from {}", self, source)
             with source._wrap():
                 if isinstance(source, NativeLink):
-                    self._call("TransferExpression", source.link)
+                    self._call("TransferExpression", source)
                 elif hasattr(source, "getMathLink"):
                     self.transferExpression(source.getMathLink())
                 else:
                     self.put(source.getExpr())
 
+            Env.logf("Transferred to {} from {}", self, source)
+
     def transferToEndOfLoopbackLink(self, source):
         with self._wrap():
             with source._wrap():
-                if hasattr(source, "getLink"):
-                    self._call("TransferToEndOfLoopbackLink", source.getLink())
+                if isinstance(source, NativeLink):
+                    self._call("TransferToEndOfLoopbackLink", source)
                 else:
-                    while source.ready():
+                    while source.ready:
                         self.transferExpression(source)
 
     def _getMessage(self):
@@ -462,7 +481,7 @@ class NativeLink(MathLink):
     @property
     def checkpoint(self):
         try:
-            m = self.__markStack[-1]
+            m = self._markStack[-1]
         except IndexError:
             m = None
         return m
@@ -471,9 +490,18 @@ class NativeLink(MathLink):
         """This has no need to return the checkpoint, but it does
 
         """
-        mark = self._createMark()
-        self.__markStack.append(mark)
+        mark = LinkMark(self)
+        mark.init()
+        self._markStack.append(mark)
         return mark
+
+    def revert_checkpoint(self):
+        try:
+            mark = self._markStack.pop()
+            if mark is not None:
+                mark.revert()
+        except IndexError:
+            pass
 
     def _createMark(self):
         with self._wrap(checkError=False):
@@ -485,12 +513,12 @@ class NativeLink(MathLink):
 
     def _seekMark(self, mark):
         with self._wrap(checkError=False, checkLink=False):
-            if self.__link != 0:
+            if self._link != 0:
                 self._call("SeekMark", mark)
 
     def _destroyMark(self, mark):
         with self._wrap(checkError=False, checkLink=False):
-            if self.__link != 0:
+            if self._link != 0:
                 self._call("DestroyMark", mark)
 
     def _setYieldFunctionOn(self, target, meth):
@@ -532,6 +560,9 @@ class NativeLink(MathLink):
 
         return res_array
 
+    def _getTempLink(self):
+        from .LoopbackLink import NativeScratchPadLink
+        return NativeScratchPadLink(self)
     def put(self, o, stack = None):
         """ We overwrite this so that if it has an attached _kernel attribute that
         gets used
@@ -545,8 +576,9 @@ class NativeLink(MathLink):
         """
 
         putter = self._getPutter(o)
+        self.Env.logf("Putter {}", putter)
         if putter is None:
-            self._kernel.put(o, stack = stack)
+            self._kernel.put(o, stack = stack, coerce = True)
         else:
             # self.Env.logf("delegating put to {}", putter)
             if stack is None:
@@ -649,11 +681,11 @@ class NativeLink(MathLink):
 
     @property
     def use_numpy(self):
-        if self.__USE_NUMPY is None:
-            self.__USE_NUMPY = self.Env.HAS_NUMPY
+        if self._USE_NUMPY is None:
+            self._USE_NUMPY = self.Env.HAS_NUMPY
             self._setUseNumPy(self.Env.HAS_NUMPY)
 
-        return self.__USE_NUMPY
+        return self._USE_NUMPY
 
     @use_numpy.setter
     def use_numpy(self, val):
@@ -663,13 +695,13 @@ class NativeLink(MathLink):
         """Sets NumPy usage at the C level"""
 
         flag = bool(flag)
-        self.__USE_NUMPY = flag
+        self._USE_NUMPY = flag
         self._call("setUseNumPy", flag)
 
     def _getUseNumPy(self):
         """Gets whether or not NumPy usage has been set at the C level and sets that for the object"""
         res = self._call("getUseNumPy")
-        self.__USE_NUMPY = res
+        self._USE_NUMPY = res
         return res
 
     def _setDebugLevel(self, val):

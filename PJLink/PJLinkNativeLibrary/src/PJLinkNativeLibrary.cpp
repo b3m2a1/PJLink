@@ -1244,8 +1244,8 @@ MLFUNCWITHARGS(MLOpen) {
     if (link != NULL) {
         gEnvUseCount++;
         setupUserData(link, gMLEnv, ml);
-        Py_DECREF(ml);
-        Py_DECREF(errMsgOut);
+//        Py_DECREF(ml);
+//        Py_DECREF(errMsgOut);
     } else if (err != MLEOK) {
         MLSETERROR(err, errMsgOut)
     }
@@ -1309,9 +1309,9 @@ MLFUNCWITHARGS(MLLoopbackOpen) {
 
     }
 
-    _MLDebugPrint(3, "Opened link MathLink(%p)", link);
+    _MLDebugPrint(3, "Opened link LoopbackLink(%p)", link);
 
-    Py_DECREF(errMsgOut);
+//    Py_DECREF(errMsgOut);
 
     PyObject *cap = _MLAttachLink(ml, link);
     if (cap == NULL) return NULL;
@@ -3787,13 +3787,13 @@ MLFUNCWITHARGS(MLTransferExpression) {
     _MLDebugMessage(2, ":TransferExpression:");
     //jlong dest, jlong source
 
-    int64_t ldest, lsource;
-    MLPARSEARGS("nn", &ldest, &lsource);
-    MLINK dest = (MLINK) ldest;
-    MLINK source = (MLINK) ldest;
-
+    PyObject *ldest, *lsource;
+    MLPARSEARGS("OO", &ldest, &lsource);
+    MLINK dest = _MLGetMLINK(ldest);
+    MLINK source = _MLGetMLINK(lsource);
 
     if (dest != 0 && source != 0) {
+        _MLDebugPrint(3, "Transferring from MathLink(%p) to MathLink(%p)", dest, source);
         MLTHREADED(MLTransferExpression(dest, source));
     };
 
@@ -3815,12 +3815,13 @@ MLFUNCWITHARGS(MLTransferToEndOfLoopbackLink) {
     _MLDebugMessage(2, ":TransferToEndOfLoopbackLink:");
     //jlong dest, jlong source
 
-    int64_t ldest, lsource;
-    MLPARSEARGS("nn", &ldest, &lsource);
-    MLINK dest = (MLINK) ldest;
-    MLINK source = (MLINK) ldest;
+    PyObject *ldest, *lsource;
+    MLPARSEARGS("OO", &ldest, &lsource);
+    MLINK dest = _MLGetMLINK(ldest);
+    MLINK source = _MLGetMLINK(lsource);
 
     if (dest != 0 && source != 0) {
+        _MLDebugPrint(3, "Transferring from MathLink(%p) to MathLink(%p)", dest, source);
         MLTHREADED(MLTransferToEndOfLoopbackLink(dest, source));
     }
 

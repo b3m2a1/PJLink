@@ -353,23 +353,35 @@ ClosePython[version:_?NumberQ|_String|Automatic:Automatic]:=
 
 
 pyEvalPacket[link_, packet_, timeout_:10]:=
-  Module[{pkt = packet, to = Quantity[timeout, "Seconds"], res},
+  Module[{pkt = packet, to = Quantity[timeout, "Seconds"], res, resRest},
     If[SameQ[LinkWrite[link, pkt], $Failed], Return[$Failed]];
     res = TimeConstrained[LinkRead[link, HoldComplete], timeout];
-    Switch[res,
-      HoldComplete @ EvaluatePacket @ _,
-        pkt = ReturnPacket[CheckAbort[res[[1, 1]], $Aborted]],
-      HoldComplete @ ReturnPacket @ _,
-        Return[res[[1, 1]]],
-      HoldComplete @ _Sequence,
-        sequenceResult = res[[1]];
-        Break[],
-      HoldComplete @ _,
-        Return[res[[1]]],
-      _,
-        Return[res]
-      ];
-    sequenceResult
+    resRest = Flatten@Reap[While[LinkReadyQ[link], Sow@LinkRead[link, HoldComplete]]][[2]];
+    If[Length[resRest]==0,
+      Switch[res,
+        HoldComplete @ EvaluatePacket @ _,
+          pkt = ReturnPacket[CheckAbort[res[[1, 1]], $Aborted]],
+        HoldComplete @ ReturnPacket @ _,
+          Return[res[[1, 1]]],
+        HoldComplete @ _Sequence,
+          sequenceResult = res[[1]];
+          Break[],
+        HoldComplete @ _,
+          Return[res[[1]]],
+        _,
+          Return[res]
+        ];
+      sequenceResult,
+
+      Switch[#,
+        HoldComplete @ EvaluatePacket @ _,
+          pkt = ReturnPacket[CheckAbort[res[[1, 1]], $Aborted]],
+        HoldComplete @ ReturnPacket @ _,
+          res[[1, 1]],
+        _,
+          ReleaseHold[res]
+        ]&/@Flatten@{res, resRest}
+      ]
     ];
 
 
@@ -400,8 +412,14 @@ cleanUpEnv[pker_, version_, $Aborted]:=
           Quiet@ReadString[
             ProcessConnection[pker["Process"], "StandardError"], 
             EndOfBuffer
+            ],
+        os =
+          Quiet@ReadString[
+            ProcessConnection[pker["Process"], "StandardOutput"],
+            EndOfBuffer
             ]
        },
+      (*Echo[os];*)
       ClosePython[version];
       If[StringQ@es && StringLength@es>0,
         Block[{$MessagePrePrint=Identity},

@@ -2,6 +2,7 @@ from .MathLink import MathLink
 from .MathLinkExceptions import MathLinkException
 from .HelperClasses import *
 from .NativeLink import NativeLink
+from .LoopbackLink import NativeLoopbackLink
 from abc import abstractmethod
 
 ###############################################################################################
@@ -35,7 +36,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
     __LAST_MESSAGE = None
     __FEServerLink = None
 
-    Decoder = TypeDecoder()
+    Converter = TypeConverter()
 
     def __init__(self):
         self.M = MPackage
@@ -58,7 +59,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
 
         if t1 == "Function":
             try:
-                res =self.Decoder.decode(self)
+                res = self.Converter.decode(self)
             except MathLinkException as e:
                 # import traceback as tb
                 # self.Env.log(tb.format_exc())
@@ -253,14 +254,13 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             # checks that it is truly intended for the FE.
             fe = self.FEServerLink
             if fe is not None:
-                mark = self._createMark()
+                mark = LinkMark(self).init()
                 try:
                     wrapper = self._getFunction()
                     if not wrapper.name == "FrontEnd`FrontEndExecute":
                         fe._putFunction("FrontEnd`FrontEndExecute", 1)
                 finally:
-                    self._seekMark(mark)
-                    self._destroyMark(mark)
+                    mark.revert()
 
                 fe.transferExpression(self)
                 fe.flush()
@@ -414,10 +414,10 @@ from Mathematica), will want to start with the handleCallPacket() method here.
                     if res == "Null":
                         res = MLSym("Null") # can't remember how _getSymbol() is working
                     elif res != MLSym("Null"):
-                        self._seekMark(mark)
+                        mark.seek()
                         res = self._getComplex()
                 else:
-                    self._seekMark(mark)
+                    mark.seek()
                     res = self._getComplex()
 
         elif name == "BigInteger":
@@ -430,10 +430,10 @@ from Mathematica), will want to start with the handleCallPacket() method here.
                     if res == "Null":
                         res = MLSym("Null") # can't remember how _getSymbol() is working
                     elif res != MLSym("Null"):
-                        self._seekMark(mark)
+                        mark.seek()
                         res = self._getInt()
                 else:
-                    self._seekMark(mark)
+                    mark.seek()
                     res = self._getInt()
 
         elif name == "Decimal":
@@ -446,10 +446,10 @@ from Mathematica), will want to start with the handleCallPacket() method here.
                     if res == "Null":
                         res = MLSym("Null") # can't remember how _getSymbol() is working
                     elif res != MLSym("Null"):
-                        self._seekMark(mark)
+                        mark.seek()
                         res = self._getDecimal()
                 else:
-                    self._seekMark(mark)
+                    mark.seek()
                     res = self._getDecimal()
 
         elif name == "Expr":
@@ -462,10 +462,10 @@ from Mathematica), will want to start with the handleCallPacket() method here.
                     if res == "Null":
                         res = MLSym("Null") # can't remember how _getSymbol() is working
                     elif res != MLSym("Null"):
-                        self._seekMark(mark)
+                        mark.seek()
                         res = self._getExpr()
                 else:
-                    self._seekMark(mark)
+                    mark.seek()
                     res = self._getExpr()
 
         elif name == "Bad":
@@ -511,7 +511,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             try:
                 # Figure out the depth of the array and its leaf class type. Note that the detected leaf class type
                 # is only used of the elementType argument is null.
-                mark = self._createMark()
+                mark = LinkMark(self).init()
                 mf = self._getFunction()
                 actualDepth = 1
                 if mf.argCount == 0:
@@ -530,8 +530,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
                             break
                     firstInstance = self._getObject()
             finally:
-                self._seekMark(mark)
-                self._destroyMark(mark)
+                mark.revert()
 
 
             #Ignore the class of the first instance if user supplied a non-null elementClass argument.
@@ -568,10 +567,10 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         # Tests whether symbol waiting on link is a valid object reference. Returns false for the symbol Null.
         # Called by getNext() and getType(), after it has already been verified that the type is MLTKSYM.
 
-        mark = None
+        mark = LinkMark(self)
         res = False
         try:
-            mark = self._createMark()
+            mark.init()
             # Note that this behavior means that the symbol Null on the link will result in MLTKSYM, not MLTKOBJECT.
             # This is desired (?) for backward compatibility.
             try:
@@ -583,10 +582,21 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         except MathLinkException as e:
             self._clearError()
         finally:
-            if mark is not None:
-                self._seekMark(mark)
-                self._destroyMark(mark)
+            mark.revert()
         return res
+
+    def _returnTraceback(self, exc, tb):
+        if isinstance(exc, MathLinkException) and exc.no == 1000:
+            raise exc
+        else:
+            try:
+                self.put(self.M.F(self.M.PackageContext+"PythonTraceback", tb))
+            except MathLinkException:
+                self.put(b'$Failed')
+            finally:
+                self._endPacket()
+                self.flush()
+
 
     def __handleCleanException(self, exc):
         # "Clean" means that we have not tried to put any partial result on the link yet. This is not
@@ -606,19 +616,15 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             else:
                 import traceback as tb
                 self.put(self.M.F(self.M.PackageContext+"PythonTraceback", tb.format_exc()))
-            self._endPacket()
-            self.flush()
         except MathLinkException as e:
             # Need to send something back on link, or this will not be an acceptable branch.
             # About the only thing to do is call endPacket and hope that this will cause
             # $Aborted to be returned.
-            try:
-                import traceback as tb
-                self.put(self.M.F(self.M.PackageContext+"PythonTraceback", tb.format_exc()))
-                self._endPacket()
-            except MathLinkException:
-                self.put(b'$Failed')
-                self._endPacket()
+            import traceback as tb
+            self._returnTraceback(exc, tb.format_exc())
+        else:
+            self._endPacket()
+            self.flush()
 
     def __handleCallPacket(self):
         """handles a CallPacket originating on the other side of the link
@@ -1216,7 +1222,37 @@ class WrappedKernelLink(KernelLink):
     def _check_error(self, allowed = None):
         return self.__impl._check_error(allowed)
 
-    def put(self, o, stack = None):
+    def _getTempLink(self):
+        from .LoopbackLink import NativeScratchPadLink
+        link = NativeScratchPadLink(self)
+        return link
+
+    def _putOnLoopback(self, o, stack = None):
+        tmp_link = NativeLoopbackLink()
+        try:
+            tmp_link.put(o, stack = stack)
+            self.Env.logf("{}", o)
+            transf = self.__impl.transferExpression(tmp_link)
+            return transf
+        except Exception as e:
+            import traceback as tb
+            self.Env.log(tb.format_exc())
+            try:
+                tmp_link.close()
+            except:
+                self.Env.log(tb.format_exc())
+            try:
+                tmp_link = NativeLoopbackLink()
+                o = self.M.prep_object(o, self, coerce = True)
+                tmp_link.put(o, stack = stack)
+                transf = self.__impl.transferExpression(tmp_link)
+                return transf
+            except:
+                self.Env.log(tb.format_exc())
+        finally:
+            tmp_link.close()
+
+    def put(self, o, stack = None, coerce = False):
         """Puts an object on the link, attempting some type coercion first
         Not clear whether this should all be *here* but it's a fine place at first, at least
 
@@ -1226,11 +1262,12 @@ class WrappedKernelLink(KernelLink):
 
         self.__ensure_connection()
 
-        o = self.M.prep_object(o, self)
-        self.Env.logf("Putting {}?", o)
+        o = self.M.prep_object(o, self, coerce = coerce)
 
+        if stack is None:
+            stack = set()
+        self.Env.logf("stack {}", stack)
         try:
-            # self.Env.logf("Putting object {} on link", o)
             return self.__impl.put(o, stack = stack)
         except Exception as e:
             import traceback as tb
@@ -1372,18 +1409,18 @@ class WrappedKernelLink(KernelLink):
         # self.__ensure_connection()
 
         pkt = None
-        mark = self._createMark()
+        mark = LinkMark(self).init()
         try:
             pkt = self.__impl._nextPacket()
         except MathLinkException as e:
             if e.name == "UnknownPacket":
                 self._clearError()
-                self._seekMark(mark)
+                mark.seek()
                 f = self._getFunction()
                 if f.head == "ExpressionPacket":
                     pkt = self.Env.getPacketInt("Expression")
                 elif f.head == "BoxData":
-                    self._seekMark(mark)
+                    mark.seek()
                     pkt = self.Env.getPacketInt("Expression")
                 else:
                     # Note that all other non-recognized functions get labelled as FEPKT. I could perhaps be
@@ -1392,12 +1429,12 @@ class WrappedKernelLink(KernelLink):
                     # a front-end-related packet is on the link. Because there is no diagnostic packet head,
                     # we need to seek back to before the function was read. That way, when programs call
                     # methods to read the "contents" of the packet, they will in fact get the whole thing.
-                    self._seekMark(mark)
+                    mark.seek()
                     pkt = self.Env.getPacketInt("FE")
             else:
                 raise
         finally:
-            self._destroyMark(mark)
+            mark.destroy()
 
         return pkt
 

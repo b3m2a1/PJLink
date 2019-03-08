@@ -19,6 +19,9 @@ class LinkBase(ABC):
     Env = Env  # just a reference so that it can be referenced outside the package
     Util = ArrayUtils
 
+    def __del__(self):
+        self.close()
+
     @abstractmethod
     def close(self):
         """Closes the link. Always call close() on every link when you are done using it.
@@ -297,18 +300,18 @@ Follow this with calls to put the argument
     def seek_checkpoint(self):
         mark = self.checkpoint
         if mark is not None:
-            self._seekMark(mark)
+            mark.seek()
 
     def revert_checkpoint(self):
         mark = self.checkpoint
         if mark is not None:
-            self._seekMark(mark)
-            self._destroyMark(mark)
+            mark.revert()
 
     def clear_checkpoint(self):
         mark = self.checkpoint
         if mark is not None:
-            self._destroyMark(mark)
+            mark.destroy()
+            self.checkpoint = None
 
     @abstractmethod
     def _createMark(self):
@@ -675,29 +678,46 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
     @abstractmethod
     def _putArray(self, o, headList = None, stack = None):
         raise NotImplemented
-    def _putMLFunction(self, call):
-        self._putFunction(call.head, call.argCount)
     @abstractmethod
     def _putByteString(self, data, num=None):
         raise NotImplemented
-    def _putMLExpr(self, call, stack = None):
-        self._putMLFunction(MLFunction(call.head, len(call.args)))
-        for a in call.args:
-            if stack is None:
-                self.put(a, stack = stack)
+
+    @abstractmethod
+    def _getTempLink(self):
+        raise NotImplemented
+    def _putMLFunction(self, call):
+        self._putFunction(call.head, call.argCount)
+    def _putMLExprArg(self, arg, stack = None):
+        if stack is None:
+            self.put(arg, stack = stack)
+        else:
+            handle = id(arg)
+            if handle not in stack:
+                stack.add(handle)
+                self.put(arg, stack = stack)
             else:
-                handle = id(a)
-                if handle not in stack:
-                    stack.add(handle)
-                    self.put(a, stack = stack)
-                else:
-                    self._putRecursionError(a)
+                self._putRecursionError(arg)
+    def _putMLExpr(self, call, stack = None, use_tmp = True):
+        if use_tmp:
+            tmp = self._getTempLink()
+            try:
+                tmp._putMLExprArg(call)
+            except:
+                raise
+            else:
+                self.transferToEndOfLoopbackLink(tmp)
+            finally:
+                tmp.close()
+        else:
+            self._putMLFunction(MLFunction(call.head, len(call.args)))
+            for a in call.args:
+                self._putMLExprArg(a, stack=stack)
         if call.end:
             self._endPacket()
     def _putRecursionError(self, expr):
-        self._putMLFunction(MLFunction("PJLink`RecursionError", 2))
+        self._putFunction("PJLink`RecursionError", 2)
         self._putString(repr(expr))
-        self._putInt(id(expr))
+        self._putString(str(id(expr)))
     def _putMLSym(self, sym):
         self._putSymbol(sym.name)
 
@@ -736,12 +756,17 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
                         putter = getattr(self, '_put'+val)
                         break
                 else:
-                   try:
-                       it = iter(o) # check if is iterable
-                       putter = self._putArray
-                   except:
-                       # self.Env.logf("couldn't get putter for {}", o)
-                       putter = None#self._putSingleObject # Dunno what the fallback should be
+                    if isinstance(o, (list, tuple)):
+                        putter = self._putArray
+                    else:
+                        putter = None
+                   # try:
+                   #
+                   #     it = iter(o) # check if is iterable
+                   #     putter = self._putArray
+                   # except:
+                   #     # self.Env.logf("couldn't get putter for {}", o)
+                   #     putter = None#self._putSingleObject # Dunno what the fallback should be
         return putter
 
     def put(self, o, stack = None):
@@ -781,7 +806,7 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
                 if ob is not o:
                     self._putArrayPiecemeal(ob, heads, head_index)
                 else:
-                    raise MathLinkException("CannotPut")
+                    self._putRecursionError(o) # raise MathLinkException("CannotPut")
         else:
             self.put(o, stack = stack)
 

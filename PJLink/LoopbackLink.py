@@ -21,28 +21,39 @@ special properties.
 """
     pass
 
-class NativeLoopbackLink(LoopbackLink, NativeLink):
+class NativeLoopbackLink(NativeLink, LoopbackLink):
 
     def __init__(self, init = None):
 
         if init is None:
-            self.__errMsgOut = [ "" ]
-            self._loadNativeLibrary()
 
-            link = 0
-            with self.__lock:
-                link = self._call("LoopbackOpen", self.__errMsgOut)
+            import os, re, threading
+            from collections import deque
+            self._init = init
 
-            if self.__link == 0:
-                if len(self.__errMsgOut) > 0:
+            lock = threading.RLock()
+            errMsgOut = [ "" ]
+
+            with lock:
+                cap, link = self._call("LoopbackOpen", errMsgOut)
+
+            super().__init__((cap, link), errMsgOut = errMsgOut)
+
+            if self._link == 0:
+                if len(self._errMsgOut) > 0:
                     err_msg = self.__errMsgOut[0]
                 else:
                     err_msg = self.__CREATE_FAILED_MESSAGE
-            raise MathLinkException("CreationFailed", err_msg)
+                raise MathLinkException("CreationFailed", err_msg)
 
         else:
-            super.__init__(init)
+            super().__init__(init)
 
+    def _setUseNumPy(self, flag):
+        self._USE_NUMPY = flag
+        return flag
+    def _getUseNumPy(self):
+        return self.use_numpy
     def setYieldFunction(self, meth):
         return False
     def _setYieldFunctionOn(self, target, meth):
@@ -51,3 +62,21 @@ class NativeLoopbackLink(LoopbackLink, NativeLink):
         return False
     def _addMessageHandlerOn(self, target, meth):
         return False
+
+
+
+class NativeScratchPadLink(NativeLoopbackLink):
+
+    def __init__(self, parent, init=None):
+        super().__init__(init)
+        self.parent = parent
+        try:
+            self._kernel = parent._kernel
+        except AttributeError:
+            self._kernel = parent
+
+    def _putMLExpr(self, call, stack = None, tmp = False):
+        NativeLink._putMLExpr(self, call, stack = None, use_tmp = False)
+
+    def _getUseNumPy(self):
+        return self.parent.use_numpy
