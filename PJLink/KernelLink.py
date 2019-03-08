@@ -1046,10 +1046,11 @@ class WrappedKernelLink(KernelLink):
     def __init__(self, link = None):
         self.__USE_NUMPY = None
         self._link_connected = False
-        self.__impl = link
+        self.__impl = link # ??
 
         if isinstance(link, MathLink):
             self.__impl = link
+            self.__impl._kernel = self
             self.addMessageHandler(self._messageHandler) ##
 
         super().__init__()
@@ -1215,47 +1216,46 @@ class WrappedKernelLink(KernelLink):
     def _check_error(self, allowed = None):
         return self.__impl._check_error(allowed)
 
-    def put(self, o):
+    def put(self, o, stack = None):
         """Puts an object on the link, attempting some type coercion first
         Not clear whether this should all be *here* but it's a fine place at first, at least
 
         :param o:
         :return:
         """
-        from collections import OrderedDict
 
         self.__ensure_connection()
 
-        if hasattr(o, "expr"):
-            expr = o.expr
-            if callable(expr):
-                expr = expr(self)
-            o = expr
+        o = self.M.prep_object(o, self)
+        self.Env.logf("Putting {}?", o)
 
-        if isinstance(o, dict):
-            try:
-                expr = self.M.from_dict(o)
-            except KeyError:
-                expr = None
-            if isinstance(expr, MLExpr):
-                o = expr
+        try:
+            # self.Env.logf("Putting object {} on link", o)
+            return self.__impl.put(o, stack = stack)
+        except Exception as e:
+            import traceback as tb
+            self.Env.log(tb.format_exc())
+            o = self.M.prep_object(o, self, coerce = True)
+            return self.__impl.put(o, stack = stack)
 
-        if isinstance(o, OrderedDict):
-            o = self.M.to_Association(o)
-        elif isinstance(o, dict):
-            o = self.M.to_HashTable(o)
+    def _putArrayPiecemeal(self, o, heads = None, head_index = 0, maxlen = 250):
+        """Calls put for each piece of o. Inefficient fallback, effectively.
 
-        if isinstance(o, type):
-            # self.Env.logf("Putting repr of type {} on link", o.__name__)
-            return self.__impl.put(repr(o))
+        :param o:
+        :param heads:
+        :param head_index:
+        :return:
+        """
+        self.Env.logf(
+            "Putting element {} of {}".format(
+                head_index,
+                len(o) if heads is None else len(heads)
+            )
+        )
+        if len(o) > maxlen:
+            self.put(self.M.to_ElidedForm(o, maxlen))
         else:
-            try:
-                # self.Env.logf("Putting object {} on link", o)
-                return self.__impl.put(o)
-            except Exception as e:
-                import traceback as tb
-                self.Env.log(tb.format_exc())
-                return self.__impl.put(repr(o))
+            super()._putArrayPiecemeal(o, heads = heads, head_index = head_index)
 
     def _getInt(self):
         self.__ensure_connection()
@@ -1436,7 +1436,7 @@ class WrappedKernelLink(KernelLink):
             # We don't _need_ to forward--just an optimization.
             return self.__impl._getArray(otype, depth, headList)
 
-    def _putArray(self, o, headList = None):
+    def _putArray(self, o, headList = None, stack = None):
         try:
             arr, tint, dims, depth = self._get_put_array_params(o)
             # if it worked arr is in efficient form so this is fine
@@ -1444,4 +1444,4 @@ class WrappedKernelLink(KernelLink):
         except (ValueError, TypeError) as e:
             import traceback as tb
             self.Env.log(tb.format_exc())
-            self._putArrayPiecemeal(o, headList, 0)
+            self._putArrayPiecemeal(o, headList, 0, stack = stack)

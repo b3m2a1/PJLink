@@ -532,6 +532,32 @@ class NativeLink(MathLink):
 
         return res_array
 
+    def put(self, o, stack = None):
+        """ We overwrite this so that if it has an attached _kernel attribute that
+        gets used
+
+        :param o:
+        :type o:
+        :param stack:
+        :type stack:
+        :return:
+        :rtype:
+        """
+
+        putter = self._getPutter(o)
+        if putter is None:
+            self._kernel.put(o, stack = stack)
+        else:
+            # self.Env.logf("delegating put to {}", putter)
+            if stack is None:
+                stack = set()
+            # the checking of whether an object is on the stack should only be done
+            # where necessary, which in general will be in _putMLExpr
+            if putter is self._putMLExpr or putter is self._putArray:
+                return putter(o, stack = stack)
+            else:
+                return putter(o)
+
     def _putArray(self, o, headList=None):
         # Already guaranteed by caller (MathLinkImpl) that data is an array and not null. All
         # by-value array-putting work goes through this function.
@@ -542,7 +568,7 @@ class NativeLink(MathLink):
 
             arr, tint, dims, depth = self._get_put_array_params(o) # will not be accurate for ragged arrays, but we won't use the result in that case.
 
-            self.Env.logf("Putting array {} of type {} with dimensions {} and {} on link", arr, tint, dims, depth)
+            self.Env.logf("Putting array {} of type {} with dimensions {} and depth {} on link", arr, tint, dims, depth)
 
             if tint is not None:
                 sent = False

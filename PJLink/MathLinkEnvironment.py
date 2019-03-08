@@ -99,7 +99,8 @@ class MathLinkEnvironment:
         "BadObject"          : 1100,
         "FirstUserException" : 2000,
         "SignalCaught"       : 2100,
-        "UnknownCallType"    : 2101
+        "UnknownCallType"    : 2101,
+        "CannotPut"          : 2201
     }
     ERROR_TYPE_NAMES = {}
     ERROR_TYPE_NAMES.update(tuple((item, key) for key, item in ERROR_TYPES.items()))
@@ -108,11 +109,12 @@ class MathLinkEnvironment:
         "ArrayTooShallow" : "Array is not as deep as requested.",
         "BadComplex"      : "Expression could not be read as a complex number.",
         "ConnectTimeout"  : "The link was not connected before the requested time limit elapsed.",
-        "BadObject"       : "Expression on link is not a valid Java object reference.",
+        "BadObject"       : "Expression on link is not a valid Python object reference.",
         "FallThrough"     : "Extended error message not available.",
         "LinkIsNull"      : "Link is not open.",
         "CreationFailed"  : "Link failed to open.",
-        "SignalCaught"    : "Signal was caught."
+        "SignalCaught"    : "Signal was caught.",
+        "CannotPut"       : "Cannot put object onto link"
     }
 
     # These must remain in sync with Mathematica and C code. They don't really belong here,

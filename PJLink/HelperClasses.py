@@ -1080,10 +1080,135 @@ class MPackageClass(MExprUtils):
             _version = expr[ "_HashTable_version_" ]
         except KeyError:
             _version = 1
-
         return self.System_Utilities_HashTable(_version, *(list(rule) for rule in expr.items()))
     def to_Rules(self, expr):
         return self.List(*(self.Rule(*rule) for rule in expr.items()))
+
+    def _get_obj_name_sym(self, obj):
+        return getattr(self, "PJLink_"+obj.__qualname__.replace(".", "_"))
+
+    def prep_object(self, o, link, coerce = False):
+
+        from collections import OrderedDict
+        from types import ModuleType, CodeType, FunctionType
+
+        if not isinstance(o, MPackageClass) and hasattr(o, "expr"):
+            expr = o.expr
+            if callable(expr):
+                expr = expr(link)
+            o = expr
+
+        if isinstance(o, dict):
+            try:
+                expr = self.M.from_dict(o)
+            except KeyError:
+                expr = None
+            if isinstance(expr, MLExpr):
+                o = expr
+
+        # TODO: write an actual framework for encoding these generally
+        if isinstance(o, OrderedDict):
+            o = self.to_Association(o)
+        elif isinstance(o, dict):
+            o = self.to_HashTable(o)
+        elif isinstance(o, FunctionType):
+            o = self.to_FunctionObject(o)
+        elif isinstance(o, CodeType):
+            o = self.to_CodeObject(o)
+        elif isinstance(o, type):
+            o = self.to_ClassObject(o)
+        elif isinstance(o, ModuleType):
+            o = self.to_ModuleObject(o)
+        elif coerce:
+            o = self.to_ObjectInstance(o)
+
+        return o
+
+    def to_ModuleObject(self, mdl):
+        head = self.PJLink_ModuleObject
+        body = OrderedDict([
+            ("name", mdl.__name__),
+            ("attributes", list(vars(mdl)))
+        ])
+        return head(self.to_Association(body))
+
+    def to_ClassObject(self, cls):
+        head = self.PJLink_TypeObject
+        body = OrderedDict([
+            ("type", self._get_obj_name_sym(cls)),
+            ("attributes", list(vars(cls)))
+        ])
+        return head(self.to_Association(body))
+
+    def to_CodeObject(self, expr):
+        import inspect
+        head = self.PJLink_CodeObject
+
+        name = expr.co_name
+        file = expr.co_filename
+        lineno = expr.co_firstlineno
+
+        try:
+            body = inspect.getsource(expr)
+        except:
+            body = self.Missing("BodyUnavailable")
+
+        return head(
+            self.to_Association(
+                OrderedDict([
+                    ("name", name),
+                    ("file", file),
+                    ("line", lineno),
+                    ("body", body)
+                ])
+            )
+        )
+
+    def to_FunctionObject(self, expr):
+        head = self.PJLink_FunctionObject
+        name = expr.__code__.co_name
+        var_names = expr.__code__.co_varnames
+        argc = expr.__code__.co_argcount
+        kwc = expr.__code__.co_kwonlycount
+        return head(
+            self.to_Association(
+                OrderedDict([
+                    ("name", name),
+                    ("arguments", var_names),
+                    ("args", argc),
+                    ("kwargs", kwc)
+                ])
+            )
+        )
+
+    def to_ObjectInstance(self, expr):
+        t = type(expr)
+        head = self.PJLink_ObjectInstance
+        cls = self._get_obj_name_sym(t)
+        args = OrderedDict([("type", cls)])
+        try:
+            body = vars(expr)
+            args["attributes"] = list(body.keys())
+        except TypeError:
+            try:
+                body = list(expr)
+                try:
+                    body.remove(expr) # recursion sucks
+                except:
+                    pass
+                args["body"] = body
+            except:
+                body = repr(expr)
+                args["repr"] = body
+
+        return head(self.to_Association(args))
+
+    def to_ElidedForm(self, expr, maxlen):
+        els = list(expr)
+        total_len = len(els)
+        taken_els = els[:maxlen]
+        taken_els.append(self.Skeleton(total_len - maxlen))
+        return taken_els
 
     def _add_type_hints(self, to_eval):
         return self.CompoundExpression(

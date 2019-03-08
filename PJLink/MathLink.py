@@ -673,19 +673,31 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
     def _putNone(self, none = None):
         return self._putSymbol("Null")
     @abstractmethod
-    def _putArray(self, o, headList = None):
+    def _putArray(self, o, headList = None, stack = None):
         raise NotImplemented
     def _putMLFunction(self, call):
         self._putFunction(call.head, call.argCount)
     @abstractmethod
     def _putByteString(self, data, num=None):
         raise NotImplemented
-    def _putMLExpr(self, call):
+    def _putMLExpr(self, call, stack = None):
         self._putMLFunction(MLFunction(call.head, len(call.args)))
         for a in call.args:
-            self.put(a)
+            if stack is None:
+                self.put(a, stack = stack)
+            else:
+                handle = id(a)
+                if handle not in stack:
+                    stack.add(handle)
+                    self.put(a, stack = stack)
+                else:
+                    self._putRecursionError(a)
         if call.end:
             self._endPacket()
+    def _putRecursionError(self, expr):
+        self._putMLFunction(MLFunction("PJLink`RecursionError", 2))
+        self._putString(repr(expr))
+        self._putInt(id(expr))
     def _putMLSym(self, sym):
         self._putSymbol(sym.name)
 
@@ -728,20 +740,23 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
                        it = iter(o) # check if is iterable
                        putter = self._putArray
                    except:
+                       # self.Env.logf("couldn't get putter for {}", o)
                        putter = None#self._putSingleObject # Dunno what the fallback should be
         return putter
 
-    def put(self, o):
+    def put(self, o, stack = None):
         """Concrete implementation of general put structure
+
+        We need a stack to make sure that we're not recursing infinitely for structures
+        that reference themselves or have circular references
 
         :param o:
         :return:
         """
         putter = self._getPutter(o)
-        # self.Env.logf("delegating put to {}", putter)
         return putter(o)
 
-    def _putArrayPiecemeal(self, o, heads = None, head_index = 0):
+    def _putArrayPiecemeal(self, o, heads = None, head_index = 0, stack = None):
         """Calls put for each piece of o. Inefficient fallback, effectively.
 
         :param o:
@@ -763,9 +778,12 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
             self._putFunction(head, olen)
             head_index += 1
             for ob in o:
-                self._putArrayPiecemeal(ob, heads, head_index)
+                if ob is not o:
+                    self._putArrayPiecemeal(ob, heads, head_index)
+                else:
+                    raise MathLinkException("CannotPut")
         else:
-            self.put(o)
+            self.put(o, stack = stack)
 
 class MathLink(MathLinkImplBase):
     """The step right below MathLink implementation wise

@@ -1,5 +1,9 @@
 (* ::Package:: *)
 
+(* ::Section:: *)
+(*SubprocessKernel*)
+
+
 BeginPackage["SubprocessKernel`"]
 
 
@@ -11,60 +15,238 @@ $SubprocessFrontEnd::usage="The front end link for the kernel";
 $SubprocessKernel::usage="The kernel link for the kernel";
 $SubprocessKernelName::usage="The basic kernel name for the subprocess";
 $SubprocessKernelExtension::usage="The extension for the kernel name";
+$SubprocessKernelAutoLaunch::usage="Whether the kernel should launch on start-up"
 OpenSubprocessNotebook::usage="Opens an a subprocess notebook";
 StartSubprocessREPL::usage="Starts the subprocess REPL";
+QuitSubprocessREPL::usage="Quites the subprocess REPL and closes the FE";
 $SubprocessREPLSettings::usage="Settings for the subprocess REPL";
-$OriginalParentLink::usage="The original $ParentLink for the subprocess";
+$OriginalParentLink::usage="The original parent link for the kernel";
+$UseCustomPreferencesPath::usage=
+  "Whether to set up the kernels via a change to the UserBaseDirectory"
+
+
+(* ::Subsection:: *)
+(*Implementation*)
 
 
 Begin["`Private`"]
 
 
-startSubprocessFrontEnd[]:=
-  If[Quiet[$FrontEnd[[1]]=!=$SubprocessFrontEnd||!BooleanQ@LinkReadyQ[$SubprocessFrontEnd]],
-    Quiet@LinkClose[$SubprocessFrontEnd];
-    UsingFrontEnd;
-    launchFECommand=
-      System`UseFrontEndDump`Command["Server"->False]<>
-        Map[{" ",#1}&, 
-          Join[System`UseFrontEndDump`Flags["Server"->False],{"-wstp"}]
+$UseCustomPreferencesPath=True;
+
+
+$useCustomPreferencesPath:=TrueQ[$UseCustomPreferencesPath];
+
+
+(* ::Subsubsection::Closed:: *)
+(*createCleanFrontEndInit*)
+
+
+createCleanFrontEndInit[currInit_]:=
+  With[
+    {
+      arg=
+        TemplateApply[
+          "-LinkMode Connect -LinkProtocol SharedMemory -LinkName \"``\" -LinkOptions 256",
+          $SubprocessKernelName<>$SubprocessKernelExtension
+          ],
+      skname=$SubprocessKernelName
+      },
+    Module[
+      {
+        prefsHold
+        },
+      prefsHold=
+        Join[
+          Hold[
+            Evaluator -> skname,
+            EvaluatorNames ->
+             {
+               skname->{
+                 "AutoStartOnLaunch"->False,
+                 "MLOpenArguments"->arg
+                 }
+              }
+            ],
+          currInit,
+          Hold[
+            PreferencesPath->
+              {
+                FrontEnd`FileName[{$UserBaseDirectory,"FrontEnd"}],
+                FrontEnd`FileName[{$BaseDirectory,"FrontEnd"}],
+                FrontEnd`FileName[{$InstallationDirectory,"Configuration","FrontEnd"}],
+                FrontEnd`FileName[{$InstallationDirectory,"SystemFiles","FrontEnd"}]
+                }
+            ]
           ];
-    
-    $SubprocessFrontEnd=LinkLaunch[launchFECommand];
-  
-    MathLink`SetFrontEnd[$SubprocessFrontEnd]
-    ];
+      Thread[
+        DeleteDuplicatesBy[
+          Function[Null, #[[1, 1]], HoldAllComplete]
+          ]@Apply[List, Hold/@prefsHold],
+        Hold
+        ]
+      ]
+    ]
 
 
-If[!StringQ@$SubprocessKernelName, 
-  $SubprocessKernelName="Subprocess"];
-If[!StringQ@$SubprocessKernelExtension, 
-  $SubprocessKernelExtension="+"<>IntegerString[RandomInteger[50000], 16, 4]];
+(* ::Subsubsection::Closed:: *)
+(*createCustomPrefs*)
+
+
+createCustomPrefs[fakePrefsDir_]:=
+  With[
+     {
+      currPrefs=
+        Quiet@Block[
+          {  
+            SetOptions=Hold, 
+            $ContextPath={"System`", "FrontEnd`Private`"}, 
+            $Context="FrontEnd`Private`"
+            },
+          Get@FileNameJoin@{$UserBaseDirectory, "FrontEnd", "init.m"}
+          ][[2;;]]
+      },
+    CreateDirectory[FileNameJoin@{fakePrefsDir, "FrontEnd"}];
+    CopyDirectory[
+      FileNameJoin@{$UserBaseDirectory, "Licensing"},
+      FileNameJoin@{fakePrefsDir, "Licensing"}
+      ];
+    Replace[
+      createCleanFrontEndInit[currPrefs],
+      Hold[specs__]:>
+        Put[
+          Unevaluated@
+            SetOptions[
+              $FrontEnd,
+              {
+                specs
+                }
+              ],
+          FileNameJoin@{fakePrefsDir, "FrontEnd", "init.m"}
+          ]
+      ];
+    Import[FileNameJoin@{fakePrefsDir, "FrontEnd", "init.m"}, "Text"];
+    ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*startSubprocessKernel*)
 
 
 startSubprocessKernel[]:= 
   If[!MatchQ[$SubprocessKernel, _LinkObject?(Quiet[BooleanQ@LinkReadyQ[#]]&)],
     $subprocessKernelName=
       $SubprocessKernelName<>$SubprocessKernelExtension;
-    $SubprocessKernel=Quiet@LinkCreate[$subprocessKernelName, "LinkMode"->Listen],
+    $SubprocessKernel=
+      Quiet@logDebugEcho@LinkCreate[$subprocessKernelName, "LinkMode"->Listen];,
     $SubprocessKernel
     ];
 
 
+(* ::Subsubsection::Closed:: *)
+(*startSubprocessFrontEnd*)
+
+
+(* ::Text:: *)
+(*Creates a front-end link*)
+
+
+startSubprocessFrontEnd[]:=
+  If[Quiet[$FrontEnd[[1]]=!=logDebugEcho@$SubprocessFrontEnd||!BooleanQ@LinkReadyQ[$SubprocessFrontEnd]],
+    Module[
+      {
+        fakePrefsDir=CreateDirectory[]
+        },
+      If[$useCustomPreferencesPath,
+        createCustomPrefs[fakePrefsDir],
+        DeleteDirectory@fakePrefsDir
+        ];
+      Quiet@LinkClose[$SubprocessFrontEnd];
+      UsingFrontEnd;
+      launchFECommand=
+        System`UseFrontEndDump`Command["Server"->False]<>
+          Map[
+            {" ", #1}&, 
+            Join[
+              System`UseFrontEndDump`Flags["Server"->False],
+              {"-wstp", "-nogui", 
+                If[$useCustomPreferencesPath, 
+                  "-preferencesDirectory '"<>fakePrefsDir<>"'",
+                  Nothing
+                  ]
+                }
+              ]
+            ]//logDebugEcho;
+      
+      $SubprocessFrontEnd=LinkLaunch[launchFECommand];
+      
+      MathLink`SetFrontEnd[$SubprocessFrontEnd];
+      MathLink`CreateFrontEndLinks[];
+      ]
+    ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*$SubprocessKernelName / $SubprocessKernelExtension*)
+
+
+If[!StringQ@$SubprocessKernelName, 
+  $SubprocessKernelName=
+    "Subprocess"
+  ];
+If[!StringQ@$SubprocessKernelExtension, 
+  $SubprocessKernelExtension=
+    IntegerString[RandomInteger[50000], 16, 4]
+  ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*configureSubprocessFrontEnd*)
+
+
+(* ::Text:: *)
+(*This creates a front-end that will attach to our current kernel*)
+
+
 configureSubprocessFrontEnd[]:=
-  (
-    $cachedKernelConfiguration=
-      CurrentValue[$FrontEndSession, {EvaluatorNames, $SubprocessKernelName}];
-    CurrentValue[$FrontEndSession, {EvaluatorNames, $SubprocessKernelName}]=
-     {
-      "AutoStartOnLaunch"->False,
-      "MLOpenArguments"->
+  With[
+    {
+      mlOpen=
         TemplateApply[
-          "-LinkMode Connect -LinkProtocol SharedMemory -LinkName \"``\" -LinkOptions 256",
+          "-LinkMode Connect -LinkProtocol SharedMemory\
+ -LinkName \"``\" -LinkOptions 256",
           $subprocessKernelName
           ]
-      };
-    )
+      },
+    MathLink`FrontEndBlock[
+      $cachedKernelConfiguration=
+        logDebugEcho@
+          CurrentValue[$FrontEndSession, {EvaluatorNames, $SubprocessKernelName}];
+      If[
+        CurrentValue[$FrontEndSession, 
+          {EvaluatorNames, "Local", "MLOpenArguments"}]=!=mlOpen//logDebugEcho,
+        FrontEndExecute@FrontEnd`EvaluatorQuit["Local"];
+        CurrentValue[$FrontEndSession, Evaluator] = $SubprocessKernelName;
+        CurrentValue[$FrontEndSession,  
+          {EvaluatorNames, $SubprocessKernelName}
+          ]=
+         {
+          "AutoStartOnLaunch"->False,
+          "MLOpenArguments"->mlOpen
+          };
+         CurrentValue[$FrontEndSession, EvaluatorNames]
+        ],
+     $SubprocessFrontEnd
+     ]
+   ]
+
+
+(* ::Subsubsection::Closed:: *)
+(* $SubprocessREPLSettings*)
+
+
+(* ::Text:: *)
+(*These are all the settings used by default for the REPL... most of them are somewhat subtle and don't need to be changed*)
 
 
 $SubprocessREPLSettings=
@@ -95,6 +277,14 @@ $SubprocessREPLSettings=
     "PollTime"->.1,
     "Blocking"->False
     |>;
+
+
+(* ::Subsubsection::Closed:: *)
+(*evaluateThings*)
+
+
+(* ::Text:: *)
+(*Custom eval layer that will generally never be used...*)
 
 
 evaluateThings[e_]:=
@@ -133,10 +323,18 @@ evaluateThings[e_]:=
     ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*logEvent*)
+
+
+$debugMode=False;
+$logFile=FileNameJoin@{$TemporaryDirectory, "subproc_repl_log.txt"};
+
+
 logEvent[packet_]:=
   With[
     {
-      log=FileNameJoin@{$TemporaryDirectory, "subproc_repl_log.txt"}
+      log=$logFile
       },
     If[!FileExistsQ@log, CreateFile@log];
     OpenAppend[log];
@@ -149,8 +347,14 @@ logEvent[packet_]:=
     PutAppend[packet, log];
     Quiet@Close@log;
     ];
+logDebugEcho[event_]:=
+  If[$debugMode, logEcho[event], event];
 logEcho[event_]:=
   (logEvent[event];event)
+
+
+(* ::Subsubsection::Closed:: *)
+(*exitSubprocessREPL*)
 
 
 exitSubprocessREPL[]:=
@@ -161,11 +365,23 @@ exitSubprocessREPL[]:=
     )
 
 
+(* ::Subsubsection::Closed:: *)
+(*doAsync*)
+
+
 doAsync:=
   If[$VersionNumber<11.2,
     Function[Null, RunScheduledTask[#, {.0001}], HoldFirst],
     SessionSubmit
     ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*manageKernelConnections*)
+
+
+(* ::Text:: *)
+(*Manages the set of kernel connections specified*)
 
 
 manageKernelConnections[]:=
@@ -177,20 +393,28 @@ manageKernelConnections[]:=
       newLinks,
       newStdin
       },
-    deadLinks=Complement[Keys@lia, conns];
-    newLinks=Complement[conns, Keys@lia];
-    Switch[Head[#],
-      LinkObject, LinkClose[#], 
-      OutputStream|InputStream, Close
-      ]&/@KeyTake[lia, deadLinks];
-    KeyDropFrom[lia, deadLinks];
-    newStdin=MemberQ[newLinks, "STDIN"];
-    If[newStdin, newLinks=DeleteCases[newLinks, "STDIN"]];
-    newLinks=AssociationMap[LinkConnect, newLinks];
-    If[newStdin, AppendTo[newLinks, "STDIN"->OpenRead["!cat", BinaryFormat->True]]];
-    $SubprocessLinks=Join[lia, newLinks];
-    $SubprocessLinks
+    If[conns===None,
+      Quiet[LinkClose[#]]&/@lia;
+      $SubprocessLinks={},
+      deadLinks=Complement[Keys@lia, conns];
+      newLinks=Complement[conns, Keys@lia];
+      Switch[Head[#],
+        LinkObject, LinkClose[#], 
+        OutputStream|InputStream, Close
+        ]&/@KeyTake[lia, deadLinks];
+      KeyDropFrom[lia, deadLinks];
+      newStdin=MemberQ[newLinks, "STDIN"];
+      If[newStdin, newLinks=DeleteCases[newLinks, "STDIN"]];
+      newLinks=AssociationMap[LinkConnect, newLinks];
+      If[newStdin, AppendTo[newLinks, "STDIN"->OpenRead["!cat", BinaryFormat->True]]];
+      $SubprocessLinks=Join[lia, newLinks]
+      ];
+    (*logDebugEcho@*)$SubprocessLinks
     ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*getNextPacket*)
 
 
 getNextPacket[linkName_, link_LinkObject, timeout_]:=
@@ -209,6 +433,10 @@ getNextPacket[linkName_, link_InputStream, timeout_]:=
       ]&@ReadString[link, EndOfBuffer],
     timeout
     ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*standardEvaluationProcedure*)
 
 
 standardEvaluationProcedure[expr_, makePacket_]:=
@@ -234,6 +462,14 @@ standardEvaluationProcedure[expr_, makePacket_]:=
         ]
      }
     ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*processPacket / packetWrite / etc.*)
+
+
+(* ::Text:: *)
+(*This is for the custom layer. Processes all the packets, and writes stuff*)
 
 
 processPacket//Clear
@@ -403,34 +639,70 @@ handleLinkPacketResponse[linkName_, packet_, preemptive:False:False]:=
     ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*subprocessBlockingREPL*)
+
+
+(* ::Text:: *)
+(*Creates a REPL that will block a kernel. Not very robust.*)
+
+
 subprocessBlockingREPL[]:=
   Module[
     {
       links,
       packets,
       responses,
-      pollTime:=$SubprocessREPLSettings["PollTime"]
+      pollTime:=$SubprocessREPLSettings["PollTime"],
+      link1Init=False,
+      link2Init=False,
+      n=1
       },
       
     While[True,
+      
+      logEcho[{1, n}];
       links=
         Join[
           manageKernelConnections[], 
           <|
-            FrontEnd->$SubprocessKernel, 
-            PreemptiveLink->MathLink`$PreemptiveLink
+            FrontEnd->$SubprocessKernel(*, 
+            PreemptiveLink:>
+              (
+                If[!link1Init, 
+                  LinkWrite[MathLink`$PreemptiveLink, InputNamePacket["In[1]:="]]
+                  ];
+                MathLink`$PreemptiveLink
+                ),
+            ServiceLink:>
+              (
+                If[!link2Init, 
+                  LinkWrite[MathLink`$ServiceLink, InputNamePacket["In[1]:="]]
+                  ];
+                MathLink`$ServiceLink
+                )*)
             |>
           ];
       
+      logEcho[{2, n}];
       packets=MapIndexed[getNextPacket[#2[[1, 1]], #, .1]&, links];
       responses=MapIndexed[handleLinkPacketResponse[#2[[1, 1]], #]&, packets];
-        
+      logEcho[{3, n}];
       If[TrueQ@$incrementLine, $Line++];
       $incrementLine=False;
-      
-      If[pollTime>0, Pause[pollTime]]
+      logEcho[{4, n}];
+      logEcho[pollTime];
+      If[pollTime>0, Pause[pollTime]];
      ]
    ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*subprocessNonBlockingREPL*)
+
+
+(* ::Text:: *)
+(*Creates a REPL that definitely does not block. Quite robust.*)
 
 
 subprocessNonBlockingREPL[]:=
@@ -458,7 +730,15 @@ subprocessNonBlockingREPL[]:=
     ]
 
 
-StartSubprocessREPL[startRepl_]:=
+(* ::Subsubsection::Closed:: *)
+(*StartSubprocessREPL*)
+
+
+(* ::Text:: *)
+(*Starts the REPL based on the settings. Killing the automatically started Local kernel is probably the hardest part of this...*)
+
+
+StartSubprocessREPL[]:=
   With[
     {
       blocking=
@@ -466,66 +746,100 @@ StartSubprocessREPL[startRepl_]:=
       },
     $SubprocessLinks=<||>;
     $SubprocessREPLSettings["Links"]=
-      Replace[$SubprocessREPLSettings["Links"],
+      logDebugEcho@Replace[$SubprocessREPLSettings["Links"],
         {
           s_String:>{s},
+          None->{},
           Except[_List]:>{"STDIN"}
           }
         ];
     $Line=1;
     startSubprocessFrontEnd[];
     startSubprocessKernel[];
-    FrontEndExecute@FrontEnd`EvaluatorStart[$SubprocessKernelName];
+    If[ListQ@CurrentValue[$FrontEndSession, {EvaluatorNames, $SubprocessKernelName}],
+      FrontEndExecute@
+        FrontEnd`EvaluatorStart[$SubprocessKernelName]
+      ];
     If[blocking,
       TimeConstrained[
-        LinkWrite[$SubprocessKernel, InputNamePacket["In[1]:="]],
-        .1
+        logDebugEcho@LinkWrite[$SubprocessKernel, InputNamePacket["In[1]:="]],
+        2
         ]
       ];
-      
     If[StringQ@$SubprocessREPLSettings["InitializationMessage"],
       Print@$SubprocessREPLSettings["InitializationMessage"]
       ];
     
-    $OriginalParentLink=$ParentLink;
+    $OriginalParentLink = $ParentLink;
     $ParentLink=$SubprocessKernel;
     
-    If[startRepl,
-      If[blocking,
-        subprocessBlockingREPL[];,
-        subprocessNonBlockingREPL[]
-       ]
-      ];
+    If[blocking,
+      subprocessBlockingREPL[];,
+      subprocessNonBlockingREPL[]
+     ];
     ]
 
 
-Options[OpenSubprocessNotebook]=
-  {
-    "StartREPL"->True
-    };
-OpenSubprocessNotebook[retry:True|False:True, ops:OptionsPattern[]]:=
+(* ::Subsubsection::Closed:: *)
+(*QuitSubprocessREPL*)
+
+
+QuitSubprocessREPL[]:=(
+  If[Head[$OriginalParentLink]===LinkObject||
+      $OriginalParentLink===Null,
+    $ParentLink = $OriginalParentLink
+    ];
+  Quiet@LinkClose@$SubprocessKernel;
+  $SubprocessKernel=.;
+  Quiet@LinkClose@$SubprocessFrontEnd;
+  $SubprocessFrontEnd=.;
+  )
+
+
+(* ::Subsubsection:: *)
+(*OpenSubprocessNotebook*)
+
+
+(* ::Text:: *)
+(*Creates a Subprocess FE and opens a notebook in it*)
+
+
+OpenSubprocessNotebook[retry:True|False:True]:=
  Module[{res},
    startSubprocessFrontEnd[];
    startSubprocessKernel[];
-   res=CreateDocument[{}, Evaluator->$SubprocessKernelName];
+   res=
+     CreateDocument[{}, 
+      {
+        If[ListQ@CurrentValue[$FrontEndSession, {EvaluatorNames, $SubprocessKernelName}],
+          Evaluator->$SubprocessKernelName,
+          Nothing
+          ]
+        }
+      ];
    Which[
      res===$Failed&&retry,
-       Quiet@LinkClose@$SubprocessKernel;
-       $SubprocessKernel=.;
-       Quiet@LinkClose@$SubprocessFrontEnd;
-       $SubprocessFrontEnd=.;
+       QuitSubprocessREPL[];
        OpenSubprocessNotebook[],
      res===$Failed,
        $Failed,
      True,
-       configureSubprocessFrontEnd[];
-       StartSubprocessREPL[TrueQ@OptionValue["StartREPL"]];
+       logDebugEcho@configureSubprocessFrontEnd[];
+       StartSubprocessREPL[];
        res
      ]
    ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*End*)
+
+
 End[]
+
+
+(* ::Subsection::Closed:: *)
+(*EndPackage*)
 
 
 EndPackage[]
