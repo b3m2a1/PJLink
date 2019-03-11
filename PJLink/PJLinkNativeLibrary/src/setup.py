@@ -33,7 +33,9 @@ for lib in os.listdir(mathlink_dir):
         mathlink_lib_file=os.path.join(build_dir, lib)
         shutil.copyfile(os.path.join(mathlink_dir, lib), mathlink_lib_file)
 
-print(mathlink_lib_file)
+if not os.path.exists(mathlink_lib_file):
+    raise IOError("MathLink library at {} doesn't exits".format(mathlink_lib_file))
+print("Using MathLink library at {}".format(mathlink_lib_file))
 
 if mathlink_lib_file is not None:
     if plat != "Linux":
