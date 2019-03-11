@@ -12,6 +12,7 @@ if not os.path.exists(target_bin_path):
     url_root = "https://www.wolframcloud.com/objects/b3m2a1/MathLinkBinaries"
     url_targ = url_root+"/"+target_arch+".zip"+"?_key="+math_link_key
 
+    print("Downloading MathLink archives from: {}".format(url_targ))
     try:
         import wget
         from zipfile import ZipFile
