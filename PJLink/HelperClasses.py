@@ -1835,7 +1835,6 @@ class TypeConverter:
         except:
             import traceback as tb
             Env.log(tb.format_exc())
-            raise
         else:
             if not hasattr(encoder, "encode"): # must be defined in the file
                 encoder = ObjectEncoder(*encoder)
