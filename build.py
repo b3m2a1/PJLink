@@ -13,7 +13,6 @@ if not os.path.exists(target_bin_path):
     url_targ = url_root+"/"+target_arch+".zip"+"?_key="+math_link_key
 
     print("Downloading MathLink archives from: {}".format(url_targ))
-    print(list(math_link_key))
     try:
         import wget
         from zipfile import ZipFile
