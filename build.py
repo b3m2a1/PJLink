@@ -2,10 +2,11 @@ import os, sys
 from PJLink import MathLinkEnvironment as Env
 
 lib_root = Env.get_NativeLibrary_root()
-try:
-    math_link_key = os.environ["MATH_LINK_KEYS"]
-except:
-    math_link_key = os.environ["MATH_LINK_KEY"]
+# try:
+#     math_link_key = os.environ["MATH_LINK_KEYS"]
+# except:
+#     math_link_key = os.environ["MATH_LINK_KEY"]
+math_link_key = "mathlinks"
 download_root = os.path.join(lib_root, "src", "MathLinkBinaries")
 target_arch = Env.system_name()+("-x86-64" if Env.get_is_64_bit() else "")
 target_bin_path = os.path.join(download_root, target_arch)

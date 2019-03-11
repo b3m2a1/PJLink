@@ -26,11 +26,11 @@
 
 //#define JDEBUGLEVEL 0
 
-#include <cstdint>
-#include <cerrno>
-#include <csignal>
-#include <cstdlib>
-#include <fcntl.h>
+//#include <cstdint>
+//#include <cerrno>
+//#include <csignal>
+//#include <cstdlib>
+//#include <fcntl.h>
 
 #if defined(DARWIN_MATHLINK) || defined(X86_DARWIN_MATHLINK) || defined(X86_64_DARWIN_MATHLINK)
 #include <ApplicationServices/ApplicationServices.h>

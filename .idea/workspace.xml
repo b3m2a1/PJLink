@@ -5,8 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/__main__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/MacOSX-x86-64/PJLinkNativeLibrary.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.py" beforeDir="false" afterPath="$PROJECT_DIR$/build.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -32,7 +36,7 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="cpp" value="2" />
+          <entry key="cpp" value="3" />
           <entry key="gitignore" value="6" />
           <entry key="h" value="3" />
           <entry key="iml" value="2" />
@@ -40,7 +44,7 @@
           <entry key="json" value="1" />
           <entry key="m" value="15" />
           <entry key="pro" value="1" />
-          <entry key="py" value="245" />
+          <entry key="py" value="246" />
           <entry key="sh" value="1" />
           <entry key="txt" value="10" />
           <entry key="user" value="1" />
@@ -50,13 +54,13 @@
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="C++" value="5" />
+          <entry key="C++" value="6" />
           <entry key="IDEA_MODULE" value="2" />
           <entry key="JAVA" value="117" />
           <entry key="JSON" value="1" />
           <entry key="Mathematica" value="21" />
           <entry key="PLAIN_TEXT" value="19" />
-          <entry key="Python" value="245" />
+          <entry key="Python" value="246" />
           <entry key="YAML" value="3" />
         </counts>
       </usages-collector>
@@ -66,8 +70,8 @@
           <entry key="gitignore" value="161" />
           <entry key="java" value="14" />
           <entry key="m" value="3483" />
-          <entry key="py" value="173825" />
-          <entry key="txt" value="537" />
+          <entry key="py" value="173850" />
+          <entry key="txt" value="559" />
           <entry key="wl" value="399" />
           <entry key="yml" value="65" />
         </counts>
@@ -77,8 +81,8 @@
           <entry key="HTML" value="2" />
           <entry key="JAVA" value="14" />
           <entry key="Mathematica" value="3882" />
-          <entry key="PLAIN_TEXT" value="830" />
-          <entry key="Python" value="173823" />
+          <entry key="PLAIN_TEXT" value="852" />
+          <entry key="Python" value="173848" />
           <entry key="YAML" value="65" />
         </counts>
       </usages-collector>
@@ -90,8 +94,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/build.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="105">
-              <caret line="7" column="47" lean-forward="true" selection-start-line="7" selection-start-column="47" selection-end-line="7" selection-end-column="47" />
+            <state relative-caret-position="169">
+              <caret line="15" column="47" selection-start-line="15" selection-start-column="47" selection-end-line="15" selection-end-column="47" />
               <folding>
                 <element signature="e#0#22#0" expanded="true" />
               </folding>
@@ -100,10 +104,31 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="328">
+              <caret line="48" column="41" lean-forward="true" selection-start-line="48" selection-start-column="41" selection-end-line="48" selection-end-column="41" />
+              <folding>
+                <element signature="e#25#68#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="420">
+              <caret line="28" column="20" lean-forward="true" selection-start-line="28" selection-start-column="20" selection-end-line="28" selection-end-column="20" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/PJLink/MathLinkEnvironment.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="97">
-              <caret line="885" column="13" lean-forward="true" selection-start-line="885" selection-start-column="13" selection-end-line="885" selection-end-column="13" />
+              <caret line="885" column="13" selection-start-line="885" selection-start-column="13" selection-end-line="885" selection-end-column="13" />
               <folding>
                 <element signature="e#101#139#0" expanded="true" />
                 <marker date="1552298673842" expanded="true" signature="11789:11794" ph="..." />
@@ -122,7 +147,7 @@
         <entry file="file://$PROJECT_DIR$/.travis.yml">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="210">
-              <caret line="14" column="17" lean-forward="true" selection-start-line="14" selection-start-column="17" selection-end-line="14" selection-end-column="17" />
+              <caret line="14" column="17" selection-start-line="14" selection-start-column="17" selection-end-line="14" selection-end-column="17" />
             </state>
           </provider>
         </entry>
@@ -131,7 +156,7 @@
         <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="174">
-              <caret line="30" column="17" lean-forward="true" selection-start-line="30" selection-start-column="17" selection-end-line="30" selection-end-column="17" />
+              <caret line="30" column="17" selection-start-line="30" selection-start-column="17" selection-end-line="30" selection-end-column="17" />
             </state>
           </provider>
         </entry>
@@ -139,22 +164,18 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret column="38" selection-start-column="22" selection-end-column="38" />
+            <state relative-caret-position="135">
+              <caret line="9" selection-start-line="9" selection-end-line="9" />
+              <folding>
+                <element signature="e#0#38#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="653">
-              <caret line="51" column="96" selection-start-line="51" selection-start-column="96" selection-end-line="51" selection-end-column="96" />
-              <folding>
-                <element signature="e#25#68#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/__main__.py">
+          <provider selected="true" editor-type-id="text-editor" />
         </entry>
       </file>
     </leaf>
@@ -234,8 +255,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/Java/KernelLinkImpl.java" />
-        <option value="$PROJECT_DIR$/PJLink/StdLink.py" />
         <option value="$PROJECT_DIR$/Java/NativeLink.java" />
         <option value="$PROJECT_DIR$/PJLink/Resources/sym_list.json" />
         <option value="$PROJECT_DIR$/PJLink/Reader.py" />
@@ -275,16 +294,18 @@
         <option value="$PROJECT_DIR$/PJLink/LoopbackLink.py" />
         <option value="$PROJECT_DIR$/PJLink/MathLink.py" />
         <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py" />
-        <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/__init__.py" />
         <option value="$PROJECT_DIR$/__.travis.yml" />
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/Tests/__init__.py" />
         <option value="$PROJECT_DIR$/Tests/tests.py" />
         <option value="$PROJECT_DIR$/PJLink/HelperClasses.py" />
-        <option value="$PROJECT_DIR$/build.py" />
         <option value="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" />
         <option value="$PROJECT_DIR$/.travis.yml" />
+        <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/__main__.py" />
+        <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/__init__.py" />
         <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" />
+        <option value="$PROJECT_DIR$/build.py" />
+        <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp" />
       </list>
     </option>
   </component>
@@ -574,7 +595,14 @@
       <option name="project" value="LOCAL" />
       <updated>1552299929284</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Travis needs C++ 2011?">
+      <created>1552300547686</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1552300547686</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TodoView">
@@ -597,7 +625,7 @@
       <window_info anchor="bottom" id="Messages" weight="0.3287841" />
       <window_info anchor="bottom" id="Inspection Results" order="0" weight="0.24968153" />
       <window_info anchor="bottom" id="Message" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.2841191" />
+      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.2841191" />
       <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.4990619" weight="0.35923567" />
       <window_info anchor="bottom" id="Find" order="4" weight="0.32866243" />
       <window_info anchor="bottom" id="Cvs" order="5" weight="0.25" />
@@ -636,7 +664,8 @@
     <MESSAGE value="...I swear I just changed the name..." />
     <MESSAGE value="Trying to get Linux binary to build?" />
     <MESSAGE value="Two build architectures" />
-    <option name="LAST_COMMIT_MESSAGE" value="Two build architectures" />
+    <MESSAGE value="Travis needs C++ 2011?" />
+    <option name="LAST_COMMIT_MESSAGE" value="Travis needs C++ 2011?" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -663,14 +692,6 @@ print(link._error())</expression-string>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/../../../Wolfram Mathematica/Applications/_paclets/PJLink/PJLink/start_kernel.py" />
-    <entry file="file://$PROJECT_DIR$/SubprocessKernel/test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="435">
-          <caret line="29" selection-start-line="29" selection-end-line="29" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../../Projects/test.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="36">
@@ -964,13 +985,6 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="38" selection-start-column="22" selection-end-column="38" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Tests/tests.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="420">
@@ -1016,14 +1030,14 @@ print(link._error())</expression-string>
     <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="174">
-          <caret line="30" column="17" lean-forward="true" selection-start-line="30" selection-start-column="17" selection-end-line="30" selection-end-column="17" />
+          <caret line="30" column="17" selection-start-line="30" selection-start-column="17" selection-end-line="30" selection-end-column="17" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/MathLinkEnvironment.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="97">
-          <caret line="885" column="13" lean-forward="true" selection-start-line="885" selection-start-column="13" selection-end-line="885" selection-end-column="13" />
+          <caret line="885" column="13" selection-start-line="885" selection-start-column="13" selection-end-line="885" selection-end-column="13" />
           <folding>
             <element signature="e#101#139#0" expanded="true" />
             <marker date="1552298673842" expanded="true" signature="11789:11794" ph="..." />
@@ -1037,30 +1051,50 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/.travis.yml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="210">
+          <caret line="14" column="17" selection-start-line="14" selection-start-column="17" selection-end-line="14" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/__main__.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="135">
+          <caret line="9" selection-start-line="9" selection-end-line="9" />
+          <folding>
+            <element signature="e#0#38#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/build.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="105">
-          <caret line="7" column="47" lean-forward="true" selection-start-line="7" selection-start-column="47" selection-end-line="7" selection-end-column="47" />
+        <state relative-caret-position="169">
+          <caret line="15" column="47" selection-start-line="15" selection-start-column="47" selection-end-line="15" selection-end-column="47" />
           <folding>
             <element signature="e#0#22#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.travis.yml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="14" column="17" lean-forward="true" selection-start-line="14" selection-start-column="17" selection-end-line="14" selection-end-column="17" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="653">
-          <caret line="51" column="96" selection-start-line="51" selection-start-column="96" selection-end-line="51" selection-end-column="96" />
+        <state relative-caret-position="328">
+          <caret line="48" column="41" lean-forward="true" selection-start-line="48" selection-start-column="41" selection-end-line="48" selection-end-column="41" />
           <folding>
             <element signature="e#25#68#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="420">
+          <caret line="28" column="20" lean-forward="true" selection-start-line="28" selection-start-column="20" selection-end-line="28" selection-end-column="20" />
         </state>
       </provider>
     </entry>
