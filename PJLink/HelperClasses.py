@@ -1100,10 +1100,11 @@ class MPackageClass(MExprUtils):
         return self.List(*(self.Rule(*rule) for rule in expr.items()))
 
     def _get_obj_name_sym(self, obj):
-        return getattr(self, "PJLink_"+obj.__qualname__.replace(".", "_"))
+        return obj.__qualname__.replace(".", "`")
 
     def prep_object(self, o, link, coerce = False):
         enc = link.Converter.encode(o, link)
+        link.Env.logf("Encoded object {}. Coersion? {}", enc, coerce)
         return self.get_puttable(enc, link, coerce=coerce)
 
     def get_puttable(self, o, link, coerce = False):

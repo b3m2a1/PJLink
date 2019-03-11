@@ -61,8 +61,7 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             try:
                 res = self.Converter.decode(self)
             except MathLinkException as e:
-                # import traceback as tb
-                # self.Env.log(tb.format_exc())
+                # # self.Env.log_tb()
                 self._clearError()
 
         if res is None:
@@ -76,10 +75,8 @@ from Mathematica), will want to start with the handleCallPacket() method here.
                     res = self._getSingleObject(t1)
                     # print(res)
                 except (MathLinkException, ValueError, TypeError) as e:
-                    import traceback as tb
-
                     self._clearError()
-                    self.Env.log(tb.format_exc())
+                    self.Env.log_tb()
                     pass # Maybe I should handle these?
                 else:
                     if t1 == "Symbol":
@@ -614,14 +611,17 @@ from Mathematica), will want to start with the handleCallPacket() method here.
             if self.wasInterrupted():
                 self._putFunction("Abort", 0)
             else:
-                import traceback as tb
-                self.put(self.M.F(self.M.PackageContext+"PythonTraceback", tb.format_exc()))
+                self.put(
+                    self.M.F(
+                        self.M.PackageContext+"PythonTraceback",
+                        self.Env.get_tb()
+                    )
+                )
         except MathLinkException as e:
             # Need to send something back on link, or this will not be an acceptable branch.
             # About the only thing to do is call endPacket and hope that this will cause
             # $Aborted to be returned.
-            import traceback as tb
-            self._returnTraceback(exc, tb.format_exc())
+            self._returnTraceback(exc, self.Env.get_tb())
         else:
             self._endPacket()
             self.flush()
@@ -666,8 +666,6 @@ from Mathematica), will want to start with the handleCallPacket() method here.
         except Exception as e:
             self.__handleCleanException(e)
             self.__LAST_EXCEPTION_DURING_CALL_HANDLING = e
-            # self.put(tb.format_exc())
-            # self.Env.log(tb.format_exc())
         finally:
             # self.Env.log("end handle call packet")
             StdLink.remove()
@@ -1050,13 +1048,14 @@ class WrappedKernelLink(KernelLink):
     """
 
     def __init__(self, link = None):
-        self.__USE_NUMPY = None
+        self._USE_NUMPY = None
         self._link_connected = False
-        self.__impl = link # ??
+        self._CORE_LINK = link # ??
+        self._ACTIVE_LINK = None # equivalent of Automatic
 
         if isinstance(link, MathLink):
-            self.__impl = link
-            self.__impl._kernel = self
+            self._CORE_LINK = link
+            self._CORE_LINK._kernel = self
             self.addMessageHandler(self._messageHandler) ##
 
         super().__init__()
@@ -1071,6 +1070,16 @@ class WrappedKernelLink(KernelLink):
     def from_new_kernel(cls, debug_level=0):
         return cls.from_init(None, debug_level=debug_level)
 
+    @property
+    def active_link(self):
+        link = self._ACTIVE_LINK
+        if link is None:
+            link = self._CORE_LINK
+        # elif not link.ready:
+        #     self._ACTIVE_LINK = None
+        #     link = self._CORE_LINK
+        return link
+
     def __ensure_connection(self):
         import time
         self._link_connected = self.ready
@@ -1082,177 +1091,152 @@ class WrappedKernelLink(KernelLink):
 
     def close(self):
         # self.__ensure_connection()
-        return self.__impl.close()
+        return self.active_link.close()
     def activate(self):
-        return self.__impl.activate()
+        return self.active_link.activate()
     def connect(self, timeout=None):
-        self._link_connected = self.__impl.connect(timeout=timeout)
+        self._link_connected = self.active_link.connect(timeout=timeout)
         return self._link_connected
 
     @property
     def link_number(self):
         # self.__ensure_connection()
-        return self.__impl.link
-
+        return self.active_link.link
     @property
     def name(self):
         # self.__ensure_connection()
-        return self.__impl.name
+        return self.active_link.name
 
     def _newPacket(self):
         # self.__ensure_connection()
-        return self.__impl._newPacket()
-
+        return self.active_link._newPacket()
     def _endPacket(self):
         # self.__ensure_connection()
-        return self.__impl._endPacket()
-
+        return self.active_link._endPacket()
     def _error(self):
         # self.__ensure_connection()
-        return self.__impl._error()
-
+        return self.active_link._error()
     def _clearError(self):
         # self.__ensure_connection()
-        return self.__impl._clearError()
-
+        return self.active_link._clearError()
     def _setError(self, err):
         # self.__ensure_connection()
-        return self.__impl._setError(err)
-
+        return self.active_link._setError(err)
     def _errorMessage(self):
         # self.__ensure_connection()
-        return self.__impl._errorMessage()
+        return self.active_link._errorMessage()
 
     @property
     def use_numpy(self):
         # self.__ensure_connection()
-        return self.__impl.use_numpy
-
+        return self.active_link.use_numpy
     @use_numpy.setter
     def use_numpy(self, val):
         self._setUseNumPy(val)
 
     def _setUseNumPy(self, val):
         use = bool(val)
-        self.__USE_NUMPY = use
-        self.__impl._setUseNumPy(use)
+        self._USE_NUMPY = use
+        self.active_link._setUseNumPy(use)
 
     def _getUseNumPy(self):
-        return self.__impl._getUseNumPy()
+        return self.active_link._getUseNumPy()
 
     def _setDebugLevel(self, lvl):
-        return self.__impl._setDebugLevel(lvl)
+        return self.active_link._setDebugLevel(lvl)
 
     @property
     def ready(self):
         # self.__ensure_connection()
-        return self.__impl.ready
+        return self.active_link.ready
 
     def flush(self):
         # self.__ensure_connection()
-        return self.__impl.flush()
+        return self.active_link.flush()
 
     def _putNext(self, otype):
         # self.__ensure_connection()
-        return self.__impl._putNext(otype)
+        return self.active_link._putNext(otype)
 
     def _getArgCount(self):
         self.__ensure_connection()
-        return self.__impl._getArgCount()
+        return self.active_link._getArgCount()
 
     def _putArgCount(self, argCount):
         # self.__ensure_connection()
-        return self.__impl._putArgCount(argCount)
+        return self.active_link._putArgCount(argCount)
 
     def _putSize(self, s):
         # self.__ensure_connection()
-        return self.__impl._putSize(s)
+        return self.active_link._putSize(s)
 
     def _bytesToPut(self):
         self.__ensure_connection()
-        return self.__impl._bytesToPut()
+        return self.active_link._bytesToPut()
 
     def _bytesToGet(self):
         self.__ensure_connection()
-        return self.__impl._bytesToGet()
+        return self.active_link._bytesToGet()
 
     def _putData(self, data, num=None):
         # self.__ensure_connection()
-        return self.__impl._putData(data, num)
+        return self.active_link._putData(data, num)
 
     def _getData(self, num):
         self.__ensure_connection()
-        return self.__impl._getData(num)
+        return self.active_link._getData(num)
 
     def _getString(self):
         self.__ensure_connection()
-        return self.__impl._getString()
+        return self.active_link._getString()
 
     def _getByteString(self, missing = 0):
         self.__ensure_connection()
-        return self.__impl._getByteString(missing)
+        return self.active_link._getByteString(missing)
 
     def _putByteString(self, data, num=None):
         # self.__ensure_connection()
-        return self.__impl._putByteString(data)
+        return self.active_link._putByteString(data)
 
     def _putSymbol(self, s):
         # self.__ensure_connection()
-        return self.__impl._putSymbol(s)
+        return self.active_link._putSymbol(s)
 
     def _putDouble(self, s):
         # self.__ensure_connection()
-        return self.__impl._putDouble(s)
+        return self.active_link._putDouble(s)
 
     def _putInt(self, s):
         # self.__ensure_connection()
-        return self.__impl._putInt(s)
+        return self.active_link._putInt(s)
 
     def _putString(self, s):
         # self.__ensure_connection()
-        return self.__impl._putString(s)
+        return self.active_link._putString(s)
 
     def _putBool(self, s):
         self.__ensure_connection()
-        return self.__impl._putBool(s)
+        return self.active_link._putBool(s)
 
     def _check_link(self):
-        return self.__impl._check_link(self)
+        return self.active_link._check_link(self)
 
     def _check_error(self, allowed = None):
-        return self.__impl._check_error(allowed)
+        return self.active_link._check_error(allowed)
 
     def _getTempLink(self):
-        from .LoopbackLink import NativeScratchPadLink
-        link = NativeScratchPadLink(self)
+        from .LoopbackLink import KernelShuttleLink
+        link = KernelShuttleLink(self)
         return link
 
-    def _putOnLoopback(self, o, stack = None):
-        tmp_link = NativeLoopbackLink()
-        try:
-            tmp_link.put(o, stack = stack)
-            self.Env.logf("{}", o)
-            transf = self.__impl.transferExpression(tmp_link)
+    def _putViaLoopback(self, o, stack = None):
+        active = self.active_link
+        with self._getTempLink() as tmp:
+            # self.Env.logf("Current active link {}", self.active_link)
+            transf = tmp.shuttle(o, active, stack = stack, use_loopback = False)
             return transf
-        except Exception as e:
-            import traceback as tb
-            self.Env.log(tb.format_exc())
-            try:
-                tmp_link.close()
-            except:
-                self.Env.log(tb.format_exc())
-            try:
-                tmp_link = NativeLoopbackLink()
-                o = self.M.prep_object(o, self, coerce = True)
-                tmp_link.put(o, stack = stack)
-                transf = self.__impl.transferExpression(tmp_link)
-                return transf
-            except:
-                self.Env.log(tb.format_exc())
-        finally:
-            tmp_link.close()
 
-    def put(self, o, stack = None, coerce = False):
+    def put(self, o, stack = None, coerce = False, use_loopback = True):
         """Puts an object on the link, attempting some type coercion first
         Not clear whether this should all be *here* but it's a fine place at first, at least
 
@@ -1266,14 +1250,22 @@ class WrappedKernelLink(KernelLink):
 
         if stack is None:
             stack = set()
-        self.Env.logf("stack {}", stack)
+        # self.Env.logf("stack {}", stack)
+        res = None
         try:
-            return self.__impl.put(o, stack = stack)
-        except Exception as e:
-            import traceback as tb
-            self.Env.log(tb.format_exc())
-            o = self.M.prep_object(o, self, coerce = True)
-            return self.__impl.put(o, stack = stack)
+            if use_loopback:
+                res = self._putViaLoopback(o, stack = stack)
+            else:
+                res = self.active_link.put(o, stack = stack)
+        except:
+            self.Env.log("...wtf?")
+            self.Env.log_tb()
+            if not coerce:
+                o = self.M.prep_object(o, self, coerce = True)
+                if use_loopback:
+                    res = self._putViaLoopback(o, stack = stack)
+                else:
+                    res = self.active_link.put(o, stack = stack, use_loopback = False)
 
     def _putArrayPiecemeal(self, o, heads = None, head_index = 0, maxlen = 250):
         """Calls put for each piece of o. Inefficient fallback, effectively.
@@ -1296,104 +1288,104 @@ class WrappedKernelLink(KernelLink):
 
     def _getInt(self):
         self.__ensure_connection()
-        return self.__impl._getInt()
+        return self.active_link._getInt()
 
     def _getLong(self):
         self.__ensure_connection()
-        return self.__impl._getLong()
+        return self.active_link._getLong()
 
     def _getDouble(self):
         self.__ensure_connection()
-        return self.__impl._getDouble()
+        return self.active_link._getDouble()
 
     def _getByte(self):
         self.__ensure_connection()
-        return self.__impl._getByte()
+        return self.active_link._getByte()
 
     def _getChar(self):
         self.__ensure_connection()
-        return self.__impl._getChar()
+        return self.active_link._getChar()
 
     def _getFloat(self):
         self.__ensure_connection()
-        return self.__impl._getFloat()
+        return self.active_link._getFloat()
 
     def _getShort(self):
         self.__ensure_connection()
-        return self.__impl._getShort()
+        return self.active_link._getShort()
 
     def _getSymbol(self):
         self.__ensure_connection()
-        return self.__impl._getSymbol()
+        return self.active_link._getSymbol()
 
     def _getFunction(self):
         self.__ensure_connection()
-        return self.__impl._getFunction()
+        return self.active_link._getFunction()
 
     def _putFunction(self, f, argCount):
         # self.__ensure_connection()
-        return self.__impl._putFunction(f, argCount)
+        return self.active_link._putFunction(f, argCount)
 
     def _checkFunction(self, f, argCount=None):
         self.__ensure_connection()
-        return self.__impl._checkFunction(f, argCount)
+        return self.active_link._checkFunction(f, argCount)
 
     def transferExpression(self, source):
         self.__ensure_connection()
-        return self.__impl.transferExpression(source)
+        return self.active_link.transferExpression(source)
 
     def transferToEndOfLoopbackLink(self, source):
         self.__ensure_connection()
-        return self.__impl.transferToEndOfLoopbackLink(source)
+        return self.active_link.transferToEndOfLoopbackLink(source)
 
     def _getExpr(self):
         self.__ensure_connection()
-        return self.__impl._getExpr()
+        return self.active_link._getExpr()
 
     def peek(self):
         self.__ensure_connection()
-        return self.__impl.peek()
+        return self.active_link.peek()
 
     def _getMessage(self): #wut?
         self.__ensure_connection()
-        return self.__impl._getMessage()
+        return self.active_link._getMessage()
 
     def _putMessage(self, msg):
         self.__ensure_connection()
-        return self.__impl._putMessage(msg)
+        return self.active_link._putMessage(msg)
 
     def _messageReady(self): #huh?
-        return self.__impl._messageReady()
+        return self.active_link._messageReady()
 
     @property
     def checkpoint(self):
-        return self.__impl.checkpoint()
+        return self.active_link.checkpoint()
 
     def make_checkpoint(self):
-        return self.__impl.make_checkpoint()
+        return self.active_link.make_checkpoint()
 
     def _createMark(self):
         self.__ensure_connection()
-        return self.__impl._createMark()
+        return self.active_link._createMark()
 
     def _seekMark(self, mark):
         self.__ensure_connection()
-        return self.__impl._seekMark(mark)
+        return self.active_link._seekMark(mark)
 
     def _destroyMark(self, mark):
         self.__ensure_connection()
-        return self.__impl._destroyMark(mark)
+        return self.active_link._destroyMark(mark)
 
     def _setYieldFunctionOn(self, target, meth):
         # self.__ensure_connection()
-        return self.__impl._setYieldFunctionOn(target, meth)
+        return self.active_link._setYieldFunctionOn(target, meth)
 
     def _addMessageHandlerOn(self, target, meth):
         # self.__ensure_connection()
-        return self.__impl._addMessageHandlerOn(target, meth)
+        return self.active_link._addMessageHandlerOn(target, meth)
 
     def _wrap(self, checkLink = True, checkError = True, check = None, lock = True):
-        return self.__impl._wrap(checkLink, checkError, check, lock)
+        return self.active_link._wrap(checkLink, checkError, check, lock)
 
     def _nextPacket(self):
         # Code here is not just a simple call to impl.nextPacket(). For a KernelLink, nextPacket() returns a
@@ -1411,7 +1403,7 @@ class WrappedKernelLink(KernelLink):
         pkt = None
         mark = LinkMark(self).init()
         try:
-            pkt = self.__impl._nextPacket()
+            pkt = self.active_link._nextPacket()
         except MathLinkException as e:
             if e.name == "UnknownPacket":
                 self._clearError()
@@ -1439,7 +1431,7 @@ class WrappedKernelLink(KernelLink):
         return pkt
 
     def _getNext(self):
-        res = self.__impl._getNext()
+        res = self.active_link._getNext()
         name = self.Env.fromTypeToken(res)
         if name == "Symbol" and self._nextIsObject():
             res = self.Env.toTypeToken("Object")
@@ -1447,7 +1439,7 @@ class WrappedKernelLink(KernelLink):
 
     def _getType(self):
         self.__ensure_connection()
-        res = self.__impl._getType()
+        res = self.active_link._getType()
         name = self.Env.fromTypeToken(res)
         if name == "Symbol" and self._nextIsObject():
             res = self.Env.toTypeToken("Object")
@@ -1471,14 +1463,13 @@ class WrappedKernelLink(KernelLink):
             return super()._getArray(otype, depth, headList)
         else:
             # We don't _need_ to forward--just an optimization.
-            return self.__impl._getArray(otype, depth, headList)
+            return self.active_link._getArray(otype, depth, headList)
 
     def _putArray(self, o, headList = None, stack = None):
         try:
             arr, tint, dims, depth = self._get_put_array_params(o)
             # if it worked arr is in efficient form so this is fine
-            self.__impl._putArray(o, headList = None)
+            self.active_link._putArray(o, headList = None)
         except (ValueError, TypeError) as e:
-            import traceback as tb
-            self.Env.log(tb.format_exc())
+            self.Env.log_tb()
             self._putArrayPiecemeal(o, headList, 0, stack = stack)

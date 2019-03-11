@@ -618,12 +618,27 @@ class MathLinkEnvironment:
         return packet_name
 
     @classmethod
+    def system_name(cls):
+        plat = cls.PLATFORM
+        if plat == "Darwin":
+            sys_name = "MacOSX"
+        else:
+            sys_name = plat
+        return sys_name
+
+    @classmethod
+    def get_NativeLibrary_root(cls, use_default = True):
+        import os
+        base = os.path.dirname(os.path.abspath(__file__))
+        return os.path.join(base, "PJLinkNativeLibrary")
+
+    @classmethod
     def get_Applications_root(cls, use_default = True):
         import os
 
         if cls.APPLICATIONS_ROOT is None or not use_default:
-            plat = cls.PLATFORM
-            if plat == "Darwin":
+            plat = cls.system_name()
+            if plat == "MacOSX":
                 root = os.sep + "Applications"
             elif plat == "Linux": #too much stuff going on to really know if I'm handling this right
                 root = os.sep + os.path.join("usr", "local", "Wolfram", "Mathematica")
@@ -677,8 +692,8 @@ class MathLinkEnvironment:
         import os, re
 
         mname = version
-        plat = cls.PLATFORM
-        if plat == "Darwin":
+        plat = cls.system_name()
+        if plat == "MaxOSX":
             if mname is None:
                 mname = "Mathematica.app"
             elif isinstance(mname, float) or (isinstance(mname, str) and re.match(r"\d\d.\d", mname)):
@@ -710,15 +725,15 @@ class MathLinkEnvironment:
             root = None
 
         if root is None:
-            plat = cls.PLATFORM
+            plat = cls.system_name()
             if mname is None and cls.CURRENT_MATHEMATICA is None:
                 root = cls.get_Installed_Mathematica(use_default=use_default)
-                if plat == "Darwin":
+                if plat == "MacOSX":
                     root = os.path.join(root, "Contents")
             else:
                 app_root = cls.get_Applications_root(use_default=use_default)
                 mname = cls.get_Mathematica_name(mname)
-                if plat == "Darwin":
+                if plat == "MacOSX":
                     root = os.path.join(app_root, mname, "Contents")
                 elif plat == "Linux":
                     root = os.path.join(app_root, mname)
@@ -739,7 +754,7 @@ class MathLinkEnvironment:
             mbin = None
 
         if mbin is None:
-            plat = cls.PLATFORM
+            plat = cls.system_name()
             try:
                 root = cls.get_Mathematica_root(version, use_default=use_default)
             except ValueError:
@@ -748,7 +763,7 @@ class MathLinkEnvironment:
                 else:
                     mbin = version
             else:
-                if plat == "Darwin":
+                if plat == "MacOSX":
                     mbin = os.path.join(root, "MacOS", "WolframKernel")
                     if not os.path.isfile(mbin):
                         mbin = os.path.join(root, "MacOS", "MathKernel")
@@ -779,8 +794,7 @@ class MathLinkEnvironment:
             mbin = None
 
         if mbin is None:
-            plat = cls.PLATFORM
-
+            plat = cls.system_name()
             try:
                 root = cls.get_Mathematica_root(version, use_default=use_default)
             except ValueError:
@@ -789,10 +803,13 @@ class MathLinkEnvironment:
                 else:
                     mbin = version
             else:
-                if plat == "Darwin":
+                if plat == "MacOSX":
                     mbin = os.path.join(root, "MacOS", "Mathematica")
                 elif plat == "Linux":
-                    mbin = os.path.join(root, "SystemFiles", "Kernel", "Binaries", "Linux-x86-64", "Mathematica")
+                    bin_bit = "Linux"
+                    if cls.get_is_64_bit():
+                        bin_bit += "-x86-64"
+                    mbin = os.path.join(root, "SystemFiles", "Kernel", "Binaries", bin_bit, "Mathematica")
                 elif plat == "Windows":
                     mbin = os.path.join(root, "Mathematica")
 
@@ -800,6 +817,17 @@ class MathLinkEnvironment:
             raise ValueError("Couldn't find Mathematica executable for platform {} ({} is not a file)".format(plat, mbin))
 
         return mbin
+
+    @classmethod
+    def get_is_64_bit(cls):
+        plat = cls.PLATFORM
+        if plat == "Windows":
+            import struct
+            is_64 = 8 * struct.calcsize("P") == 64
+        else:
+            import sys
+            is_64 = sys.maxsize > 2**32
+        return is_64
 
     @classmethod
     def get_MathLink_library(cls, version = None, use_default = True):
@@ -810,31 +838,39 @@ class MathLinkEnvironment:
         else:
             lib = None
 
-        plat = cls.PLATFORM
+        sys_name = cls.system_name()
+
+        if lib is None:
+            core_lib = os.path.join(cls.get_NativeLibrary_root(), "src", "MathLinkBinaries")
+            if os.path.exists(core_lib):
+                lib = os.path.join(core_lib, sys_name)
+                if cls.get_is_64_bit():
+                    lib = lib + "-x86-64"
+                if not os.path.exists(lib):
+                    lib = None
 
         if lib is None:
             try:
                 root = cls.get_Mathematica_root(version, use_default=use_default)
             except ValueError:
                 # if not (isinstance(version, str) and os.path.isfile(version)):
-                raise ValueError("Don't know how to find MathLink library on system {}".format(plat))
+                raise ValueError("Don't know how to find MathLink library on system {}".format(sys_name))
                 # else:
                 #     mbin = version
             else:
                 lib = os.path.join(root, "SystemFiles", "Links", "MathLink", "DeveloperKit")
 
-                if plat == "Darwin":
-                    sys_name = "MacOSX"
-                else:
-                    sys_name = plat
+                ext_list = [ "-x86" ]
+                if cls.get_is_64_bit():
+                    ext_list.append("-x86-64")
 
-                ext_list = [ "-x86-64", "-x86" ]
+                core_lib = lib
                 for ext in ext_list:
-                    lib = os.path.join(lib, sys_name + ext, "CompilerAdditions")
+                    lib = os.path.join(core_lib, sys_name + ext, "CompilerAdditions")
                     if os.path.exists(lib):
                         break
                 else:
-                    lib = os.path.join(lib, sys_name, "CompilerAdditions")
+                    lib = os.path.join(core_lib, sys_name, "CompilerAdditions")
 
         if not os.path.exists(lib):
             raise ValueError("Couldn't find MathLink library for platform {} (path {} does not exist)".format(plat, lib))
@@ -881,3 +917,16 @@ class MathLinkEnvironment:
     def logf(cls, logs, *args, **kwargs):
         if cls.ALLOW_LOGGING:
             cls.log(logs.format(*args, **kwargs))
+
+    TRACEBACK_LIMIT = 3
+    @classmethod
+    def get_tb(cls, limit = None):
+        if limit is None:
+            limit = cls.TRACEBACK_LIMIT
+        import traceback as tb
+        return tb.format_exc(limit)
+
+    @classmethod
+    def log_tb(cls, limit = None):
+        if cls.ALLOW_LOGGING:
+            cls.log(cls.get_tb(limit))

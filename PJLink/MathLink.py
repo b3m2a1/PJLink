@@ -676,18 +676,21 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
     def _putNone(self, none = None):
         return self._putSymbol("Null")
     @abstractmethod
-    def _putArray(self, o, headList = None, stack = None):
+    def _putArray(self, o, headList = None):
         raise NotImplemented
     @abstractmethod
     def _putByteString(self, data, num=None):
         raise NotImplemented
 
-    @abstractmethod
-    def _getTempLink(self):
-        raise NotImplemented
+    # @abstractmethod
+    # def _getTempLink(self):
+    #     raise NotImplemented
     def _putMLFunction(self, call):
         self._putFunction(call.head, call.argCount)
     def _putMLExprArg(self, arg, stack = None):
+        # Because python can have circular references
+        # we need a way to break a circular reference loop
+        # the cleanest way is to use a set() that we test for object inclusion
         if stack is None:
             self.put(arg, stack = stack)
         else:
@@ -697,21 +700,10 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
                 self.put(arg, stack = stack)
             else:
                 self._putRecursionError(arg)
-    def _putMLExpr(self, call, stack = None, use_tmp = True):
-        if use_tmp:
-            tmp = self._getTempLink()
-            try:
-                tmp._putMLExprArg(call)
-            except:
-                raise
-            else:
-                self.transferToEndOfLoopbackLink(tmp)
-            finally:
-                tmp.close()
-        else:
-            self._putMLFunction(MLFunction(call.head, len(call.args)))
-            for a in call.args:
-                self._putMLExprArg(a, stack=stack)
+    def _putMLExpr(self, call, stack = None):
+        self._putMLFunction(MLFunction(call.head, len(call.args)))
+        for a in call.args:
+            self._putMLExprArg(a, stack=stack)
         if call.end:
             self._endPacket()
     def _putRecursionError(self, expr):
@@ -756,7 +748,11 @@ by more direct methods (specifically, STRING, BOOLEAN, LONG, BIGDECIMAL, BIGINTE
                         putter = getattr(self, '_put'+val)
                         break
                 else:
-                    if isinstance(o, (list, tuple)):
+                    array_types = (list, tuple, BufferedNDArray)
+                    if self.use_numpy:
+                        import numpy as np
+                        array_types = array_types + (np.ndarray, )
+                    if isinstance(o, array_types):
                         putter = self._putArray
                     else:
                         putter = None

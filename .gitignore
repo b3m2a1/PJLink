@@ -3,9 +3,12 @@
 *.pyc
 log.txt
 Java
+PJLink/PJLinkNativeLibrary/*/PJLinkNativeLibrary.so
+PJLink/PJLinkNativeLibrary/*/PJLinkNativeLibrary.pyd
 PJLink/PJLinkNativeLibrary/PJLinkNativeLibrary.so
 PJLink/PJLinkNativeLibrary/PJLinkNativeLibrary.pyd
 PJLink/PJLinkNativeLibrary/src/build
+PJLink/PJLinkNativeLibrary/src/MathLinkBinaries
 .idea
 *.o
 *.a

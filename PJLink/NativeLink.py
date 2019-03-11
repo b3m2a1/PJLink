@@ -454,6 +454,7 @@ class NativeLink(MathLink):
 
     def transferToEndOfLoopbackLink(self, source):
         with self._wrap():
+            Env.logf("Transferring to {} from {}", self, source)
             with source._wrap():
                 if isinstance(source, NativeLink):
                     self._call("TransferToEndOfLoopbackLink", source)
@@ -560,10 +561,10 @@ class NativeLink(MathLink):
 
         return res_array
 
-    def _getTempLink(self):
-        from .LoopbackLink import NativeScratchPadLink
-        return NativeScratchPadLink(self)
-    def put(self, o, stack = None):
+    # def _getTempLink(self):
+    #     from .LoopbackLink import NativeShuttleLink
+    #     return NativeShuttleLink(self)
+    def put(self, o, stack = None, use_loopback = False):
         """ We overwrite this so that if it has an attached _kernel attribute that
         gets used
 

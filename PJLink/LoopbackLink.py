@@ -19,7 +19,14 @@ MathLinkFactory class.
 LoopbackLink has no methods; it is simply a type that marks certain links as having
 special properties.
 """
-    pass
+    def __enter__(self):
+        return self
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            self.close()
+        except:
+            pass
+
 
 class NativeLoopbackLink(NativeLink, LoopbackLink):
 
@@ -63,9 +70,7 @@ class NativeLoopbackLink(NativeLink, LoopbackLink):
     def _addMessageHandlerOn(self, target, meth):
         return False
 
-
-
-class NativeScratchPadLink(NativeLoopbackLink):
+class NativeShuttleLink(NativeLoopbackLink):
 
     def __init__(self, parent, init=None):
         super().__init__(init)
@@ -75,8 +80,29 @@ class NativeScratchPadLink(NativeLoopbackLink):
         except AttributeError:
             self._kernel = parent
 
-    def _putMLExpr(self, call, stack = None, tmp = False):
-        NativeLink._putMLExpr(self, call, stack = None, use_tmp = False)
+    def _putMLExpr(self, call, stack = None):
+        return NativeLink._putMLExpr(self, call, stack = stack)
+
+    def shuttle(self, expr, link, stack = None, use_loopback = False):
+        self.Env.logf("Shuttling {} to {}", expr, link)
+        self.put(expr, stack = stack, use_loopback = False)
+        return link.transferToEndOfLoopbackLink(self)
 
     def _getUseNumPy(self):
         return self.parent.use_numpy
+
+class KernelShuttleLink(NativeShuttleLink):
+
+    def __enter__(self):
+        try:
+            self._cached_active = self.parent._ACTIVE_LINK
+            self.parent._ACTIVE_LINK = self
+        except AttributeError:
+            pass
+        return super().__enter__()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            self.parent._ACTIVE_LINK = self._cached_active
+        except AttributeError:
+            pass
+        return super().__exit__(exc_type, exc_val, exc_tb)

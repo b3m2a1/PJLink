@@ -76,7 +76,7 @@ PythonNew::usage="Makes a new python object";
 PythonObjectMutate::usage="MutationHandler for python objects";
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*SymbolicPython*)
 
 
@@ -94,6 +94,8 @@ Internal`WithLocalSettings[
   System`Private`RestoreContextPath[];
   EndPackage[];
   ];
+BeginPackage["`SymbolicPython`Package`"];
+EndPackage[];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -200,7 +202,11 @@ InstallPython[version:_?NumberQ|_String|Automatic:Automatic, ops:OptionsPattern[
         pyExe,
         pyKer = FindInstalledPython[version],
         link = OptionValue[LinkObject],
-        lname = Replace[OptionValue["LinkName"], Except[String]:>Sequence@@{}],
+        lname = 
+          Replace[
+            OptionValue["LinkName"], 
+            Except[String]:>"PJLink+"<>RandomChoice[Alphabet[], 8]
+            ],
         proc = OptionValue[ProcessObject],
         failed = False,
         failed2 = True,
@@ -442,7 +448,51 @@ cleanUpEnv[pker_, version_, $Aborted]:=
 cleanUpEnv[_, _, p_]:=p
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
+(*preprocessExpr*)
+
+
+registerHintingRule[hints_, expr_, head_]:=
+  With[{h=Hash[expr], e=expr},
+    hints[head[h]]=e;
+    PyVerbatim[head[h]]
+    ];
+registerHintingRule~SetAttributes~HoldFirst;
+
+
+preprocessExpr[expr_, head_]:=
+  Module[{hints = <||>, held = Hold[expr]},
+    held = held /. (Replace[Values@$TypeHints, 
+      {
+        (a_ :> (h:With|Module|Block)[v_,Verbatim[Condition][b_, c_]]):>(
+          a:>
+            h[
+              v,
+              With[{rule=registerHintingRule[hints, b, head]},
+                Condition[rule, c]
+                ]
+             ]
+          ),
+        (a_ :> Verbatim[Condition][b_, c_]):>(
+          a:>
+            With[{cc=c, rule=If[c, registerHintingRule[hints, b, head]]},
+              Condition[rule, cc]
+              ]
+          ),
+        (a_ :> b_):>
+          (
+            a:>
+              RuleCondition[registerHintingRule[hints, b, head], True]
+            )
+        },
+      {1}
+      ]);
+    {hints, held}
+    ];
+preprocessExpr~SetAttributes~HoldFirst
+
+
+(* ::Subsubsection:: *)
 (*Evaluate*)
 
 
@@ -460,11 +510,16 @@ PyEvaluate[expr_, ops:OptionsPattern[]]:=
         link,
         sym,
         cm,
-        to = If[NumericQ@OptionValue[TimeConstraint], OptionValue[TimeConstraint], 10]
+        to = If[NumericQ@OptionValue[TimeConstraint], OptionValue[TimeConstraint], 10],
+        hints,
+        prexpr,
+        typeHinted
       },
       If[AssociationQ@pker,
-        sym = ToPython@ToSymbolicPython[expr];
+        {hints, prexpr} = preprocessExpr[expr, typeHinted];
+        sym = ToPython[ToSymbolicPython@@prexpr];
         If[OptionValue@"EchoSymbolicForm", Echo@sym];
+        sym = sym /. hints;
         link = pker["Link"];
         cleanUpEnv[
           pker, 
@@ -659,8 +714,8 @@ If[!AssociationQ@$TypeHints,
 (*AddTypeHints*)
 
 
-AddTypeHints[eval_] :=
-  Replace[eval, Values@$TypeHints];
+AddTypeHints[eval_, level_:{0}] :=
+  Replace[eval, Values@$TypeHints, level];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -695,7 +750,7 @@ Format[pt:PythonTraceback[ts_], StandardForm]:=
     ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*pythonAttachSymbol*)
 
 
@@ -711,7 +766,7 @@ pythonAttachSymbol[obj:PythonObject[id_Integer, class_String, addr_Integer]]:=
     ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*pythonWrapSymbol*)
 
 
@@ -725,7 +780,7 @@ pythonWrapSymbol[sym_]:=
     )
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PythonNew*)
 
 
@@ -735,7 +790,7 @@ PythonNew[expr_, args:___]:=
     ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PythonObject*)
 
 
