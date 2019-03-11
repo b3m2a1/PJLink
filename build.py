@@ -13,6 +13,7 @@ if not os.path.exists(target_bin_path):
     url_targ = url_root+"/"+target_arch+".zip"+"?_key="+math_link_key
 
     print("Downloading MathLink archives from: {}".format(url_targ))
+    print(list(math_link_key))
     try:
         import wget
         from zipfile import ZipFile
@@ -47,7 +48,7 @@ try:
     os.rename(so_file, new_so)
 except:
     import traceback as tb
-    tb.print_exception()
+    tb.print_exc()
     sys.exit(1)
 else:
     sys.exit(0)
