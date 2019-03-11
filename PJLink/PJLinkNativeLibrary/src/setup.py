@@ -51,7 +51,9 @@ if mathlink_lib_file is not None:
             'PJLinkNativeLibrary',
             sources = ['PJLinkNativeLibrary.cpp'],
             library_dirs = [ build_dir ],
-            libraries = [ mathlink_name, "uuid" ],
+            ##  ${LIBDIR}/libML64i4.a -lm -lpthr
+            # ead -lrt -ldl -luuid
+            libraries = [ mathlink_name, "m", "pthread", "rt", "dl", "uuid" ],
             include_dirs= [ mathlink_dir ]
             #extra_compile_args=['-std=c++11'] # Travis apparently needs this to build cleanly...
             # extra_link_args=[ ]

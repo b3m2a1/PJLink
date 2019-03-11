@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/MacOSX-x86-64/PJLinkNativeLibrary.so" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
@@ -67,8 +66,8 @@
           <entry key="gitignore" value="161" />
           <entry key="java" value="14" />
           <entry key="m" value="3483" />
-          <entry key="py" value="173962" />
-          <entry key="txt" value="640" />
+          <entry key="py" value="174008" />
+          <entry key="txt" value="666" />
           <entry key="wl" value="399" />
           <entry key="yml" value="65" />
         </counts>
@@ -78,8 +77,8 @@
           <entry key="HTML" value="2" />
           <entry key="JAVA" value="14" />
           <entry key="Mathematica" value="3882" />
-          <entry key="PLAIN_TEXT" value="933" />
-          <entry key="Python" value="173960" />
+          <entry key="PLAIN_TEXT" value="959" />
+          <entry key="Python" value="174006" />
           <entry key="YAML" value="65" />
         </counts>
       </usages-collector>
@@ -103,8 +102,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="111">
-              <caret line="36" column="81" selection-start-line="36" selection-start-column="81" selection-end-line="36" selection-end-column="81" />
+            <state relative-caret-position="358">
+              <caret line="54" column="34" lean-forward="true" selection-start-line="54" selection-start-column="34" selection-end-line="54" selection-end-column="34" />
               <folding>
                 <element signature="e#25#68#0" expanded="true" />
               </folding>
@@ -627,7 +626,21 @@
       <option name="project" value="LOCAL" />
       <updated>1552303610521</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="Odd linking issues in Travis">
+      <created>1552303791229</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1552303791229</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Including UUID I guess">
+      <created>1552304367494</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1552304367494</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="TodoView">
@@ -692,7 +705,8 @@
     <MESSAGE value="Travis needs C++ 2011?" />
     <MESSAGE value="Trying to remove unnecessary includes for Travis" />
     <MESSAGE value="Odd linking issues in Travis" />
-    <option name="LAST_COMMIT_MESSAGE" value="Odd linking issues in Travis" />
+    <MESSAGE value="Including UUID I guess" />
+    <option name="LAST_COMMIT_MESSAGE" value="Including UUID I guess" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1117,8 +1131,8 @@ print(link._error())</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="111">
-          <caret line="36" column="81" selection-start-line="36" selection-start-column="81" selection-end-line="36" selection-end-column="81" />
+        <state relative-caret-position="358">
+          <caret line="54" column="34" lean-forward="true" selection-start-line="54" selection-start-column="34" selection-end-line="54" selection-end-column="34" />
           <folding>
             <element signature="e#25#68#0" expanded="true" />
           </folding>
