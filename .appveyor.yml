@@ -1,0 +1,33 @@
+# Once I have the MathLink binaries I'm gonna try to build on Windows too
+# For that we'll use AppVeyor from: https://packaging.python.org/guides/supporting-windows-using-appveyor/#appveyor-yml
+# With this we'll have Linux via Travis, Windows via AppVeyor, and I can easily build Mac locally
+
+environment:
+
+  matrix:
+
+  # For Python versions available on Appveyor, see
+  # https://www.appveyor.com/docs/windows-images-software/#python
+  # The list here is complete (excluding Python 2.6, which
+  # isn't covered by this document) at the time of writing.
+
+  - PYTHON: "C:\\Python35-x64"
+  - PYTHON: "C:\\Python36-x64"
+
+install:
+  - "%PYTHON%\\python.exe -m pip install wget"
+
+script:
+  - "%PYTHON%\\python.exe build.py"
+
+deploy:
+  release: "Windows"
+  description: 'Windows Binary'
+  provider: GitHub
+  auth_token:
+    secure: ifPeZ5H1LBaX4yogsR8BegGce+auO3xx2b4PHGfNha2o5uax3BMJ/bqu9kqwFoFsbQU3kFfacQUM6kN26Xa8RbSPyHzmF+IlO67Wvpt/Z1ABQ8AmZiZXOMBAvm5Uqopz2DgceV3s87wjFc+mCHVmA0OEHtYTEn0R2SdoWWFyzN95ETCyX2DX154cyiMLRx8LGT60ed8RjMqRHFMP+szRc+Bqr7of5f41rqyC+GFnrj0vRWdZ0P3e5M8Yr7RYqgrLRCQ4cgKzYtDs76t582HHmseBcymb2MBbM71Jw0nD0ncGpFLt6z3uhd3Qq62xCes26/HP3rLe4aNLPrSUrj/z5lgub5WhGuujsfPLM7W8SCBTnbGKuLgXzlHsnT1VNQcDtKb2tgVDJEkEf976cuawI6CERCSKBDycjWLfCO6avI51Y5K/G27g1PGzCEP56oDjCAHmrCsdUj16QdzW0hwJm8ZGiSpB8CBA1LjBT2TtO+nJKjc66mGq/MC8U+Nzztvf4uRgtC8FERL7lKDSNYpBVgAfJlsE2eR91pjGabLCNdtedR4qKwcctIs0x9Y6LEK/7iGso6MN/ggaJteivVHoJugs3pbHpkrz4h1sD98CBqE1NLQdiAc4DcjbRcRgu5G4wqmdFStf+3igzzlsF8LpDgOqR2sT9Ga/LKKNQHL+pTc=
+  artifact: PJLink/PJLinkNativeLibrary/Windows-x86-64/PJLinkNativeLibrary.so
+  draft: true
+  prerelease: true
+  on:
+    repo: b3m2a1/PJLink

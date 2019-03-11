@@ -1,14 +1,22 @@
 language: python
 python:
-  - "3.5"
-  - "3.6"
-  - "3.7"
-
+- '3.5'
+- '3.6'
 os:
-  - linux
-
+- linux
 install:
 - pip install wget
-
 script:
 - python build.py
+before_deploy:
+  - git config --local user.name "b3m2a1-builder"
+  - git config --local user.email "b3m2a1+machine@gmail.com"
+deploy:
+  provider: releases
+  api_key:
+    secure: ifPeZ5H1LBaX4yogsR8BegGce+auO3xx2b4PHGfNha2o5uax3BMJ/bqu9kqwFoFsbQU3kFfacQUM6kN26Xa8RbSPyHzmF+IlO67Wvpt/Z1ABQ8AmZiZXOMBAvm5Uqopz2DgceV3s87wjFc+mCHVmA0OEHtYTEn0R2SdoWWFyzN95ETCyX2DX154cyiMLRx8LGT60ed8RjMqRHFMP+szRc+Bqr7of5f41rqyC+GFnrj0vRWdZ0P3e5M8Yr7RYqgrLRCQ4cgKzYtDs76t582HHmseBcymb2MBbM71Jw0nD0ncGpFLt6z3uhd3Qq62xCes26/HP3rLe4aNLPrSUrj/z5lgub5WhGuujsfPLM7W8SCBTnbGKuLgXzlHsnT1VNQcDtKb2tgVDJEkEf976cuawI6CERCSKBDycjWLfCO6avI51Y5K/G27g1PGzCEP56oDjCAHmrCsdUj16QdzW0hwJm8ZGiSpB8CBA1LjBT2TtO+nJKjc66mGq/MC8U+Nzztvf4uRgtC8FERL7lKDSNYpBVgAfJlsE2eR91pjGabLCNdtedR4qKwcctIs0x9Y6LEK/7iGso6MN/ggaJteivVHoJugs3pbHpkrz4h1sD98CBqE1NLQdiAc4DcjbRcRgu5G4wqmdFStf+3igzzlsF8LpDgOqR2sT9Ga/LKKNQHL+pTc=
+  file: PJLink/PJLinkNativeLibrary/Linux-x86-64/PJLinkNativeLibrary.so
+  skip_cleanup: true
+  draft: true
+  on:
+    repo: b3m2a1/PJLink
