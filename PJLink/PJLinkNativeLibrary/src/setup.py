@@ -48,8 +48,8 @@ if mathlink_lib_file is not None:
             sources = ['PJLinkNativeLibrary.cpp'],
             library_dirs = [ build_dir ],
             libraries = [ mathlink_name ],
-            include_dirs= [ mathlink_dir ],
-            extra_compile_args=['-std=c++11'] # Travis apparently needs this to build cleanly...
+            include_dirs= [ mathlink_dir ]
+            #extra_compile_args=['-std=c++11'] # Travis apparently needs this to build cleanly...
             #extra_link_args=[ ]
         )
 

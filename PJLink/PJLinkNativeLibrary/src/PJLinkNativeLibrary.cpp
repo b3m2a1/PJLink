@@ -27,8 +27,8 @@
 //#define JDEBUGLEVEL 0
 
 //#include <cstdint>
-//#include <cerrno>
-//#include <csignal>
+#include <cerrno>
+#include <csignal>
 //#include <cstdlib>
 //#include <fcntl.h>
 
