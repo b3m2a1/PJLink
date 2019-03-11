@@ -888,7 +888,7 @@ class MathLinkEnvironment:
 
         if lib_name is None:
             lib_dir = cls.get_MathLink_library(version, use_default=use_default)
-            plat = cls.PLATFORM
+            # plat = cls.PLATFORM
             math_link_names = []
             for lib_file in os.listdir(lib_dir):
                 name, ext = os.path.splitext(lib_file)
@@ -897,6 +897,12 @@ class MathLinkEnvironment:
                     if len(name_bits)>1:
                         sort_bits = [int(v) for v in name_bits[1].split(".")]
                         math_link_names.append((name.strip("lib"), sort_bits))
+                    else:
+                        name_bits = name.split("ML")
+                        if len(name_bits)>1:
+                            sort_bits = [ int(v) for v in name_bits[1].split("i") ]
+                            math_link_names.append((name.strip("lib"), sort_bits))
+
             if len(math_link_names) == 0:
                 raise ValueError("Couldn't find any MathLink library files in {}".format(lib_dir))
             math_link_names = sorted(math_link_names, key=lambda b:b[1], reverse=True)
