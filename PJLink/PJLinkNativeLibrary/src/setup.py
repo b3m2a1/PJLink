@@ -34,13 +34,23 @@ for lib in os.listdir(mathlink_dir):
         shutil.copyfile(os.path.join(mathlink_dir, lib), mathlink_lib_file)
 
 if mathlink_lib_file is not None:
-    module1 = Extension(
-        'PJLinkNativeLibrary',
-        sources = ['PJLinkNativeLibrary.cpp'],
-        library_dirs = [ build_dir ],
-        libraries = [ mathlink_name ],
-        include_dirs= [ mathlink_dir ]
-    )
+    if plat != "Linux":
+        module1 = Extension(
+            'PJLinkNativeLibrary',
+            sources = ['PJLinkNativeLibrary.cpp'],
+            library_dirs = [ build_dir ],
+            libraries = [ mathlink_name ],
+            include_dirs= [ mathlink_dir ]
+        )
+    else:
+        module1 = Extension(
+            'PJLinkNativeLibrary',
+            sources = ['PJLinkNativeLibrary.cpp'],
+            library_dirs = [ build_dir ],
+            libraries = [ mathlink_name ],
+            include_dirs= [ mathlink_dir ],
+            extra_compile_args=['-std=c++11'] # Travis apparently needs this to build cleanly...
+        )
 
     setup (name = 'PJLinkNativeLibrary',
            version = '1.0',
