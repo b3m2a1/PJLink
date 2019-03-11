@@ -18,7 +18,7 @@ if not os.path.exists(target_bin_path):
 
         tmp_ = os.path.join(lib_root, target_arch+".zip")
         wget.download(url_targ, tmp_)
-        zipfile = ZipFile.open(tmp_)
+        zipfile = ZipFile(tmp_)
         zipfile.extractall(download_root)
         os.remove(tmp_)
 

@@ -4,16 +4,9 @@
     <option name="SCOPE_TYPE" value="3" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="Relinked SDK (finally)">
-      <change afterPath="$PROJECT_DIR$/Tests/TestUtils.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Tests/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Tests/_old_tests.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Tests/run_tests.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Tests/test_results.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Tests/tests.py" afterDir="false" />
+    <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.travis.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.travis.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/HelperClasses.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/HelperClasses.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.py" beforeDir="false" afterPath="$PROJECT_DIR$/build.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -73,10 +66,10 @@
           <entry key="gitignore" value="161" />
           <entry key="java" value="14" />
           <entry key="m" value="3483" />
-          <entry key="py" value="173402" />
-          <entry key="txt" value="286" />
+          <entry key="py" value="173526" />
+          <entry key="txt" value="312" />
           <entry key="wl" value="399" />
-          <entry key="yml" value="42" />
+          <entry key="yml" value="48" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
@@ -84,9 +77,9 @@
           <entry key="HTML" value="2" />
           <entry key="JAVA" value="14" />
           <entry key="Mathematica" value="3882" />
-          <entry key="PLAIN_TEXT" value="579" />
-          <entry key="Python" value="173400" />
-          <entry key="YAML" value="42" />
+          <entry key="PLAIN_TEXT" value="605" />
+          <entry key="Python" value="173524" />
+          <entry key="YAML" value="48" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.vcs.git.usages" />
@@ -113,11 +106,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/build.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="110">
-              <caret line="17" selection-start-line="17" selection-end-line="17" />
+            <state relative-caret-position="219">
+              <caret line="21" column="27" selection-start-line="21" selection-start-column="27" selection-end-line="21" selection-end-column="27" />
               <folding>
                 <element signature="e#0#22#0" expanded="true" />
               </folding>
@@ -146,8 +139,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-340">
-              <caret line="17" column="51" selection-start-line="17" selection-start-column="51" selection-end-line="17" selection-end-column="51" />
+            <state relative-caret-position="369">
+              <caret line="58" column="25" lean-forward="true" selection-start-line="58" selection-start-column="25" selection-end-line="58" selection-end-column="25" />
               <folding>
                 <element signature="e#25#68#0" expanded="true" />
               </folding>
@@ -156,35 +149,10 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/.gitignore">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="195">
-              <caret line="13" column="3" lean-forward="true" selection-start-line="13" selection-start-column="3" selection-end-line="13" selection-end-column="3" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/PJLink/HelperClasses.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="198">
-              <caret line="1812" column="34" lean-forward="true" selection-start-line="1812" selection-start-column="34" selection-end-line="1812" selection-end-column="34" />
-              <folding>
-                <element signature="e#3502#16188#0" />
-                <element signature="e#16694#18551#0" />
-                <marker date="1552295664765" expanded="true" signature="19306:19380" ph="..." />
-                <marker date="1552295664765" expanded="true" signature="19395:19749" ph="..." />
-                <marker date="1552295664765" expanded="true" signature="41471:41477" ph="..." />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/.travis.yml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="90">
-              <caret line="6" column="22" selection-start-line="6" selection-start-column="22" selection-end-line="6" selection-end-column="22" />
+            <state relative-caret-position="75">
+              <caret line="5" lean-forward="true" selection-start-line="5" selection-end-line="5" />
             </state>
           </provider>
         </entry>
@@ -310,13 +278,13 @@
         <option value="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" />
         <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py" />
         <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/__init__.py" />
-        <option value="$PROJECT_DIR$/build.py" />
         <option value="$PROJECT_DIR$/__.travis.yml" />
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/Tests/__init__.py" />
         <option value="$PROJECT_DIR$/Tests/tests.py" />
-        <option value="$PROJECT_DIR$/.travis.yml" />
         <option value="$PROJECT_DIR$/PJLink/HelperClasses.py" />
+        <option value="$PROJECT_DIR$/.travis.yml" />
+        <option value="$PROJECT_DIR$/build.py" />
       </list>
     </option>
   </component>
@@ -523,7 +491,21 @@
       <option name="project" value="LOCAL" />
       <updated>1552295270588</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Building is ~fun~">
+      <created>1552295699286</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1552295699286</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Building is ~less fun~">
+      <created>1552296633368</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1552296633368</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TodoView">
@@ -570,11 +552,15 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
+    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
+    <option name="CHECK_NEW_TODO" value="false" />
     <MESSAGE value="Improved type returns. Quashed a few bugs." />
     <MESSAGE value="More robust packet processing. Some type system enhancements." />
     <MESSAGE value="A few robustifications/trying to get Travis to build" />
     <MESSAGE value="Relinked SDK (finally)" />
-    <option name="LAST_COMMIT_MESSAGE" value="Relinked SDK (finally)" />
+    <MESSAGE value="Building is ~fun~" />
+    <MESSAGE value="Building is ~less fun~" />
+    <option name="LAST_COMMIT_MESSAGE" value="Building is ~less fun~" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -919,16 +905,6 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-340">
-          <caret line="17" column="51" selection-start-line="17" selection-start-column="51" selection-end-line="17" selection-end-column="51" />
-          <folding>
-            <element signature="e#25#68#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state>
@@ -940,23 +916,6 @@ print(link._error())</expression-string>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="110">
           <caret line="41" column="20" selection-start-line="41" selection-start-column="4" selection-end-line="41" selection-end-column="20" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/build.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="110">
-          <caret line="17" selection-start-line="17" selection-end-line="17" />
-          <folding>
-            <element signature="e#0#22#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/.travis.yml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="6" column="22" selection-start-line="6" selection-start-column="22" selection-end-line="6" selection-end-column="22" />
         </state>
       </provider>
     </entry>
@@ -981,23 +940,50 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="195">
-          <caret line="13" column="3" lean-forward="true" selection-start-line="13" selection-start-column="3" selection-end-line="13" selection-end-column="3" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/HelperClasses.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="198">
-          <caret line="1812" column="34" lean-forward="true" selection-start-line="1812" selection-start-column="34" selection-end-line="1812" selection-end-column="34" />
+        <state relative-caret-position="221">
+          <caret line="1804" column="27" lean-forward="true" selection-start-line="1804" selection-start-column="27" selection-end-line="1804" selection-end-column="27" />
           <folding>
             <element signature="e#3502#16188#0" />
             <element signature="e#16694#18551#0" />
             <marker date="1552295664765" expanded="true" signature="19306:19380" ph="..." />
             <marker date="1552295664765" expanded="true" signature="19395:19749" ph="..." />
             <marker date="1552295664765" expanded="true" signature="41471:41477" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="105">
+          <caret line="7" column="47" selection-start-line="7" selection-start-column="47" selection-end-line="7" selection-end-column="47" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.travis.yml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="75">
+          <caret line="5" lean-forward="true" selection-start-line="5" selection-end-line="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="369">
+          <caret line="58" column="25" lean-forward="true" selection-start-line="58" selection-start-column="25" selection-end-line="58" selection-end-column="25" />
+          <folding>
+            <element signature="e#25#68#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="219">
+          <caret line="21" column="27" selection-start-line="21" selection-start-column="27" selection-end-line="21" selection-end-column="27" />
+          <folding>
+            <element signature="e#0#22#0" expanded="true" />
           </folding>
         </state>
       </provider>
