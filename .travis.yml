@@ -5,7 +5,6 @@ python:
   - "3.7"
 
 os:
-  - osx
   - linux
 
 install:
