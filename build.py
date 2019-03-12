@@ -6,6 +6,7 @@ try:
     math_link_key = os.environ["MATH_LINK_KEYS"]
 except:
     math_link_key = os.environ["MATH_LINK_KEY"]
+# not-a-real-change
 download_root = os.path.join(lib_root, "src", "MathLinkBinaries")
 target_arch = Env.system_name()+("-x86-64" if Env.get_is_64_bit() else "")
 target_bin_path = os.path.join(download_root, target_arch)
