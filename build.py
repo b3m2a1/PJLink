@@ -25,7 +25,7 @@ if not os.path.exists(target_bin_path):
         wget.download(url_targ, tmp_)
         zipfile = ZipFile(tmp_)
         zipfile.extractall(download_root)
-        os.remove(tmp_)
+        # os.remove(tmp_) # AppVeyor doesn't like this?
 
     except ImportError:
         from io import BytesIO
