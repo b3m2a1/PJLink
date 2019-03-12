@@ -23,7 +23,7 @@ build_script:
 before_deploy:
   - git config --local user.name "b3m2a1-builder"
   - git config --local user.email "b3m2a1+machine@gmail.com"
-  - git tag 'Windows Binary'
+  - git tag "WindowsBinary-$APPVEYOR_BUILD_NUMBER"
 deploy:
   release: "Windows Binary"
   description: 'Windows Binary'
