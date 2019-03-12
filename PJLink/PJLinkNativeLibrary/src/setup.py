@@ -22,6 +22,9 @@ if plat == "Darwin":
         cur_targ = None
     if cur_targ is None or float(cur_targ[:4])<10.9:
         os.environ["MACOSX_DEPLOYMENT_TARGET"]="10.9" #minimum target with cstdint
+elif plat == "WINDOWS":
+    # force gcc since I guess Windows default compiler dislikes some of my macros...?
+    os.environ["CC"] = "g++"
 
 if not os.path.exists(build_dir):
     os.mkdir(build_dir)
@@ -55,8 +58,6 @@ if mathlink_lib_file is not None:
             # ead -lrt -ldl -luuid
             libraries = [ mathlink_name, "m", "pthread", "rt", "dl", "uuid" ],
             include_dirs= [ mathlink_dir ]
-            #extra_compile_args=['-std=c++11'] # Travis apparently needs this to build cleanly...
-            # extra_link_args=[ ]
         )
 
     setup (name = 'PJLinkNativeLibrary',
