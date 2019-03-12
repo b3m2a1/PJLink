@@ -11,8 +11,7 @@ script:
 before_deploy:
   - git config --local user.name "b3m2a1-builder"
   - git config --local user.email "b3m2a1+machine@gmail.com"
-  - export TRAVIS_TAG="Linux Binary"
-  - git tag $TRAVIS_TAG
+  - git tag 'Linux Binary'
 deploy:
   provider: releases
   api_key:
