@@ -873,12 +873,22 @@ class MathLinkEnvironment:
                     lib = os.path.join(core_lib, sys_name, "CompilerAdditions")
 
         if not os.path.exists(lib):
-            raise ValueError("Couldn't find MathLink library for platform {} (path {} does not exist)".format(plat, lib))
+            raise ValueError("Couldn't find MathLink library for platform {} (path {} does not exist)".format(sys_name, lib))
 
         return lib
 
     @classmethod
     def get_MathLink_library_name(cls, version = None, use_default = True):
+        """Finds the actual library file to use. On Mac this is just the .a, on Linux this is a .a with a different format,
+        on Windows this is a .lib file with yet a different naming convention...
+
+        :param version:
+        :type version:
+        :param use_default:
+        :type use_default:
+        :return:
+        :rtype:
+        """
         import os
 
         if use_default:
@@ -892,16 +902,21 @@ class MathLinkEnvironment:
             math_link_names = []
             for lib_file in os.listdir(lib_dir):
                 name, ext = os.path.splitext(lib_file)
-                if ext == ".a" or ext == ".lib":
+                if ext == ".a":
                     name_bits = name.split("MLi")
-                    if len(name_bits)>1:
+                    if len(name_bits)>1: #Mac versions
                         sort_bits = [int(v) for v in name_bits[1].split(".")]
                         math_link_names.append((name.strip("lib"), sort_bits))
-                    else:
+                    else: #Linux versions
                         name_bits = name.split("ML")
                         if len(name_bits)>1:
                             sort_bits = [ int(v) for v in name_bits[1].split("i") ]
                             math_link_names.append((name.strip("lib"), sort_bits))
+                elif ext == ".lib" and name[-1] == "s": #Windows
+                    name_bits = name.split("ML")
+                    if len(name_bits)>1:
+                        sort_bits = [ int(v) for v in name_bits[1].strip("s").split("i") ]
+                        math_link_names.append((name.strip("lib"), sort_bits))
 
             if len(math_link_names) == 0:
                 raise ValueError("Couldn't find any MathLink library files in {}".format(lib_dir))

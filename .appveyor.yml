@@ -20,8 +20,11 @@ install:
 script:
   - "%PYTHON%\\python.exe build.py"
 
+before_deploy:
+  - git config --local user.name "b3m2a1-builder"
+  - git config --local user.email "b3m2a1+machine@gmail.com"
 deploy:
-  release: "Windows"
+  release: "Windows Binary"
   description: 'Windows Binary'
   provider: GitHub
   auth_token:

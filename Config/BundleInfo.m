@@ -9,6 +9,7 @@
 		"project",
 		"README.nb",
 		"Java",
+		"Tests",
 		".idea",
 		"PJLink/PJLinkNativeLibrary/src/build",
 		"PJLink/PJLinkNativeLibrary/PJLinkNativeLibrary.pyd",
@@ -21,5 +22,7 @@
     "log.txt",
 		"*.o",
 		"*.a"
-		}
+		},
+  "UpdateLoader"->False, (* not really a BTools package...yet? *)
+  "UpdateDependencies"->False
  	}
