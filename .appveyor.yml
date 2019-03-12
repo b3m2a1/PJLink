@@ -17,7 +17,7 @@ environment:
 install:
   - "%PYTHON%\\python.exe -m pip install wget"
 
-script:
+build_script:
   - "%PYTHON%\\python.exe build.py"
 
 before_deploy:
