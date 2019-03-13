@@ -12,7 +12,9 @@ environment:
   # isn't covered by this document) at the time of writing.
 
   - PYTHON: "C:\\Python35-x64"
+    COMPILER: MinGW-w64
   - PYTHON: "C:\\Python36-x64"
+    COMPILER: MinGW-w64
 
 install:
   - "%PYTHON%\\python.exe -m pip install wget"
