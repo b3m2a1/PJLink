@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
@@ -84,7 +83,7 @@
           <entry key="JAVA" value="14" />
           <entry key="Mathematica" value="4369" />
           <entry key="PLAIN_TEXT" value="1251" />
-          <entry key="Python" value="174726" />
+          <entry key="Python" value="174745" />
           <entry key="YAML" value="597" />
         </counts>
       </usages-collector>
@@ -105,8 +104,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="571">
-              <caret line="66" column="39" selection-start-line="66" selection-start-column="39" selection-end-line="66" selection-end-column="39" />
+            <state relative-caret-position="515">
+              <caret line="66" column="42" selection-start-line="66" selection-start-column="42" selection-end-line="66" selection-end-column="42" />
               <folding>
                 <element signature="e#25#68#0" expanded="true" />
               </folding>
@@ -470,13 +469,6 @@
       <option name="presentableId" value="Default" />
       <updated>1536198584620</updated>
     </task>
-    <task id="LOCAL-00001" summary="Improved type returns. Quashed a few bugs.">
-      <created>1552011334274</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1552011334274</updated>
-    </task>
     <task id="LOCAL-00002" summary="More robust packet processing. Some type system enhancements.">
       <created>1552049339344</created>
       <option name="number" value="00002" />
@@ -806,7 +798,21 @@
       <option name="project" value="LOCAL" />
       <updated>1552477554133</updated>
     </task>
-    <option name="localTasksCounter" value="49" />
+    <task id="LOCAL-00049" summary="fuck everything">
+      <created>1552477732182</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1552477732182</updated>
+    </task>
+    <task id="LOCAL-00050" summary="fuck everything">
+      <created>1552478910147</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1552478910148</updated>
+    </task>
+    <option name="localTasksCounter" value="51" />
     <servers />
   </component>
   <component name="TodoView">
@@ -1237,8 +1243,8 @@ print(link._error())</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="571">
-          <caret line="66" column="39" selection-start-line="66" selection-start-column="39" selection-end-line="66" selection-end-column="39" />
+        <state relative-caret-position="515">
+          <caret line="66" column="42" selection-start-line="66" selection-start-column="42" selection-end-line="66" selection-end-column="42" />
           <folding>
             <element signature="e#25#68#0" expanded="true" />
           </folding>

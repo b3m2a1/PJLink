@@ -64,7 +64,7 @@ if mathlink_lib_file is not None:
             'PJLinkNativeLibrary',
             sources = ['PJLinkNativeLibrary.cpp'],
             library_dirs = [ build_dir ],
-            libraries = [ mathlink_name, "cmt" ],#, mathlink_name.strip("s") ],
+            libraries = [ mathlink_name ],
             include_dirs= [ mathlink_dir ],
             extra_compile_args = [ "/MT" ]
         )
