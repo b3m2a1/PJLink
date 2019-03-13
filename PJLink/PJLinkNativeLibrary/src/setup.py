@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from distutils.core import setup, Extension
-import shutil, os, platform, sys
+import shutil, os, sys
 from PJLink.MathLinkEnvironment import MathLinkEnvironment as Env
 
 setup_orig_dir = os.getcwd()
@@ -23,8 +23,8 @@ if plat == "Darwin":
     if cur_targ is None or float(cur_targ[:4])<10.9:
         os.environ["MACOSX_DEPLOYMENT_TARGET"]="10.9" #minimum target with cstdint
 elif plat == "WINDOWS":
-    # force gcc since I guess Windows default compiler dislikes some of my macros...?
-    os.environ["CC"] = "g++"
+    # force clang? since I guess Windows default compiler dislikes some of my macros...?
+    sys.argv.append("--compiler=clang") # wow this is such a hack
 
 if not os.path.exists(build_dir):
     os.mkdir(build_dir)
