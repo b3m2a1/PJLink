@@ -59,10 +59,13 @@
 //#define MLFUNC(meth)  JNICALL Java_com_wolfram_jlink_NativeLink_##meth(JNIEnv *env, jclass clz
 // // This is my guess for how this should work:
 
+// I had to duplicate all this fucking code because Microsoft can't fucking write a preprocessor
+// that behaves the way clang or g++ does and expand ##__VA_ARGS__ in a sensible fucking manner
+// so now this is just shittier
 #define fuckVisualStudio( x ) x
-#define __glue(meth, ...) PyObject * PJLink_##meth(PyObject* self, ##__VA_ARGS__)
-#define __glueargs(meth, ...) fuckVisualStudio( __glue(meth, ##__VA_ARGS__, PyObject* args) )
-#define __gluekwargs(meth, ...) fuckVisualStudio( __glue(meth, ##__VA_ARGS__, PyObject* args, PyObject* kwargs) )
+#define __glue(meth) PyObject * PJLink_##meth(PyObject* self)
+#define __glueargs(meth) PyObject * PJLink_##meth(PyObject* self, PyObject* args)
+#define __gluekwargs(meth)  PyObject * PJLink_##meth(PyObject* self, PyObject* args, PyObject* kwargs) )
 
 #define MLFUNCNOARGS(meth) __glue(meth)
 #define MLFUNCWITHARGS(meth) __glueargs(meth)
