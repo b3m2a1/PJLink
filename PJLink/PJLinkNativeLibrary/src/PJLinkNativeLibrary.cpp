@@ -1497,7 +1497,7 @@ MLFUNCWITHARGS(MLClose) {
     if (mlink ==0 ) {
         _MLDebugPrintNullLink(3);
     } else {
-        _MLDebugPrint(3, "Closing link MathLink(%p)", link);
+        _MLDebugPrint(3, "Closing link MathLink(%p)", mlink);
         struct cookie* c = (struct cookie*) MLUserData(mlink, NULL);
         MLTHREADED(MLSetUserData(mlink, NULL, NULL));
         if (c != NULL) {
