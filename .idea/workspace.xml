@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
@@ -83,7 +84,7 @@
           <entry key="JAVA" value="14" />
           <entry key="Mathematica" value="4369" />
           <entry key="PLAIN_TEXT" value="1251" />
-          <entry key="Python" value="174699" />
+          <entry key="Python" value="174718" />
           <entry key="YAML" value="597" />
         </counts>
       </usages-collector>
@@ -104,8 +105,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="629">
-              <caret line="68" column="42" lean-forward="true" selection-start-line="68" selection-start-column="42" selection-end-line="68" selection-end-column="42" />
+            <state relative-caret-position="571">
+              <caret line="66" column="65" selection-start-line="66" selection-start-column="65" selection-end-line="66" selection-end-column="65" />
               <folding>
                 <element signature="e#25#68#0" expanded="true" />
               </folding>
@@ -116,17 +117,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/PJLink/MathLinkEnvironment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret line="921" column="51" selection-start-line="921" selection-start-column="51" selection-end-line="921" selection-end-column="51" />
+            <state relative-caret-position="190">
+              <caret line="917" column="77" lean-forward="true" selection-start-line="917" selection-start-column="77" selection-end-line="917" selection-end-column="77" />
               <folding>
                 <element signature="e#101#139#0" expanded="true" />
-                <marker date="1552425033639" expanded="true" signature="11789:11794" ph="..." />
-                <marker date="1552425033639" expanded="true" signature="12429:12435" ph="..." />
-                <marker date="1552425033639" expanded="true" signature="17496:17786" ph="..." />
-                <marker date="1552425033639" expanded="true" signature="19086:19247" ph="..." />
-                <marker date="1552425033639" expanded="true" signature="19450:19455" ph="..." />
-                <marker date="1552425033639" expanded="true" signature="20383:20389" ph="..." />
-                <marker date="1552425033639" expanded="true" signature="27253:27492" ph="..." />
+                <marker date="1552477383888" expanded="true" signature="11789:11794" ph="..." />
+                <marker date="1552477383888" expanded="true" signature="12429:12435" ph="..." />
+                <marker date="1552477383888" expanded="true" signature="17496:17786" ph="..." />
+                <marker date="1552477383888" expanded="true" signature="19086:19247" ph="..." />
+                <marker date="1552477383888" expanded="true" signature="19450:19455" ph="..." />
+                <marker date="1552477383888" expanded="true" signature="20383:20389" ph="..." />
+                <marker date="1552477383888" expanded="true" signature="27253:27492" ph="..." />
               </folding>
             </state>
           </provider>
@@ -153,8 +154,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/build.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="270">
-              <caret line="19" column="8" selection-start-line="19" selection-start-column="8" selection-end-line="19" selection-end-column="8" />
+            <state relative-caret-position="135">
+              <caret line="10" column="63" selection-start-line="10" selection-start-column="63" selection-end-line="10" selection-end-column="63" />
             </state>
           </provider>
         </entry>
@@ -282,10 +283,10 @@
         <option value="$PROJECT_DIR$/Config/BundleInfo.m" />
         <option value="$PROJECT_DIR$/PacletInfo.m" />
         <option value="$PROJECT_DIR$/build.py" />
-        <option value="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" />
         <option value="$PROJECT_DIR$/.travis.yml" />
         <option value="$PROJECT_DIR$/.appveyor.yml" />
         <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp" />
+        <option value="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" />
         <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" />
       </list>
     </option>
@@ -770,7 +771,21 @@
       <option name="project" value="LOCAL" />
       <updated>1552476109418</updated>
     </task>
-    <option name="localTasksCounter" value="44" />
+    <task id="LOCAL-00044" summary="fuck everything">
+      <created>1552476645982</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1552476645982</updated>
+    </task>
+    <task id="LOCAL-00045" summary="fuck everything">
+      <created>1552477271542</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1552477271542</updated>
+    </task>
+    <option name="localTasksCounter" value="46" />
     <servers />
   </component>
   <component name="TodoView">
@@ -1127,23 +1142,6 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/PJLink/MathLinkEnvironment.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret line="921" column="51" selection-start-line="921" selection-start-column="51" selection-end-line="921" selection-end-column="51" />
-          <folding>
-            <element signature="e#101#139#0" expanded="true" />
-            <marker date="1552425033639" expanded="true" signature="11789:11794" ph="..." />
-            <marker date="1552425033639" expanded="true" signature="12429:12435" ph="..." />
-            <marker date="1552425033639" expanded="true" signature="17496:17786" ph="..." />
-            <marker date="1552425033639" expanded="true" signature="19086:19247" ph="..." />
-            <marker date="1552425033639" expanded="true" signature="19450:19455" ph="..." />
-            <marker date="1552425033639" expanded="true" signature="20383:20389" ph="..." />
-            <marker date="1552425033639" expanded="true" signature="27253:27492" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/PacletInfo.m">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="300">
@@ -1178,13 +1176,6 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/build.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="270">
-          <caret line="19" column="8" selection-start-line="19" selection-start-column="8" selection-end-line="19" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/.appveyor.yml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="210">
@@ -1199,10 +1190,34 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/PJLink/MathLinkEnvironment.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="190">
+          <caret line="917" column="77" lean-forward="true" selection-start-line="917" selection-start-column="77" selection-end-line="917" selection-end-column="77" />
+          <folding>
+            <element signature="e#101#139#0" expanded="true" />
+            <marker date="1552477383888" expanded="true" signature="11789:11794" ph="..." />
+            <marker date="1552477383888" expanded="true" signature="12429:12435" ph="..." />
+            <marker date="1552477383888" expanded="true" signature="17496:17786" ph="..." />
+            <marker date="1552477383888" expanded="true" signature="19086:19247" ph="..." />
+            <marker date="1552477383888" expanded="true" signature="19450:19455" ph="..." />
+            <marker date="1552477383888" expanded="true" signature="20383:20389" ph="..." />
+            <marker date="1552477383888" expanded="true" signature="27253:27492" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="135">
+          <caret line="10" column="63" selection-start-line="10" selection-start-column="63" selection-end-line="10" selection-end-column="63" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="629">
-          <caret line="68" column="42" lean-forward="true" selection-start-line="68" selection-start-column="42" selection-end-line="68" selection-end-column="42" />
+        <state relative-caret-position="571">
+          <caret line="66" column="65" selection-start-line="66" selection-start-column="65" selection-end-line="66" selection-end-column="65" />
           <folding>
             <element signature="e#25#68#0" expanded="true" />
           </folding>
