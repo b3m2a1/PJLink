@@ -24,7 +24,7 @@ if plat == "Darwin":
         os.environ["MACOSX_DEPLOYMENT_TARGET"]="10.9" #minimum target with cstdint
 elif plat == "Windows":
     # force clang? since I guess Windows default compiler dislikes some of my macros...?
-    sys.argv.append("--compiler=clang") # wow this is such a hack
+    sys.argv.append("--compiler=mingw32") # wow this is such a hack
     print(sys.argv)
 
 if not os.path.exists(build_dir):
