@@ -912,10 +912,10 @@ class MathLinkEnvironment:
                         if len(name_bits)>1:
                             sort_bits = [ int(v) for v in name_bits[1].split("i") ]
                             math_link_names.append((name.strip("lib"), sort_bits))
-                elif ext == ".lib" and name[-1] == "m": #Windows
+                elif ext == ".lib" and name[-1] == "s": #Windows
                     name_bits = name.split("ml")
                     if len(name_bits)>1:
-                        sort_bits = [ int(v) for v in name_bits[1].strip("m").split("i") ]
+                        sort_bits = [ int(v) for v in name_bits[1].strip("s").split("i") ]
                         math_link_names.append((name.strip("lib"), sort_bits))
 
             if len(math_link_names) == 0:
