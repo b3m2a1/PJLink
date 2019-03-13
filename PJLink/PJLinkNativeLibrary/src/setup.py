@@ -41,7 +41,7 @@ if not os.path.exists(mathlink_lib_file):
 print("Using MathLink library at {}".format(mathlink_lib_file))
 
 if mathlink_lib_file is not None:
-    if plat != "Linux":
+    if plat == "Darwin":
         module1 = Extension(
             'PJLinkNativeLibrary',
             sources = ['PJLinkNativeLibrary.cpp'],
@@ -49,7 +49,7 @@ if mathlink_lib_file is not None:
             libraries = [ mathlink_name ],
             include_dirs= [ mathlink_dir ]
         )
-    else:
+    elif plat == "Linux":
         module1 = Extension(
             'PJLinkNativeLibrary',
             sources = ['PJLinkNativeLibrary.cpp'],
@@ -58,6 +58,15 @@ if mathlink_lib_file is not None:
             # ead -lrt -ldl -luuid
             libraries = [ mathlink_name, "m", "pthread", "rt", "dl", "uuid" ],
             include_dirs= [ mathlink_dir ]
+        )
+    elif plat == "Windows":
+        module1 = Extension(
+            'PJLinkNativeLibrary',
+            sources = ['PJLinkNativeLibrary.cpp'],
+            library_dirs = [ build_dir ],
+            libraries = [ mathlink_name ],
+            include_dirs= [ mathlink_dir ],
+            extra_compile_args = [ "/MT" ]
         )
 
     setup (name = 'PJLinkNativeLibrary',
