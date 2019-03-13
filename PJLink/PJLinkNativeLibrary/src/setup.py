@@ -22,9 +22,9 @@ if plat == "Darwin":
         cur_targ = None
     if cur_targ is None or float(cur_targ[:4])<10.9:
         os.environ["MACOSX_DEPLOYMENT_TARGET"]="10.9" #minimum target with cstdint
-elif plat == "Windows":
-    sys.argv.append("--compiler=cygwin") # wow this is such a hack
-    # print(sys.argv)
+# elif plat == "Windows":
+#     sys.argv.append("--compiler=cygwin") # wow this is such a hack
+#     # print(sys.argv)
 
 if not os.path.exists(build_dir):
     os.mkdir(build_dir)
