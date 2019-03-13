@@ -22,7 +22,7 @@ if plat == "Darwin":
         cur_targ = None
     if cur_targ is None or float(cur_targ[:4])<10.9:
         os.environ["MACOSX_DEPLOYMENT_TARGET"]="10.9" #minimum target with cstdint
-elif plat == "WINDOWS":
+elif plat == "Windows":
     # force clang? since I guess Windows default compiler dislikes some of my macros...?
     sys.argv.append("--compiler=clang") # wow this is such a hack
     print(sys.argv)
