@@ -23,9 +23,6 @@
     hosts the native methods.
 */
 
-
-//#define JDEBUGLEVEL 0
-
 #include <cstdint>
 #include <cerrno>
 #include <csignal>
@@ -36,28 +33,15 @@
 #include <ApplicationServices/ApplicationServices.h>
 #endif
 
+#ifdef WINDOWS_MATHLINK
+#include <windows.h>
+#endif
+
 #include "mathlink.h"
 #include "Python.h"
 #include "PJLink_NativeLink.h"
 
-//#ifdef WINDOWS_MATHLINK
-///* On Windows, need to load jawt.dll to get HWNDs from a Java window.
-//   Load the DLL dynamically to avoid fatal problems that have occurred in
-//   non-standard runtime environments where jawt.dll cannot be found.
-//*/
-//#include <jawt.h>
-//#include <jawt_md.h>
-//HINSTANCE hJawtLib = NULL;
-//typedef jboolean (JNICALL *GET_AWT_PROC) (JNIEnv* env, JAWT* awt);
-//GET_AWT_PROC getAWTproc = NULL;
-//#endif
-
 /********************************** PYTHONLEVEL MACROS *****************************************************/
-// // [TODO] Need to come back to this after I understand the python API better
-// // It looks like the idea is just to insert the boilerplate for a NativeLink call in there
-//#define MLFUNC(meth)        JNICALL Java_com_wolfram_jlink_NativeLink_##meth(JNIEnv *env, jobject ml
-//#define MLFUNC(meth)  JNICALL Java_com_wolfram_jlink_NativeLink_##meth(JNIEnv *env, jclass clz
-// // This is my guess for how this should work:
 
 // I had to duplicate all this fucking code because Microsoft can't fucking write a preprocessor
 // that behaves the way clang or g++ does and expand ##__VA_ARGS__ in a sensible fucking manner
@@ -96,14 +80,6 @@
 #else
 #  define DEBUGSTR2(x)
 #endif
-
-// // DEBUGSTR should never appear in the code, only DEBUGSTR1 or DEBUGSTR2
-//#ifdef WINDOWS_MATHLINK
-//#  include <windows.h>
-//#  define DEBUGSTR(x) MessageBox(NULL, x, "MathLinkJavaLibrary Debug", MB_OK);
-//#else
-//#  define DEBUGSTR(x)
-//#endif
 
 */
 
