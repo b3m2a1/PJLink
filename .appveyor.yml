@@ -24,14 +24,16 @@ before_deploy:
   - git config --local user.name "b3m2a1-builder"
   - git config --local user.email "b3m2a1+machine@gmail.com"
   - git tag "WindowsBinary-$APPVEYOR_BUILD_NUMBER"
+
 deploy:
-  release: "Windows Binary"
-  description: 'Windows Binary'
   provider: GitHub
+  release: "Windows Binary"
+  description: "Windows Binary"
   auth_token:
     secure:
-  artifact: "PJLink/PJLinkNativeLibrary/Windows-x86-64/PJLinkNativeLibrary.so"
+  auth_token:
+    secure: rwXvMg12winYWs7RER+aUWCvEdS7Gfe4pd2QdQa7YNWXAUFdkw6HfETpTNAqn953
+  repository: b3m2a1/PJLink
+  artifact: PJLink/PJLinkNativeLibrary/Windows-x86-64/PJLinkNativeLibrary.so
   draft: true
   prerelease: true
-  on:
-    repo: "b3m2a1/PJLink"
