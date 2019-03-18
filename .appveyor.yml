@@ -32,6 +32,6 @@ deploy:
   auth_token:
     secure: rwXvMg12winYWs7RER+aUWCvEdS7Gfe4pd2QdQa7YNWXAUFdkw6HfETpTNAqn953
   repository: b3m2a1/PJLink
-  artifact: PJLink/PJLinkNativeLibrary/Windows-x86-64/PJLinkNativeLibrary.so
+  artifact: PJLink/PJLinkNativeLibrary/Windows-x86-64/PJLinkNativeLibrary.*
   draft: true
   prerelease: true
