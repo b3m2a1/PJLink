@@ -44,9 +44,6 @@
 
 /********************************** PYTHONLEVEL MACROS *****************************************************/
 
-// I had to duplicate all this fucking code because Microsoft can't fucking write a preprocessor
-// that behaves the way clang or g++ does and expand ##__VA_ARGS__ in a sensible fucking manner
-// so now this is just shittier
 #define fuckVisualStudio( x ) x
 #define __glue(meth) PyObject * PJLink_##meth(PyObject* self)
 #define __glueargs(meth) PyObject * PJLink_##meth(PyObject* self, PyObject* args)

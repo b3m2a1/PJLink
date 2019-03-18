@@ -63,9 +63,14 @@ if mathlink_lib_file is not None:
             'PJLinkNativeLibrary',
             sources = ['PJLinkNativeLibrary.cpp'],
             library_dirs = [ build_dir ],
-            libraries = [ mathlink_name ],
+            libraries = [ mathlink_name,
+                          "kernel32", "user32", "ws2_32", "advapi32", "comdlg32",
+                          "Rpcrt4"
+                          ],
             include_dirs= [ mathlink_dir ],
-            extra_compile_args = [ "/MT" ]
+            extra_compile_args = [
+                "/MT", "/O2"
+            ]
         )
 
     setup (name = 'PJLinkNativeLibrary',
