@@ -33,7 +33,7 @@ deploy:
   provider: GitHub
   release: "Windows Binary"
   description: "Windows Binary"
-  tag: "WindowsBinary-$APPVEYOR_BUILD_NUMBER"
+  tag: WindowsBinary-v$(APPVEYOR_BUILD_NUMBER)
   auth_token:
     secure: rwXvMg12winYWs7RER+aUWCvEdS7Gfe4pd2QdQa7YNWXAUFdkw6HfETpTNAqn953
   repository: b3m2a1/PJLink

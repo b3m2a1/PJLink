@@ -78,13 +78,13 @@
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="C++" value="347" />
+          <entry key="C++" value="349" />
           <entry key="HTML" value="2" />
           <entry key="JAVA" value="14" />
           <entry key="Mathematica" value="4369" />
           <entry key="PLAIN_TEXT" value="1347" />
           <entry key="Python" value="174841" />
-          <entry key="YAML" value="647" />
+          <entry key="YAML" value="651" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.vcs.git.usages" />
@@ -96,7 +96,7 @@
         <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="255">
-              <caret line="37" column="23" lean-forward="true" selection-start-line="37" selection-start-column="23" selection-end-line="37" selection-end-column="23" />
+              <caret line="37" column="20" lean-forward="true" selection-start-line="37" selection-start-column="20" selection-end-line="37" selection-end-column="20" />
             </state>
           </provider>
         </entry>
@@ -153,8 +153,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/.appveyor.yml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="585">
-              <caret line="39" column="21" selection-start-line="39" selection-start-column="21" selection-end-line="39" selection-end-column="21" />
+            <state relative-caret-position="525">
+              <caret line="35" column="22" selection-start-line="35" selection-start-column="22" selection-end-line="35" selection-end-column="22" />
             </state>
           </provider>
         </entry>
@@ -208,8 +208,8 @@
       <find>__glue</find>
       <find>PyInit</find>
       <find>Windows</find>
-      <find>DEBUGSTR</find>
       <find>pyd</find>
+      <find>DEBUGSTR</find>
     </findStrings>
     <replaceStrings>
       <replace>T =</replace>
@@ -477,20 +477,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1536198584620</updated>
-    </task>
-    <task id="LOCAL-00012" summary="Trying to get Linux binary to build?">
-      <created>1552298785834</created>
-      <option name="number" value="00012" />
-      <option name="presentableId" value="LOCAL-00012" />
-      <option name="project" value="LOCAL" />
-      <updated>1552298785834</updated>
-    </task>
-    <task id="LOCAL-00013" summary="Two build architectures">
-      <created>1552299929284</created>
-      <option name="number" value="00013" />
-      <option name="presentableId" value="LOCAL-00013" />
-      <option name="project" value="LOCAL" />
-      <updated>1552299929284</updated>
     </task>
     <task id="LOCAL-00014" summary="Travis needs C++ 2011?">
       <created>1552300547686</created>
@@ -821,7 +807,21 @@
       <option name="project" value="LOCAL" />
       <updated>1552947556099</updated>
     </task>
-    <option name="localTasksCounter" value="61" />
+    <task id="LOCAL-00061" summary="Meh">
+      <created>1552947651861</created>
+      <option name="number" value="00061" />
+      <option name="presentableId" value="LOCAL-00061" />
+      <option name="project" value="LOCAL" />
+      <updated>1552947651861</updated>
+    </task>
+    <task id="LOCAL-00062" summary="Meh">
+      <created>1552947739161</created>
+      <option name="number" value="00062" />
+      <option name="presentableId" value="LOCAL-00062" />
+      <option name="project" value="LOCAL" />
+      <updated>1552947739161</updated>
+    </task>
+    <option name="localTasksCounter" value="63" />
     <servers />
   </component>
   <component name="TodoView">
@@ -1209,20 +1209,6 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.travis.yml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="12" column="60" lean-forward="true" selection-start-line="12" selection-start-column="60" selection-end-line="12" selection-end-column="60" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="37" column="23" lean-forward="true" selection-start-line="37" selection-start-column="23" selection-end-line="37" selection-end-column="23" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/MathLinkEnvironment.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="236">
@@ -1250,10 +1236,24 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/.travis.yml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="12" column="60" lean-forward="true" selection-start-line="12" selection-start-column="60" selection-end-line="12" selection-end-column="60" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="37" column="20" lean-forward="true" selection-start-line="37" selection-start-column="20" selection-end-line="37" selection-end-column="20" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/.appveyor.yml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="585">
-          <caret line="39" column="21" selection-start-line="39" selection-start-column="21" selection-end-line="39" selection-end-column="21" />
+        <state relative-caret-position="525">
+          <caret line="35" column="22" selection-start-line="35" selection-start-column="22" selection-end-line="35" selection-end-column="22" />
         </state>
       </provider>
     </entry>
