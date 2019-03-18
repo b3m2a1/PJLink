@@ -23,7 +23,6 @@
     hosts the native methods.
 */
 
-//#include <cstdint>
 #include <cerrno>
 #include <csignal>
 #include <cstdlib>
@@ -37,6 +36,7 @@
 
 #ifdef WINDOWS_MATHLINK
 #include <windows.h>
+#include <cstdint>
 #endif
 
 #include "Python.h"
