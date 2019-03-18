@@ -6,8 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/setup.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -83,7 +81,7 @@
           <entry key="HTML" value="2" />
           <entry key="JAVA" value="14" />
           <entry key="Mathematica" value="4369" />
-          <entry key="PLAIN_TEXT" value="1251" />
+          <entry key="PLAIN_TEXT" value="1287" />
           <entry key="Python" value="174763" />
           <entry key="YAML" value="597" />
         </counts>
@@ -96,8 +94,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
-              <caret line="37" column="6" selection-start-line="37" selection-start-column="6" selection-end-line="37" selection-end-column="6" />
+            <state relative-caret-position="270">
+              <caret line="38" lean-forward="true" selection-start-line="38" selection-end-line="38" />
             </state>
           </provider>
         </entry>
@@ -479,13 +477,6 @@
       <option name="presentableId" value="Default" />
       <updated>1536198584620</updated>
     </task>
-    <task id="LOCAL-00003" summary="A few robustifications/trying to get Travis to build">
-      <created>1552295270586</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1552295270588</updated>
-    </task>
     <task id="LOCAL-00004" summary="Building is ~fun~">
       <created>1552295699286</created>
       <option name="number" value="00004" />
@@ -822,7 +813,14 @@
       <option name="project" value="LOCAL" />
       <updated>1552479428473</updated>
     </task>
-    <option name="localTasksCounter" value="52" />
+    <task id="LOCAL-00052" summary="Maybe needed to include windows.h...">
+      <created>1552933101551</created>
+      <option name="number" value="00052" />
+      <option name="presentableId" value="LOCAL-00052" />
+      <option name="project" value="LOCAL" />
+      <updated>1552933101551</updated>
+    </task>
+    <option name="localTasksCounter" value="53" />
     <servers />
   </component>
   <component name="TodoView">
@@ -871,7 +869,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="Travis build seems to not have access to Env key...?" />
     <MESSAGE value="Was feeding Travis a bad key... oops" />
     <MESSAGE value="sigh..." />
     <MESSAGE value="...I swear I just changed the name..." />
@@ -896,7 +893,8 @@
     <MESSAGE value="Sigh" />
     <MESSAGE value="Visual Studio is a POS" />
     <MESSAGE value="fuck everything" />
-    <option name="LAST_COMMIT_MESSAGE" value="fuck everything" />
+    <MESSAGE value="Maybe needed to include windows.h..." />
+    <option name="LAST_COMMIT_MESSAGE" value="Maybe needed to include windows.h..." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1253,8 +1251,8 @@ print(link._error())</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/src/PJLinkNativeLibrary.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="37" column="6" selection-start-line="37" selection-start-column="6" selection-end-line="37" selection-end-column="6" />
+        <state relative-caret-position="270">
+          <caret line="38" lean-forward="true" selection-start-line="38" selection-end-line="38" />
         </state>
       </provider>
     </entry>
