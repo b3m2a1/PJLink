@@ -29,6 +29,8 @@
 #include <cstdlib>
 #include <fcntl.h>
 
+#include "mathlink.h"
+
 #if defined(DARWIN_MATHLINK) || defined(X86_DARWIN_MATHLINK) || defined(X86_64_DARWIN_MATHLINK)
 #include <ApplicationServices/ApplicationServices.h>
 #endif
@@ -37,7 +39,6 @@
 #include <windows.h>
 #endif
 
-#include "mathlink.h"
 #include "Python.h"
 #include "PJLink_NativeLink.h"
 
