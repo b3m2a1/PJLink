@@ -13,16 +13,8 @@ OK
 ----------------------------------------------------------------------
 Running Validation Tests:
 
-test_CartesianToZMatrix (PyVPT.Tests.ConverterTests.ConverterTest) ... ok
-test_CartesianToZMatrixMulti (PyVPT.Tests.ConverterTests.ConverterTest) ... ok
-test_CoordinateSet (PyVPT.Tests.ConverterTests.ConverterTest) ... ok
-test_Loader (PyVPT.Tests.ConverterTests.ConverterTest) ... ok
-test_ZMatrixToCartesian (PyVPT.Tests.ConverterTests.ConverterTest) ... ok
-test_affine_mats (PyVPT.Tests.CoordinateTests.TestAffineMatrix) ... ok
-test_mat_dim (PyVPT.Tests.CoordinateTests.TestAffineMatrix) ... ok
-test_mat_mul (PyVPT.Tests.CoordinateTests.TestAffineMatrix) ... ok
 
 ----------------------------------------------------------------------
-Ran 8 tests in 0.852s
+Ran 0 tests in 0.000s
 
 OK

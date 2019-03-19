@@ -38,11 +38,13 @@ if not os.path.exists(target_bin_path):
         zipfile = ZipFile(BytesIO(resp.read()))
         zipfile.extractall(download_root)
 
-from PJLink.PJLinkNativeLibrary.load_lib import _get_lib_dir_loc, _NATIVE_LIBRARY_SHARED_OBJECT
+from PJLink.PJLinkNativeLibrary.load_lib import _get_lib_dir_loc, _NATIVE_LIBRARY_SHARED_OBJECT, _NATIVE_LIBRARY_EXISTS
 
 try:
     _get_lib_dir_loc() # just to set _NATIVE_LIBRARY_SHARED_OBJECT
     so_file = _NATIVE_LIBRARY_SHARED_OBJECT
+    if not _NATIVE_LIBRARY_EXISTS:
+        raise Exception("Failed to build...?")
     new_dir = os.path.join(lib_root, target_arch)
     if not os.path.exists(new_dir):
         os.mkdir(new_dir)
