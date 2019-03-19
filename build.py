@@ -3,8 +3,8 @@ from PJLink import MathLinkEnvironment as Env
 
 lib_root = Env.get_NativeLibrary_root()
 try:
-    # math_link_key = os.environ["MATH_LINK_KEYS"]
-    math_link_key = None
+    math_link_key = os.environ["MATH_LINK_KEYS"]
+    # math_link_key = None
 except:
     math_link_key = os.environ["MATH_LINK_KEY"]
 download_root = os.path.join(lib_root, "src", "MathLinkBinaries")
