@@ -18,7 +18,8 @@ def _find_native_library_dir(libdata=libdata):
     else:
         sys_name = plat
 
-    ext_list = [ "-"+platform.machine().replace("_", "-"), "" ]
+    mach = platform.machine().replace("AMD", "x86-").replace("_", "-")
+    ext_list = [ "-"+mach, "" ]
     for ext in ext_list:
         targ_dir = os.path.join(targ_dir_base, sys_name + ext)
         bin_test_so = os.path.join(targ_dir, "PJLinkNativeLibrary.so")

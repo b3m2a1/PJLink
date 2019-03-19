@@ -6,7 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/lib.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/lib.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -84,7 +84,7 @@
           <entry key="JAVA" value="14" />
           <entry key="Mathematica" value="4433" />
           <entry key="PLAIN_TEXT" value="1485" />
-          <entry key="Python" value="175632" />
+          <entry key="Python" value="175678" />
           <entry key="YAML" value="734" />
         </counts>
       </usages-collector>
@@ -147,11 +147,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/lib.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="195">
-              <caret line="13" column="18" selection-start-line="13" selection-start-column="18" selection-end-line="13" selection-end-column="18" />
+            <state relative-caret-position="135">
+              <caret line="9" column="52" lean-forward="true" selection-start-line="9" selection-start-column="52" selection-end-line="9" selection-end-column="52" />
               <folding>
                 <element signature="e#0#28#0" expanded="true" />
               </folding>
@@ -168,11 +168,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="125">
-              <caret line="42" column="28" selection-start-line="42" selection-start-column="21" selection-end-line="42" selection-end-column="28" />
+            <state relative-caret-position="252">
+              <caret line="20" column="70" selection-start-line="20" selection-start-column="70" selection-end-line="20" selection-end-column="70" />
             </state>
           </provider>
         </entry>
@@ -312,11 +312,11 @@
         <option value="$PROJECT_DIR$/PacletInfo.m" />
         <option value="$PROJECT_DIR$/.travis.yml" />
         <option value="$PROJECT_DIR$/.appveyor.yml" />
-        <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py" />
         <option value="$PROJECT_DIR$/build.py" />
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/Tests/CompilationTest.py" />
         <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/lib.py" />
+        <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py" />
       </list>
     </option>
   </component>
@@ -517,13 +517,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1536198584620</updated>
-    </task>
-    <task id="LOCAL-00021" summary="Including a bunch more stuff for Linux">
-      <created>1552304720750</created>
-      <option name="number" value="00021" />
-      <option name="presentableId" value="LOCAL-00021" />
-      <option name="project" value="LOCAL" />
-      <updated>1552304720750</updated>
     </task>
     <task id="LOCAL-00022" summary="Added prelim .appveyor support">
       <created>1552347397780</created>
@@ -861,7 +854,14 @@
       <option name="project" value="LOCAL" />
       <updated>1552981971585</updated>
     </task>
-    <option name="localTasksCounter" value="70" />
+    <task id="LOCAL-00070" summary="Windows tests">
+      <created>1552982323168</created>
+      <option name="number" value="00070" />
+      <option name="presentableId" value="LOCAL-00070" />
+      <option name="project" value="LOCAL" />
+      <updated>1552982323168</updated>
+    </task>
+    <option name="localTasksCounter" value="71" />
     <servers />
   </component>
   <component name="TodoView">
@@ -1233,13 +1233,6 @@ print(link._error())</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="125">
-          <caret line="42" column="28" selection-start-line="42" selection-start-column="21" selection-end-line="42" selection-end-column="28" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Tests/run_tests.sh">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="30">
@@ -1277,11 +1270,18 @@ print(link._error())</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/lib.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="195">
-          <caret line="13" column="18" selection-start-line="13" selection-start-column="18" selection-end-line="13" selection-end-column="18" />
+        <state relative-caret-position="135">
+          <caret line="9" column="52" lean-forward="true" selection-start-line="9" selection-start-column="52" selection-end-line="9" selection-end-column="52" />
           <folding>
             <element signature="e#0#28#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="252">
+          <caret line="20" column="70" selection-start-line="20" selection-start-column="70" selection-end-line="20" selection-end-column="70" />
         </state>
       </provider>
     </entry>
