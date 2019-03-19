@@ -2,7 +2,7 @@ from .TestUtils import *
 
 class CompilationTest(TestCase):
 
-    @validationTest
+    @debugTest
     def importLib(self):
         import PJLink.PJLinkNativeLibrary.lib as lib
         import types
