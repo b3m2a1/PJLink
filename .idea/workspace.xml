@@ -4,10 +4,10 @@
     <option name="SCOPE_TYPE" value="3" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="Adding some quick tests that will hopefully work...">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
+    <list default="true" id="8771f8f1-43fa-498c-92f7-2cd445526205" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/MacOSX-x86-64/PJLinkNativeLibrary.so" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Tests/test_results.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Tests/test_results.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py" beforeDir="false" afterPath="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build.py" beforeDir="false" afterPath="$PROJECT_DIR$/build.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
@@ -85,8 +85,8 @@
           <entry key="HTML" value="2" />
           <entry key="JAVA" value="14" />
           <entry key="Mathematica" value="4433" />
-          <entry key="PLAIN_TEXT" value="1421" />
-          <entry key="Python" value="175214" />
+          <entry key="PLAIN_TEXT" value="1424" />
+          <entry key="Python" value="175359" />
           <entry key="YAML" value="734" />
         </counts>
       </usages-collector>
@@ -99,7 +99,7 @@
         <entry file="file://$PROJECT_DIR$/.travis.yml">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="180">
-              <caret line="12" column="46" lean-forward="true" selection-start-line="12" selection-start-column="46" selection-end-line="12" selection-end-column="46" />
+              <caret line="12" column="46" selection-start-line="12" selection-start-column="46" selection-end-line="12" selection-end-column="46" />
             </state>
           </provider>
         </entry>
@@ -117,7 +117,7 @@
         <entry file="file://$PROJECT_DIR$/.appveyor.yml">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="75">
-              <caret line="5" lean-forward="true" selection-start-line="5" selection-end-line="5" />
+              <caret line="5" selection-start-line="5" selection-end-line="5" />
             </state>
           </provider>
         </entry>
@@ -125,8 +125,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/build.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="450">
-              <caret line="46" column="46" selection-start-line="46" selection-start-column="46" selection-end-line="46" selection-end-column="46" />
+            <state relative-caret-position="159">
+              <caret line="43" column="31" selection-start-line="43" selection-start-column="31" selection-end-line="43" selection-end-column="31" />
             </state>
           </provider>
         </entry>
@@ -135,7 +135,7 @@
         <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/lib.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="30">
-              <caret line="2" lean-forward="true" selection-start-line="2" selection-end-line="2" />
+              <caret line="2" selection-start-line="2" selection-end-line="2" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -146,8 +146,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="382">
-              <caret line="36" column="38" selection-start-line="36" selection-start-column="16" selection-end-line="36" selection-end-column="38" />
+            <state relative-caret-position="125">
+              <caret line="42" column="28" selection-start-line="42" selection-start-column="21" selection-end-line="42" selection-end-column="28" />
             </state>
           </provider>
         </entry>
@@ -156,7 +156,7 @@
         <entry file="file://$PROJECT_DIR$/PacletInfo.m">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="285">
-              <caret line="19" column="33" lean-forward="true" selection-start-line="19" selection-start-column="33" selection-end-line="19" selection-end-column="33" />
+              <caret line="19" column="33" selection-start-line="19" selection-start-column="33" selection-end-line="19" selection-end-column="33" />
             </state>
           </provider>
         </entry>
@@ -165,7 +165,7 @@
         <entry file="file://$PROJECT_DIR$/Tests/run_tests.sh">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="30">
-              <caret line="2" column="22" lean-forward="true" selection-start-line="2" selection-start-column="22" selection-end-line="2" selection-end-column="22" />
+              <caret line="2" column="22" selection-start-line="2" selection-start-column="22" selection-end-line="2" selection-end-column="22" />
             </state>
           </provider>
         </entry>
@@ -174,7 +174,7 @@
         <entry file="file://$PROJECT_DIR$/.git/hooks/pre-push">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="120">
-              <caret line="8" column="58" lean-forward="true" selection-start-line="8" selection-start-column="58" selection-end-line="8" selection-end-column="58" />
+              <caret line="8" column="58" selection-start-line="8" selection-start-column="58" selection-end-line="8" selection-end-column="58" />
             </state>
           </provider>
         </entry>
@@ -299,7 +299,6 @@
         <option value="$PROJECT_DIR$/PJLink/KernelLink.py" />
         <option value="$PROJECT_DIR$/PJLink/LoopbackLink.py" />
         <option value="$PROJECT_DIR$/PJLink/MathLink.py" />
-        <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py" />
         <option value="$PROJECT_DIR$/__.travis.yml" />
         <option value="$PROJECT_DIR$/PJLink/HelperClasses.py" />
         <option value="$PROJECT_DIR$/PJLink/MathLinkEnvironment.py" />
@@ -318,6 +317,7 @@
         <option value="$PROJECT_DIR$/PacletInfo.m" />
         <option value="$PROJECT_DIR$/.travis.yml" />
         <option value="$PROJECT_DIR$/.appveyor.yml" />
+        <option value="$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py" />
         <option value="$PROJECT_DIR$/build.py" />
       </list>
     </option>
@@ -370,6 +370,13 @@
               <item name="PJLink" type="462c0819:PsiDirectoryNode" />
               <item name="PJLink" type="462c0819:PsiDirectoryNode" />
               <item name="PJLinkNativeLibrary" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="PJLink" type="b2602c69:ProjectViewProjectNode" />
+              <item name="PJLink" type="462c0819:PsiDirectoryNode" />
+              <item name="PJLink" type="462c0819:PsiDirectoryNode" />
+              <item name="PJLinkNativeLibrary" type="462c0819:PsiDirectoryNode" />
+              <item name="Linux-x86-64" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="PJLink" type="b2602c69:ProjectViewProjectNode" />
@@ -505,13 +512,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1536198584620</updated>
-    </task>
-    <task id="LOCAL-00016" summary="Trying to remove unnecessary includes for Travis">
-      <created>1552302722530</created>
-      <option name="number" value="00016" />
-      <option name="presentableId" value="LOCAL-00016" />
-      <option name="project" value="LOCAL" />
-      <updated>1552302722530</updated>
     </task>
     <task id="LOCAL-00017" summary="Trying to remove unnecessary includes for Travis">
       <created>1552303204954</created>
@@ -849,7 +849,14 @@
       <option name="project" value="LOCAL" />
       <updated>1552980005031</updated>
     </task>
-    <option name="localTasksCounter" value="65" />
+    <task id="LOCAL-00065" summary="...">
+      <created>1552980582236</created>
+      <option name="number" value="00065" />
+      <option name="presentableId" value="LOCAL-00065" />
+      <option name="project" value="LOCAL" />
+      <updated>1552980582236</updated>
+    </task>
+    <option name="localTasksCounter" value="66" />
     <servers />
   </component>
   <component name="TodoView">
@@ -865,13 +872,13 @@
     <frame x="267" y="23" width="1173" height="877" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.26790452" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.26790452" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Favorites" order="3" side_tool="true" />
       <window_info anchor="bottom" id="Inspection Results" order="0" weight="0.24968153" />
       <window_info anchor="bottom" id="Message" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.2841191" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.28407642" />
       <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.4990619" weight="0.35923567" />
       <window_info anchor="bottom" id="Find" order="4" weight="0.32866243" />
       <window_info anchor="bottom" id="Cvs" order="5" weight="0.25" />
@@ -898,7 +905,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="Travis needs C++ 2011?" />
     <MESSAGE value="Trying to remove unnecessary includes for Travis" />
     <MESSAGE value="Odd linking issues in Travis" />
     <MESSAGE value="Including UUID I guess" />
@@ -923,7 +929,8 @@
     <MESSAGE value="Finally pushing" />
     <MESSAGE value="Meh" />
     <MESSAGE value="Adding some quick tests that will hopefully work..." />
-    <option name="LAST_COMMIT_MESSAGE" value="Adding some quick tests that will hopefully work..." />
+    <MESSAGE value="..." />
+    <option name="LAST_COMMIT_MESSAGE" value="..." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1210,14 +1217,14 @@ print(link._error())</expression-string>
     <entry file="file://$PROJECT_DIR$/Tests/run_tests.sh">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="30">
-          <caret line="2" column="22" lean-forward="true" selection-start-line="2" selection-start-column="22" selection-end-line="2" selection-end-column="22" />
+          <caret line="2" column="22" selection-start-line="2" selection-start-column="22" selection-end-line="2" selection-end-column="22" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/.git/hooks/pre-push">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
-          <caret line="8" column="58" lean-forward="true" selection-start-line="8" selection-start-column="58" selection-end-line="8" selection-end-column="58" />
+          <caret line="8" column="58" selection-start-line="8" selection-start-column="58" selection-end-line="8" selection-end-column="58" />
         </state>
       </provider>
     </entry>
@@ -1231,28 +1238,28 @@ print(link._error())</expression-string>
     <entry file="file://$PROJECT_DIR$/PacletInfo.m">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="285">
-          <caret line="19" column="33" lean-forward="true" selection-start-line="19" selection-start-column="33" selection-end-line="19" selection-end-column="33" />
+          <caret line="19" column="33" selection-start-line="19" selection-start-column="33" selection-end-line="19" selection-end-column="33" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/.travis.yml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
-          <caret line="12" column="46" lean-forward="true" selection-start-line="12" selection-start-column="46" selection-end-line="12" selection-end-column="46" />
+          <caret line="12" column="46" selection-start-line="12" selection-start-column="46" selection-end-line="12" selection-end-column="46" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/.appveyor.yml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="75">
-          <caret line="5" lean-forward="true" selection-start-line="5" selection-end-line="5" />
+          <caret line="5" selection-start-line="5" selection-end-line="5" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/lib.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="30">
-          <caret line="2" lean-forward="true" selection-start-line="2" selection-end-line="2" />
+          <caret line="2" selection-start-line="2" selection-end-line="2" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
@@ -1261,15 +1268,15 @@ print(link._error())</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/PJLink/PJLinkNativeLibrary/load_lib.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="382">
-          <caret line="36" column="38" selection-start-line="36" selection-start-column="16" selection-end-line="36" selection-end-column="38" />
+        <state relative-caret-position="125">
+          <caret line="42" column="28" selection-start-line="42" selection-start-column="21" selection-end-line="42" selection-end-column="28" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/build.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="450">
-          <caret line="46" column="46" selection-start-line="46" selection-start-column="46" selection-end-line="46" selection-end-column="46" />
+        <state relative-caret-position="159">
+          <caret line="43" column="31" selection-start-line="43" selection-start-column="31" selection-end-line="43" selection-end-column="31" />
         </state>
       </provider>
     </entry>
