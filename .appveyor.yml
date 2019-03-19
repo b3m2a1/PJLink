@@ -20,6 +20,9 @@ install:
 build_script:
   - "%PYTHON%\\python.exe build.py"
 
+test_script:
+  - "%PYTHON%\\python.exe Tests/test.py"
+
 before_deploy:
   - git config --local user.name "b3m2a1-builder"
   - git config --local user.email "b3m2a1+machine@gmail.com"

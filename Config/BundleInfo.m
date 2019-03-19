@@ -12,6 +12,7 @@
 		"Tests",
 		".idea",
 		"PJLink/PJLinkNativeLibrary/src/build",
+		"PJLink/PJLinkNativeLibrary/src/MathLinkBinaries",
 		"PJLink/PJLinkNativeLibrary/PJLinkNativeLibrary.pyd",
 		"PJLink/PJLinkNativeLibrary/PJLinkNativeLibrary.so"
 		},

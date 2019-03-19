@@ -103,7 +103,7 @@ class NativeLink(MathLink):
         if not self.__NATIVE_LIBRARY_LOADED:
 
             try:
-                import PJLink.PJLinkNativeLibrary as pj
+                import PJLink.PJLinkNativeLibrary.lib as pj
             except ImportError as e:
                 self.__LIBRARY_LOAD_EXCEPTION = e
                 raise e

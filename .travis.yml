@@ -8,6 +8,7 @@ install:
 - pip install wget
 script:
 - python build.py
+- python Tests/tests.py
 before_deploy:
   - git config --local user.name "b3m2a1-builder"
   - git config --local user.email "b3m2a1+machine@gmail.com"

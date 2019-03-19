@@ -49,6 +49,9 @@ try:
     new_so = os.path.join(new_dir, os.path.basename(so_file))
     print(so_file, new_so)
     os.rename(so_file, new_so)
+
+    import PJLink.PJLinkNativeLibrary.lib as lib
+
 except:
     import traceback as tb
     tb.print_exc()

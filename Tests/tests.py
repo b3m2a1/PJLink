@@ -1,12 +1,3 @@
-"""These are the set of tests to the PyVPT package
-Every type of tests should be its own module and should be tagged as either a FastTest, SlowTest, or TimingTest
-
-
-
-
-
-"""
-
 
 
 if __name__=="__main__":
@@ -15,7 +6,7 @@ if __name__=="__main__":
     base_dir = os.path.dirname(os.path.dirname(tests_dir))
     sys.path.insert(0, base_dir)
 
-    from PyVPT.Tests import TestRunner, DebugTests, ValidationTests, TimingTests, LoadTests
+    from PJLink.Tests import TestRunner, DebugTests, ValidationTests, TimingTests, LoadTests
 
     LoadTests(base_dir)
 

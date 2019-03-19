@@ -2,7 +2,7 @@
 
 Paclet[
   Name -> "PJLink",
-  Version -> "1.0.7",
+  Version -> "1.1.1",
   Creator -> "b3m2a1@gmail.com",
   Description -> "A JLink-like interface for python",
   Extensions -> {
